@@ -11,7 +11,7 @@ const memberNo = (name = '') => {
  * Tarjeta «VIP Pass» del speed-dating: fondo tinta, toques dorados y rojo corporativo.
  * `animated` la hace entrar girando con un reflejo.
  */
-export default function VipCard({ name, role, branch, animated = false, className = '' }) {
+export default function VipCard({ name, role, branch, photo, animated = false, className = '' }) {
   // Durante la animación, el sello «MATCH READY» sustituye a la etiqueta de la tarjeta
   const { t } = useI18n()
   return (
@@ -41,8 +41,13 @@ export default function VipCard({ name, role, branch, animated = false, classNam
         </div>
 
         <div className="mt-auto">
-          <p className="truncate font-display text-2xl font-semibold leading-tight sm:text-[1.75rem]">{name || '—'}</p>
-          <p className="mt-0.5 truncate text-xs text-white/70 sm:text-sm">{[role, branch].filter(Boolean).join(' · ')}</p>
+          <div className="flex items-center gap-3">
+            {photo && <img src={photo} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-accent sm:h-14 sm:w-14" />}
+            <div className="min-w-0">
+              <p className="truncate font-display text-2xl font-semibold leading-tight sm:text-[1.75rem]">{name || '—'}</p>
+              <p className="mt-0.5 truncate text-xs text-white/75 sm:text-sm">{[role, branch].filter(Boolean).join(' · ')}</p>
+            </div>
+          </div>
           <div className="mt-3 flex items-center justify-between gap-2">
             <span className="font-mono text-[11px] tracking-wider text-white/60">{t('match.member')} {memberNo(name)}</span>
             {!animated && <span className="rounded-full bg-brand px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider">{t('match.ready')}</span>}

@@ -62,7 +62,7 @@ export default function ProjectorView() {
             <div className="mt-12 flex max-w-5xl flex-wrap justify-center gap-4">
               {participants.map((p, i) => (
                 <div key={p.id} className="animate-pop-in flex w-28 flex-col items-center gap-2 text-center" style={{ animationDelay: `${i * 60}ms` }}>
-                  <Avatar name={p.name} size="lg" />
+                  <Avatar name={p.name} photo={p.photo} size="lg" />
                   <span className="text-sm font-semibold leading-tight">{p.name.split(' ')[0]}</span>
                   <span className="-mt-1 text-xs text-slate-400">{country(p.country)}</span>
                 </div>
@@ -82,7 +82,7 @@ export default function ProjectorView() {
                     const p = byId.get(id)
                     return p ? (
                       <li key={id} className="flex items-center gap-4">
-                        <Avatar name={p.name} />
+                        <Avatar name={p.name} photo={p.photo} />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-lg font-semibold">{p.name}</p>
                           <p className="truncate text-sm text-slate-500">{country(p.country)}</p>

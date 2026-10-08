@@ -157,7 +157,7 @@ export default function ModeratorPanelView() {
                       const p = byId.get(id)
                       return p ? (
                         <li key={id} className="flex items-center gap-2 text-sm">
-                          <Avatar name={p.name} size="sm" />
+                          <Avatar name={p.name} photo={p.photo} size="sm" />
                           <span className="min-w-0 flex-1 truncate">
                             {p.name}{p.id === currentUser?.id && <span className="ml-1 text-xs text-slate-400">({t('panel.you')})</span>}
                           </span>
@@ -188,7 +188,7 @@ export default function ModeratorPanelView() {
               {participants.map((p) => (
                 <li key={p.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
                   <div className="flex min-w-0 items-center gap-3 sm:w-64">
-                    <Avatar name={p.name} />
+                    <Avatar name={p.name} photo={p.photo} />
                     <div className="min-w-0">
                       <p className="truncate font-semibold">
                         {p.name}

@@ -34,15 +34,15 @@ export default function TagPicker({ value, onChange, tone = 'offer', alsoIn = []
               disabled={disabled}
               aria-pressed={selected}
               title={inOther ? t('register.bothLists') : undefined}
-              className={`relative inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-all duration-150 active:scale-95 ${
+              className={`relative inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 py-2 text-[15px] font-medium transition-all duration-150 active:scale-95 ${
                 selected
                   ? TONES[tone].on
                   : disabled
-                    ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300'
-                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400'
+                    ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
+                    : 'border-slate-300 bg-white text-slate-800 hover:border-slate-500'
               }`}
             >
-              {selected ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5 opacity-50" />}
+              {selected ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4 text-slate-500" />}
               {topic(tag)}
               {inOther && (
                 <span aria-hidden className={`absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-white ${TONES[tone].other}`} />
@@ -51,11 +51,11 @@ export default function TagPicker({ value, onChange, tone = 'offer', alsoIn = []
           )
         })}
       </div>
-      <div className="mt-2 flex items-center justify-between text-xs">
-        <span className={error ? 'font-medium text-brand' : 'text-slate-400'}>
+      <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+        <span role={error ? 'alert' : undefined} className={error ? 'font-semibold text-brand' : 'text-slate-600'}>
           {error ?? t('register.tagHint', { max: MAX_TAGS })}
         </span>
-        <span className="flex items-center gap-1.5 font-medium text-slate-500">
+        <span className="flex shrink-0 items-center gap-1.5 font-semibold text-slate-700">
           <span className={`h-1.5 w-1.5 rounded-full ${TONES[tone].dot}`} /> {value.length}/{MAX_TAGS}
         </span>
       </div>

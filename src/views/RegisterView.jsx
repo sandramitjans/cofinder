@@ -5,18 +5,18 @@ import { useI18n } from '../context/I18nContext'
 import { COUNTRIES, MAX_SUPERPOWERS, VIEWS } from '../constants'
 import { DICT } from '../lib/i18n'
 import Logo from '../components/ui/Logo'
-import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
 import Field from '../components/ui/Field'
 import TagPicker from '../components/ui/TagPicker'
 import SuperpowerPicker from '../components/ui/SuperpowerPicker'
+import PhotoPicker from '../components/ui/PhotoPicker'
 import LangSwitch from '../components/ui/LangSwitch'
 import AttractivenessMeter, { attractivenessScore } from '../components/AttractivenessMeter'
 import PublicFooter from '../components/layout/PublicFooter'
 import MatchScene from './MatchScene'
 
 // `country` guarda «Filiale / Département» (texto libre, con sugerencias de filiales)
-const EMPTY = { name: '', role: '', country: '', offers: [], needs: [], superpowers: [] }
+const EMPTY = { name: '', role: '', country: '', photo: '', offers: [], needs: [], superpowers: [] }
 
 /** Si el texto coincide con una filial conocida (en cualquier idioma), guarda su identificador */
 const normalizeBranch = (text) => {
@@ -89,14 +89,14 @@ export default function RegisterView() {
 
           {/* Cabecera */}
           <header className="mt-8">
-            <p className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wider text-ink">
+            <p className="inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold uppercase tracking-wide text-ink">
               <Gem className="h-3.5 w-3.5" /> {t('register.kicker')}
             </p>
             <h1 className="mt-4 tracking-tight">
               <span className="block text-lg font-bold text-brand">{t('register.titleBrand')}</span>
               <span className="block font-display text-4xl font-bold italic leading-[1.05] sm:text-5xl">{t('register.titleMain')}</span>
             </h1>
-            <p className="mt-4 max-w-lg text-base text-slate-600 sm:text-lg">{t('register.subtitle')}</p>
+            <p className="mt-4 max-w-lg text-lg leading-relaxed text-slate-700">{t('register.subtitle')}</p>
           </header>
 
           {/* Indice d'attractivité, siempre visible */}
@@ -107,15 +107,13 @@ export default function RegisterView() {
           <form onSubmit={submit} noValidate className="mt-6 space-y-6">
             {/* 1 · Profil */}
             <Card n={1} icon={UserRound} title={t('register.step1')} subtitle={t('register.step1Sub')}>
-              <div className="mt-4 flex items-center gap-4 rounded-xl bg-gradient-to-r from-brand-soft to-accent-soft/60 p-3">
-                <Avatar name={form.name || '?'} />
-                <div className="min-w-0">
-                  <p className="truncate font-display text-lg font-semibold">{form.name || t('register.previewName')}</p>
-                  <p className="truncate text-xs text-slate-600">
-                    {[form.role || t('register.previewRole'), form.country ? country(form.country) : t('register.previewCountry')].join(' · ')}
-                  </p>
-                </div>
-                <Heart className={`ml-auto h-5 w-5 shrink-0 transition ${score >= 100 ? 'animate-heartbeat fill-brand text-brand' : 'text-brand/30'}`} />
+              <div className="mt-5">
+                <PhotoPicker
+                  value={form.photo}
+                  name={form.name}
+                  subtitle={[form.role || t('register.previewRole'), form.country ? country(form.country) : t('register.previewCountry')].join(' · ')}
+                  onChange={(v) => set('photo', v)}
+                />
               </div>
               <div className="mt-4 space-y-4">
                 <div data-field="name">
@@ -217,20 +215,17 @@ const BADGES = { brand: 'bg-brand text-white', accent: 'bg-accent text-ink', ink
 const TAGS = { brand: 'bg-brand-soft text-brand', accent: 'bg-accent-soft text-ink', ink: 'bg-ink text-accent' }
 
 function Card({ n, icon: Icon, tone = 'ink', title, tag, subtitle, field, labelId, children }) {
+  const { t } = useI18n()
   return (
-    <fieldset data-field={field} className="relative rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <fieldset data-field={field} className="relative rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
       <legend className="sr-only">{title}</legend>
-      <span aria-hidden className="absolute right-5 top-5 font-display text-sm italic text-slate-300">{String(n).padStart(2, '0')}/03</span>
-      <div className="flex items-start gap-3 pr-12">
-        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${BADGES[tone]}`}><Icon className="h-4 w-4" /></span>
-        <div>
-          <h2 id={labelId} className="flex flex-wrap items-center gap-x-2 font-display text-xl font-semibold leading-9">
-            {title}
-            {tag && <span className={`rounded-full px-2 py-0.5 font-sans text-[11px] font-bold uppercase not-italic leading-none tracking-wide ${TAGS[tone]}`}>{tag}</span>}
-          </h2>
-          {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
-        </div>
+      <p className="text-sm font-bold uppercase tracking-wider text-brand">{t('register.stepOf', { n, total: 3 })}</p>
+      <div className="mt-2 flex items-center gap-3">
+        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${BADGES[tone]}`}><Icon className="h-5 w-5" /></span>
+        <h2 id={labelId} className="text-xl font-bold leading-tight text-ink sm:text-2xl">{title}</h2>
       </div>
+      {tag && <span className={`mt-3 inline-block rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${TAGS[tone]}`}>{tag}</span>}
+      {subtitle && <p className="mt-2 text-base leading-relaxed text-slate-700">{subtitle}</p>}
       {children}
     </fieldset>
   )
@@ -238,13 +233,12 @@ function Card({ n, icon: Icon, tone = 'ink', title, tag, subtitle, field, labelI
 
 function SubBlock({ field, id, icon: Icon, tone, title, tag, subtitle, children }) {
   return (
-    <div data-field={field} className="mt-5">
-      <h3 id={id} className="flex flex-wrap items-center gap-2 font-semibold">
-        <Icon className={`h-4 w-4 ${tone === 'brand' ? 'text-brand' : 'text-amber-500'}`} />
-        {title}
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase leading-none tracking-wide ${TAGS[tone]}`}>{tag}</span>
-      </h3>
-      <p className="mb-3 mt-0.5 text-sm text-slate-500">{subtitle}</p>
+    <div data-field={field} className="mt-6">
+      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${TAGS[tone]}`}>
+        <Icon className="h-3.5 w-3.5" /> {tag}
+      </span>
+      <h3 id={id} className="mt-2 text-lg font-bold leading-snug text-ink">{title}</h3>
+      <p className="mb-4 mt-1 text-base text-slate-700">{subtitle}</p>
       {children}
     </div>
   )

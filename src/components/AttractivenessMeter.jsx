@@ -24,11 +24,11 @@ export default function AttractivenessMeter({ value }) {
   return (
     <div className={`rounded-xl border bg-white/90 p-4 shadow-sm backdrop-blur transition-colors ${max ? 'border-brand/40 shadow-brand/10' : 'border-slate-200'}`}>
       <div className="flex items-center justify-between gap-3">
-        <p className="flex items-center gap-2 whitespace-nowrap text-xs font-bold uppercase tracking-widest text-slate-500">
+        <p className="flex items-center gap-2 whitespace-nowrap text-sm font-bold uppercase tracking-wider text-slate-700">
           <Heart className={`h-3.5 w-3.5 transition-colors ${max ? 'animate-heartbeat fill-brand text-brand' : value ? 'fill-brand/20 text-brand' : ''}`} />
           {t('attract.label')}
         </p>
-        <span className="font-mono text-xs font-bold tabular-nums text-slate-400">{value}%</span>
+        <span className="text-sm font-bold tabular-nums text-slate-700">{value} %</span>
       </div>
 
       <div
@@ -51,7 +51,7 @@ export default function AttractivenessMeter({ value }) {
         ))}
       </div>
 
-      <p key={level} aria-hidden className={`animate-rise-in mt-2 font-display text-[15px] italic ${max ? 'font-semibold text-brand' : 'text-slate-600'}`}>
+      <p key={level} aria-hidden className={`animate-rise-in mt-2 text-base font-semibold ${max ? 'text-brand' : 'text-slate-700'}`}>
         {levels[level]}
       </p>
     </div>

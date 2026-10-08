@@ -67,7 +67,7 @@ export default function RoundCardView() {
                   if (!p) return null
                   return (
                     <li key={id} className="flex items-start gap-3">
-                      <Avatar name={p.name} />
+                      <Avatar name={p.name} photo={p.photo} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-semibold">{p.name}</p>
                         <p className="truncate text-xs text-slate-500">{p.role} · {country(p.country)}</p>

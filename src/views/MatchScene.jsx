@@ -36,7 +36,7 @@ export default function MatchScene({ profile, onDone }) {
       <div className="mb-10 animate-rise-in"><Logo /></div>
 
       <div className="relative w-full max-w-sm">
-        <VipCard animated name={profile?.name} role={profile?.role} branch={profile && country(profile.country)} />
+        <VipCard animated photo={profile?.photo} name={profile?.name} role={profile?.role} branch={profile && country(profile.country)} />
 
         {/* Corazones */}
         <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-6">

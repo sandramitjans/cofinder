@@ -40,19 +40,19 @@ export default function WaitingView() {
         {/* Tarjeta VIP + resumen del perfil */}
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex items-center justify-between gap-3">
-            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+            <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-600">
               <Gem className="h-4 w-4 text-accent" /> {t('waiting.yourFile')}
             </p>
-            <span className="font-display text-sm font-semibold italic text-brand">{t('waiting.status')}</span>
+            <span className="text-sm font-bold text-brand">{t('waiting.status')}</span>
           </div>
           <div className="mx-auto mt-4 max-w-sm">
-            <VipCard name={currentUser.name} role={currentUser.role} branch={country(currentUser.country)} />
+            <VipCard photo={currentUser.photo} name={currentUser.name} role={currentUser.role} branch={country(currentUser.country)} />
           </div>
           <TagRow title={t('waiting.masters')} tags={currentUser.offers.map(topic)} className="bg-brand-soft text-brand" />
           <TagRow title={t('waiting.explores')} tags={currentUser.needs.map(topic)} className="bg-accent-soft text-slate-800" />
           {currentUser.superpowers?.length > 0 && (
             <div className="mt-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('waiting.superpowers')}</p>
+              <p className="text-sm font-semibold uppercase tracking-wider text-slate-600">{t('waiting.superpowers')}</p>
               <SuperpowerChips ids={currentUser.superpowers} className="mt-1.5" />
             </div>
           )}
@@ -125,7 +125,7 @@ function CupidMessages() {
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
     >
-      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+      <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-600">
         <Heart className="animate-heartbeat h-4 w-4 fill-brand text-brand" /> {t('waiting.messagesTitle')}
       </p>
       <p key={`${lang}-${index}`} className="animate-message-in mt-3 min-h-[3.5rem] font-display text-xl italic leading-snug text-ink sm:text-2xl">
@@ -150,7 +150,7 @@ function CupidMessages() {
 function TagRow({ title, tags, className }) {
   return (
     <div className="mt-4">
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{title}</p>
+      <p className="text-sm font-semibold uppercase tracking-wider text-slate-600">{title}</p>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {tags.map((x) => <span key={x} className={`rounded-full px-3 py-1 text-sm font-medium ${className}`}>{x}</span>)}
       </div>

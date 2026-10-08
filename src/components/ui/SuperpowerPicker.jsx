@@ -23,12 +23,12 @@ export default function SuperpowerPicker({ value, onChange, labelledBy }) {
               onClick={() => toggle(id)}
               disabled={disabled}
               aria-pressed={selected}
-              className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-all duration-150 active:scale-[0.98] ${
+              className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-[15px] font-medium transition-all duration-150 active:scale-[0.98] ${
                 selected
                   ? 'border-ink bg-ink text-white shadow-md shadow-ink/20'
                   : disabled
-                    ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300'
-                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400'
+                    ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
+                    : 'border-slate-300 bg-white text-slate-800 hover:border-slate-500'
               }`}
             >
               <span
@@ -45,7 +45,7 @@ export default function SuperpowerPicker({ value, onChange, labelledBy }) {
           )
         })}
       </div>
-      <p className="mt-2 text-right text-xs font-medium text-slate-500">
+      <p className="mt-3 text-right text-sm font-semibold text-slate-700">
         {t('register.superHint', { n: value.length, max: MAX_SUPERPOWERS })}
       </p>
     </div>
