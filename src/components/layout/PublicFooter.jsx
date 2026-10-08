@@ -6,11 +6,12 @@ import { useI18n } from '../../context/I18nContext'
  * Pie de las vistas públicas. El candado es el acceso discreto al panel de
  * moderadora: casi invisible, sin texto, y además pide PIN.
  */
-export default function PublicFooter({ className = '' }) {
+export default function PublicFooter({ className = '', children }) {
   const { openGate } = useApp()
   const { t } = useI18n()
   return (
-    <footer className={`flex items-center justify-center gap-2 py-6 text-xs text-slate-400 ${className}`}>
+    <footer className={`flex flex-wrap items-center justify-center gap-x-2 gap-y-1 py-6 text-xs text-slate-400 ${className}`}>
+      {children && <>{children}<span aria-hidden>·</span></>}
       <span>© {new Date().getFullYear()} Cofinder</span>
       <button
         type="button"

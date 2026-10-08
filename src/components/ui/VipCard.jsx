@@ -1,4 +1,4 @@
-import { Heart, MapPin } from 'lucide-react'
+import { Camera, Heart, MapPin } from 'lucide-react'
 import { useI18n } from '../../context/I18nContext'
 import { initialsOf } from './Avatar'
 import { SuperpowerChips } from './SuperpowerPicker'
@@ -10,6 +10,8 @@ import { SuperpowerChips } from './SuperpowerPicker'
  */
 export default function VipCard({
   name, role, branch, photo, offers = [], needs = [], superpowers = [], animated = false, className = '',
+  photoClassName = 'aspect-[4/5]', // alto de la foto (más baja en la pantalla de espera móvil)
+  onAddPhoto, // si no hay foto: la zona de iniciales se vuelve un botón «Ajouter une photo»
 }) {
   const { t } = useI18n()
   const hasDetails = offers.length > 0 || needs.length > 0 || superpowers.length > 0
@@ -20,16 +22,27 @@ export default function VipCard({
       aria-label={name}
     >
       {/* Foto (o iniciales) a sangre */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-br from-brand via-[#c1003a] to-[#6e0021]">
+      <div className={`relative w-full overflow-hidden bg-gradient-to-br from-brand via-[#c1003a] to-[#6e0021] ${photoClassName}`}>
         {photo ? (
           <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
           <>
             <Heart aria-hidden className="absolute -right-10 -top-6 h-56 w-56 rotate-12 fill-white/10 text-transparent" />
             <Heart aria-hidden className="absolute -bottom-8 -left-12 h-44 w-44 -rotate-12 fill-accent/20 text-transparent" />
-            <span aria-hidden className="absolute inset-0 grid place-items-center pb-16 font-display text-8xl font-bold italic text-white/95">
-              {initialsOf(name)}
-            </span>
+            {!onAddPhoto && (
+              <span aria-hidden className="absolute inset-0 grid place-items-center pb-20 font-display text-6xl font-bold italic text-white/95 sm:pb-24 sm:text-8xl">
+                {initialsOf(name)}
+              </span>
+            )}
+            {onAddPhoto && (
+              <button
+                type="button"
+                onClick={onAddPhoto}
+                className="absolute left-4 top-[42%] z-10 inline-flex -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-white px-4 py-2.5 text-[15px] font-bold text-brand shadow-lg transition hover:scale-105"
+              >
+                <Camera className="h-4 w-4" /> {t('register.photoAdd')}
+              </button>
+            )}
           </>
         )}
 
@@ -67,7 +80,7 @@ export default function VipCard({
 
       {/* Temas como etiquetas */}
       {hasDetails && (
-        <div className="space-y-3 p-5">
+        <div className="space-y-2.5 p-4 lg:space-y-3 lg:p-5">
           <TagGroup title={t('waiting.masters')} tags={offers} className="bg-brand-soft text-brand" />
           <TagGroup title={t('waiting.explores')} tags={needs} className="bg-accent-soft text-slate-800" />
           {superpowers.length > 0 && (
