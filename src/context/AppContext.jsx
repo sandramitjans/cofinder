@@ -23,6 +23,7 @@ const REMOTE = api.isRemote
 const EVENT_KEY = 'cofinder:event:v4'
 const ME_KEY = 'cofinder:me'
 const PROFILE_KEY = 'cofinder:me:profile' // copia local del propio perfil (pantalla al instante, sin red)
+const SECRET_KEY = 'cofinder:me:secret'   // clave para poder modificar el propio perfil
 const MOD_KEY = REMOTE ? 'cofinder:mod:pin' : 'cofinder:mod'
 const EMPTY_EVENT = { round: 0, rounds: [], finished: false }
 const MOD_POLL_MS = 4000
@@ -40,6 +41,8 @@ const isSeated = (rounds, id) => rounds.some((r) => r.tables.some((t) => t.membe
 export function AppProvider({ children }) {
   /* ---------- Estado común ---------- */
   const [currentUserId, setCurrentUserId] = useState(() => read(localStorage, ME_KEY, null))
+  const [editSecret, setEditSecret] = useState(() => read(localStorage, SECRET_KEY, null))
+  const [profileUpdatedAt, setProfileUpdatedAt] = useState(0)
   const [modPin, setModPin] = useState(() => read(sessionStorage, MOD_KEY, null)) // remoto: PIN; local: true
   const modUnlocked = !!modPin
   const [gateOpen, setGateOpen] = useState(() => window.location.hash === MOD_HASH)
@@ -63,6 +66,7 @@ export function AppProvider({ children }) {
   // Persistencia
   useEffect(() => { if (!REMOTE) write(localStorage, EVENT_KEY, { participants: localParticipants, event: localEvent }) }, [localParticipants, localEvent])
   useEffect(() => write(localStorage, ME_KEY, currentUserId), [currentUserId])
+  useEffect(() => write(localStorage, SECRET_KEY, editSecret), [editSecret])
   useEffect(() => { if (REMOTE) write(localStorage, PROFILE_KEY, me) }, [me])
   useEffect(() => write(sessionStorage, MOD_KEY, modPin), [modPin])
 
@@ -86,9 +90,10 @@ export function AppProvider({ children }) {
   /* ---------- Remoto: participante ---------- */
   const forgetLocally = useCallback(() => {
     setCurrentUserId(null)
+    setEditSecret(null)
     setMe(null)
     setMyTable(null)
-    setView((v) => (v === VIEWS.HOME ? VIEWS.REGISTER : v))
+    setView((v) => (v === VIEWS.HOME || v === VIEWS.EDIT ? VIEWS.REGISTER : v))
   }, [])
 
   const refreshMine = useCallback(async () => {
@@ -156,7 +161,7 @@ export function AppProvider({ children }) {
 
   // Modo local: si la persona de este dispositivo fue eliminada desde el panel, vuelve al registro
   useEffect(() => {
-    if (!REMOTE && currentUserId && !currentUser && view === VIEWS.HOME) {
+    if (!REMOTE && currentUserId && !currentUser && (view === VIEWS.HOME || view === VIEWS.EDIT)) {
       setCurrentUserId(null)
       setView(VIEWS.REGISTER)
     }
@@ -198,12 +203,14 @@ export function AppProvider({ children }) {
   // (el registro termina su animación de sello y luego navega a HOME)
   const register = useCallback(async (data, { stay = false } = {}) => {
     const user = { id: crypto.randomUUID(), createdAt: Date.now(), ...data }
+    const secret = crypto.randomUUID()
     if (REMOTE) {
-      try { await api.insertProfile(user, currentLang()) } catch { return false }
+      try { await api.insertProfile(user, currentLang(), secret) } catch { return false }
       setMe(user)
     } else {
       setLocalParticipants((prev) => [...prev, user])
     }
+    setEditSecret(secret)
     setCurrentUserId(user.id)
     if (!stay) {
       setView(VIEWS.HOME)
@@ -212,9 +219,27 @@ export function AppProvider({ children }) {
     return true
   }, [])
 
+  // El participante modifica su propio perfil (solo desde el dispositivo con el que se registró)
+  const canEditProfile = !!currentUserId && (!REMOTE || !!editSecret)
+  const updateProfile = useCallback(async (data) => {
+    if (!currentUserId) return false
+    const next = { ...data, id: currentUserId }
+    if (REMOTE) {
+      try { await api.updateProfile(next, currentLang(), editSecret) } catch { return false }
+      setMe((m) => ({ ...m, ...next }))
+    } else {
+      setLocalParticipants((prev) => prev.map((p) => (p.id === currentUserId ? { ...p, ...next } : p)))
+    }
+    setProfileUpdatedAt(Date.now())
+    setView(VIEWS.HOME)
+    window.scrollTo({ top: 0 })
+    return true
+  }, [currentUserId, editSecret])
+
   // Solo olvida el perfil en ESTE dispositivo (el registro sigue en la base de datos)
   const forgetMe = useCallback(() => {
     setCurrentUserId(null)
+    setEditSecret(null)
     setMe(null)
     setMyTable(null)
     setView(VIEWS.REGISTER)
@@ -289,10 +314,12 @@ export function AppProvider({ children }) {
     participants, currentUser, event, currentRound, seatedEver,
     modLoading: REMOTE && modUnlocked && !modState,
     register, forgetMe, removeParticipant, seedDemo, clearDemo,
+    canEditProfile, updateProfile, profileUpdatedAt,
     modUnlocked, gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     startNextRound, regenerateRound, restartTimer, finishEvent, resetEvent,
   }), [view, navigate, participants, currentUser, event, currentRound, seatedEver, modUnlocked, modState,
     register, forgetMe, removeParticipant, seedDemo, clearDemo,
+    canEditProfile, updateProfile, profileUpdatedAt,
     gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     startNextRound, regenerateRound, restartTimer, finishEvent, resetEvent])
 

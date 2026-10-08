@@ -14,6 +14,7 @@ import LangSwitch from '../components/ui/LangSwitch'
 import AttractivenessMeter, { attractivenessScore } from '../components/AttractivenessMeter'
 import PublicFooter from '../components/layout/PublicFooter'
 import MatchScene from './MatchScene'
+import { isCustom } from '../lib/topics'
 
 // `country` guarda «Filiale / Département» (texto libre, con sugerencias de filiales)
 const EMPTY = { name: '', role: '', country: '', photo: '', offers: [], needs: [], customTopics: [], superpowers: [] }
@@ -42,11 +43,32 @@ const normalizeBranch = (text) => {
  * El mismo formulario para todo el mundo (moderadora incluida), sin pistas de mesas ni rondas.
  * Al validar: el formulario se desvanece, entra la tarjeta VIP y cae el sello «PROFIL VALIDÉ & MATCH READY !».
  */
-export default function RegisterView() {
-  const { register, navigate } = useApp()
+export function EditProfileView() {
+  return <RegisterView mode="edit" />
+}
+
+/** Perfil guardado → valores del formulario (la filial vuelve a texto legible) */
+const formFromProfile = (p, countryLabel) => {
+  const used = [...(p.offers ?? []), ...(p.needs ?? [])].filter(isCustom)
+  return {
+    ...EMPTY,
+    name: p.name ?? '',
+    role: p.role ?? '',
+    country: countryLabel(p.country) ?? '',
+    photo: p.photo || '',
+    offers: [...(p.offers ?? [])],
+    needs: [...(p.needs ?? [])],
+    customTopics: [...new Set([...(p.customTopics ?? []), ...used])],
+    superpowers: [...(p.superpowers ?? [])],
+  }
+}
+
+export default function RegisterView({ mode = 'create' }) {
+  const editing = mode === 'edit'
+  const { register, navigate, currentUser, updateProfile } = useApp()
   const { t, country } = useI18n()
-  const [form, setForm] = useState(() => loadDraft() ?? EMPTY)
-  const [restored, setRestored] = useState(() => !!loadDraft() && !isEmpty(loadDraft()))
+  const [form, setForm] = useState(() => (editing && currentUser ? formFromProfile(currentUser, country) : loadDraft() ?? EMPTY))
+  const [restored, setRestored] = useState(() => !editing && !!loadDraft() && !isEmpty(loadDraft()))
   const [errors, setErrors] = useState({})
   const [phase, setPhase] = useState('form') // form → saving → fading → matched
   const [saveError, setSaveError] = useState(false)
@@ -66,7 +88,7 @@ export default function RegisterView() {
 
   // Guardado automático del borrador (con un pequeño retardo para no escribir en cada tecla)
   useEffect(() => {
-    if (phase !== 'form') return
+    if (phase !== 'form' || editing) return // al modificar un perfil ya validado no hay borrador
     const timer = setTimeout(() => {
       try {
         if (isEmpty(form)) localStorage.removeItem(DRAFT_KEY)
@@ -74,7 +96,7 @@ export default function RegisterView() {
       } catch { /* sin almacenamiento: el formulario sigue funcionando */ }
     }, 400)
     return () => clearTimeout(timer)
-  }, [form, phase])
+  }, [form, phase, editing])
 
   const resetDraft = () => {
     try { localStorage.removeItem(DRAFT_KEY) } catch { /* noop */ }
@@ -116,6 +138,10 @@ export default function RegisterView() {
     saved.current = data
     setSaveError(false)
     setPhase('saving')
+    if (editing) {
+      if (!(await updateProfile(data))) { setPhase('form'); setSaveError(true) }
+      return
+    }
     // Se guarda primero en la base de datos; la animación es solo escenografía.
     // Si falla la red, el borrador sigue intacto y se puede volver a intentar.
     const ok = await register(data, { stay: true })
@@ -148,13 +174,13 @@ export default function RegisterView() {
           {/* Cabecera */}
           <header className="mt-8">
             <p className="inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold uppercase tracking-wide text-ink">
-              <Gem className="h-3.5 w-3.5" /> {t('register.kicker')}
+              <Gem className="h-3.5 w-3.5" /> {t(editing ? 'register.editKicker' : 'register.kicker')}
             </p>
             <h1 className="mt-4 tracking-tight">
               <span className="block text-lg font-bold text-brand">{t('register.titleBrand')}</span>
               <span className="block font-display text-4xl font-bold italic leading-[1.05] sm:text-5xl">{t('register.titleMain')}</span>
             </h1>
-            <p className="mt-4 max-w-lg text-lg leading-relaxed text-slate-700">{t('register.subtitle')}</p>
+            <p className="mt-4 max-w-lg text-lg leading-relaxed text-slate-700">{t(editing ? 'register.editSubtitle' : 'register.subtitle')}</p>
           </header>
 
           {/* Indice d'attractivité, siempre visible */}
@@ -239,11 +265,18 @@ export default function RegisterView() {
               </p>
             )}
             <Button type="submit" icon={Heart} className="w-full py-4 text-base" disabled={phase !== 'form'}>
-              {phase === 'saving' ? t('register.saving') : t('register.submit')}
+              {phase === 'saving' ? t('register.saving') : t(editing ? 'register.editSave' : 'register.submit')}
             </Button>
-            <p className="flex items-center justify-center gap-1.5 text-sm text-slate-600">
-              <Save className="h-4 w-4" /> {t('register.draftSaved')}
-            </p>
+            {editing ? (
+              <button type="button" onClick={() => navigate(VIEWS.HOME)} disabled={phase !== 'form'}
+                className="w-full rounded-xl border border-slate-300 bg-white py-3.5 text-base font-semibold text-slate-700 hover:bg-slate-50">
+                {t('register.editCancel')}
+              </button>
+            ) : (
+              <p className="flex items-center justify-center gap-1.5 text-sm text-slate-600">
+                <Save className="h-4 w-4" /> {t('register.draftSaved')}
+              </p>
+            )}
           </form>
         </div>
         <PublicFooter />

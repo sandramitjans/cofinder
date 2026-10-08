@@ -57,9 +57,15 @@ const rpc = async (fn, args) => {
 
 /* ---------- Participante ---------- */
 // Sin .select(): el rol público no puede leer la tabla, así que no pedimos la fila de vuelta
-export async function insertProfile(profile, lang) {
-  const { error } = await supabase.from('participants').insert(toRow(profile, lang))
+// `secret` = clave de edición generada en este dispositivo; ninguna función la devuelve nunca
+export async function insertProfile(profile, lang, secret) {
+  const { error } = await supabase.from('participants').insert({ ...toRow(profile, lang), edit_secret: secret })
   if (error) throw error
+}
+
+export async function updateProfile(profile, lang, secret) {
+  const { id, ...row } = toRow(profile, lang)
+  await rpc('update_my_profile', { p_id: id, p_secret: secret, p_profile: row })
 }
 
 export const fetchMyProfile = async (id) => fromRow(await rpc('get_my_profile', { p_id: id }))

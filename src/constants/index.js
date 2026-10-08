@@ -2,6 +2,7 @@
 export const VIEWS = {
   REGISTER: 'register',   // pública: pre-registro "Opération Secrète"
   HOME: 'home',           // pública: espera con cuenta atrás / tarjeta de ronda / cierre
+  EDIT: 'edit',           // pública: el participante modifica su propio perfil
   MOD_PANEL: 'mod-panel', // oculta: panel de moderadora
   PROJECTOR: 'projector', // oculta: pantalla grande
 }

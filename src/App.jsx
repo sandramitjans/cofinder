@@ -2,6 +2,7 @@ import { useApp } from './context/AppContext'
 import { VIEWS, MODERATOR_VIEWS } from './constants'
 import RegisterView from './views/RegisterView'
 import HomeView from './views/HomeView'
+import { EditProfileView } from './views/RegisterView'
 import ModeratorPanelView from './views/ModeratorPanelView'
 import ProjectorView from './views/ProjectorView'
 import ModeratorGate from './components/ModeratorGate'
@@ -10,6 +11,7 @@ import ModeratorGate from './components/ModeratorGate'
 const ROUTES = {
   [VIEWS.REGISTER]: RegisterView,
   [VIEWS.HOME]: HomeView,
+  [VIEWS.EDIT]: EditProfileView,
   [VIEWS.MOD_PANEL]: ModeratorPanelView,
   [VIEWS.PROJECTOR]: ProjectorView,
 }
@@ -20,7 +22,7 @@ export default function App() {
   // Guardas: las vistas de moderadora exigen PIN; HOME exige estar registrado
   let active = view
   if (MODERATOR_VIEWS.includes(view) && !modUnlocked) active = currentUser ? VIEWS.HOME : VIEWS.REGISTER
-  if (view === VIEWS.HOME && !currentUser) active = VIEWS.REGISTER
+  if ((view === VIEWS.HOME || view === VIEWS.EDIT) && !currentUser) active = VIEWS.REGISTER
   const View = ROUTES[active] ?? RegisterView
 
   return (

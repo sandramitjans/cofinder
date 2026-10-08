@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Gem, Heart } from 'lucide-react'
+import { CheckCircle2, Gem, Heart, PencilLine } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { EVENT_DATE } from '../constants'
+import { EVENT_DATE, VIEWS } from '../constants'
 import { useTimeLeft } from '../lib/useTimeLeft'
 import Logo from '../components/ui/Logo'
 import LangSwitch from '../components/ui/LangSwitch'
@@ -15,8 +15,14 @@ const ROTATE_MS = 5000
 
 /** Pantalla de espera tras validar el perfil: cuenta atrás al 25/11 + frases de Cupidon + tarjeta VIP */
 export default function WaitingView() {
-  const { currentUser, forgetMe } = useApp()
+  const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt } = useApp()
   const { t, topic, country, formatDate } = useI18n()
+  const [justUpdated, setJustUpdated] = useState(() => Date.now() - profileUpdatedAt < 3000)
+  useEffect(() => {
+    if (!justUpdated) return
+    const timer = setTimeout(() => setJustUpdated(false), 6000)
+    return () => clearTimeout(timer)
+  }, [justUpdated])
   if (!currentUser) return null
 
   return (
@@ -27,6 +33,12 @@ export default function WaitingView() {
       </header>
 
       <main className="mx-auto w-full max-w-2xl flex-1 py-10">
+        {justUpdated && (
+          <p role="status" className="animate-pop-in mb-6 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-base font-semibold text-emerald-800">
+            <CheckCircle2 className="h-5 w-5 shrink-0" /> {t('waiting.updated')}
+          </p>
+        )}
+
         {/* Encabezado */}
         <div className="text-center">
           <Stamp size="md" top={t('match.stampTop')} bottom={t('match.stampBottom')} label={t('match.stampLabel')} />
@@ -55,6 +67,15 @@ export default function WaitingView() {
               <p className="text-sm font-semibold uppercase tracking-wider text-slate-600">{t('waiting.superpowers')}</p>
               <SuperpowerChips ids={currentUser.superpowers} className="mt-1.5" />
             </div>
+          )}
+          {canEditProfile && (
+            <button
+              type="button"
+              onClick={() => navigate(VIEWS.EDIT)}
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-brand py-3.5 text-base font-bold text-brand transition hover:bg-brand-soft"
+            >
+              <PencilLine className="h-5 w-5" /> {t('waiting.edit')}
+            </button>
           )}
         </section>
 
