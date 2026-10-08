@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, PencilLine } from 'lucide-react'
+import { CheckCircle2, Heart, PencilLine } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { EVENT_DATE, VIEWS } from '../constants'
 import { useTimeLeft } from '../lib/useTimeLeft'
-import Logo from '../components/ui/Logo'
 import LangSwitch from '../components/ui/LangSwitch'
 import Stamp from '../components/ui/Stamp'
 import VipCard from '../components/ui/VipCard'
 import PublicFooter from '../components/layout/PublicFooter'
 
-/** Pantalla de espera tras validar el perfil: cuenta atrás al 25/11 + tarjeta VIP */
+/**
+ * Pantalla de espera «Soirée de gala» tras validar el perfil.
+ * Desktop: tarjeta-póster a toda la altura a la izquierda; a la derecha, hoja de calendario,
+ * cuenta atrás discreta, lacre «sous scellés» y editar. Móvil: lo mismo en vertical, en ~una pantalla.
+ */
 export default function WaitingView() {
   const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt } = useApp()
   const { t, topic, country, formatDate } = useI18n()
@@ -25,36 +28,19 @@ export default function WaitingView() {
   const edit = () => navigate(VIEWS.EDIT)
 
   return (
-    <div className="vip-glow flex min-h-dvh flex-col bg-gradient-to-b from-brand-soft/60 via-white to-slate-50 px-4 sm:px-6">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between pt-4 lg:pt-6">
-        <Logo />
-        <LangSwitch />
-      </header>
+    <div className="relative isolate flex min-h-dvh flex-col bg-ink text-white lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+      {/* Resplandor de gala */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -left-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-brand/25 blur-3xl" />
+        <div className="absolute -bottom-48 right-0 h-[28rem] w-[28rem] rounded-full bg-brand/15 blur-3xl" />
+        <div className="absolute right-1/4 top-1/3 h-64 w-64 rounded-full bg-accent/10 blur-3xl" />
+      </div>
 
-      {/*
-        Móvil: mensaje → cuenta atrás compacta → tarjeta → editar (≈ una pantalla).
-        Desktop: tarjeta a la izquierda; mensaje, cuenta atrás grande y editar a la derecha (sin scroll).
-      */}
-      <main className="mx-auto grid w-full max-w-sm flex-1 content-start gap-4 py-4 lg:max-w-5xl lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:content-center lg:gap-x-16 lg:gap-y-6 lg:py-5">
-        <div className="lg:col-start-2 lg:row-start-1 lg:self-end">
-          {justUpdated && (
-            <p role="status" className="animate-pop-in mb-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[15px] font-semibold text-emerald-800">
-              <CheckCircle2 className="h-5 w-5 shrink-0" /> {t('waiting.updated')}
-            </p>
-          )}
-          <h1 className="flex items-center justify-center gap-2 text-center font-display text-xl font-bold italic tracking-tight lg:block lg:text-left lg:text-5xl lg:leading-tight">
-            <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 lg:hidden" />
-            {t('waiting.saved')}
-          </h1>
-          <p className="mt-1 text-center text-base text-slate-600 lg:mt-3 lg:text-left lg:text-xl">
-            {t('waiting.seeYou', { date: formatDate(EVENT_DATE) })}
-          </p>
-          <Countdown />
-        </div>
-
-        {/* Tarjeta VIP con el sello como adhesivo en la esquina */}
-        <section className="relative lg:col-start-1 lg:row-span-2 lg:row-start-1" aria-label={t('waiting.yourFile')}>
+      {/* Tarjeta-póster: en desktop ocupa toda la altura de la columna izquierda */}
+      <aside className="order-3 px-4 lg:sticky lg:top-0 lg:order-none lg:col-start-1 lg:row-start-1 lg:h-dvh lg:p-6" aria-label={t('waiting.yourFile')}>
+        <div className="relative mx-auto h-full max-w-sm lg:max-w-none">
           <VipCard
+            variant="poster"
             photo={currentUser.photo}
             name={currentUser.name}
             role={currentUser.role}
@@ -62,67 +48,125 @@ export default function WaitingView() {
             offers={currentUser.offers.map(topic)}
             needs={currentUser.needs.map(topic)}
             superpowers={currentUser.superpowers ?? []}
-            photoClassName="aspect-[5/4] lg:aspect-[4/5]"
             onAddPhoto={canEditProfile ? edit : undefined}
+            className="aspect-[6/7] lg:aspect-auto lg:h-full"
           />
-          <div className="pointer-events-none absolute -right-2 top-14 z-10 drop-shadow-sm lg:-right-8 lg:top-12">
+          <div className="pointer-events-none absolute right-3 top-4 z-10 lg:right-6 lg:top-6">
             <Stamp size="sm" top={t('match.stampTop')} bottom={t('match.stampBottom')} label={t('match.stampLabel')} />
+          </div>
+        </div>
+      </aside>
+
+      {/* Columna derecha (en móvil sus bloques se intercalan con la tarjeta gracias a `contents`) */}
+      <div className="contents lg:col-start-2 lg:row-start-1 lg:flex lg:min-h-dvh lg:flex-col lg:px-12 lg:py-6">
+        <header className="order-1 flex items-center justify-end px-4 pt-4 lg:p-0">
+          <LangSwitch dark />
+        </header>
+
+        <section className="order-2 px-4 pb-4 pt-3 lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:p-0">
+          <div className="mx-auto w-full max-w-sm lg:mx-0 lg:max-w-xl">
+            {justUpdated && (
+              <p role="status" className="animate-pop-in mb-4 flex items-center gap-2 rounded-xl bg-emerald-400/15 px-3 py-2.5 text-[15px] font-semibold text-emerald-200 ring-1 ring-emerald-300/30">
+                <CheckCircle2 className="h-5 w-5 shrink-0" /> {t('waiting.updated')}
+              </p>
+            )}
+            <h1 className="font-display text-xl font-bold italic leading-tight tracking-tight lg:text-5xl">
+              {t('waiting.saved')}
+            </h1>
+            <DateBlock />
+            <div className="hidden lg:block">
+              <Sealed />
+              {canEditProfile && <EditButton onClick={edit} />}
+            </div>
           </div>
         </section>
 
-        {canEditProfile && (
-          <div className="text-center lg:col-start-2 lg:row-start-2 lg:self-start lg:text-left">
-            <button
-              type="button"
-              onClick={edit}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-base font-bold text-brand underline-offset-4 transition hover:bg-brand-soft hover:underline lg:-ml-3"
-            >
-              <PencilLine className="h-5 w-5" /> {t('waiting.edit')}
-            </button>
+        <div className="order-4 px-4 pt-4 lg:hidden">
+          <div className="mx-auto max-w-sm">
+            <Sealed />
+            {canEditProfile && <EditButton onClick={edit} />}
           </div>
-        )}
-      </main>
+        </div>
 
-      <PublicFooter className="py-3">
-        <button onClick={forgetMe} className="underline-offset-4 hover:text-slate-600 hover:underline">
-          {t('waiting.notYou')}
-        </button>
-      </PublicFooter>
+        <PublicFooter className="order-5 !py-3 lg:!py-0">
+          <button onClick={forgetMe} className="underline-offset-4 hover:text-slate-200 hover:underline">
+            {t('waiting.notYou')}
+          </button>
+        </PublicFooter>
+      </div>
     </div>
   )
 }
 
-function Countdown() {
-  const { t } = useI18n()
+/** Días naturales hasta el evento (J-n), contando el día de hoy como J-n y el 25/11 como Jour J */
+const daysUntil = (left) => left.days + (left.hours || left.minutes || left.seconds ? 1 : 0)
+
+/** Hoja de calendario de sobremesa + «Dans 48 jours» + cuenta atrás discreta (sin segundos) */
+function DateBlock() {
+  const { t, formatDate } = useI18n()
   const left = useTimeLeft(EVENT_DATE)
-  const units = t('waiting.units')
-  const values = [left.days, left.hours, left.minutes, left.seconds]
+  const n = daysUntil(left)
+  const headline = left.done ? t('waiting.jToday') : n === 1 ? t('waiting.tomorrow') : t('waiting.inDays', { n })
+  const weekday = formatDate(EVENT_DATE, { weekday: 'long' })
+  const pad = (v) => String(v).padStart(2, '0')
 
   return (
-    <section className="relative mt-4 overflow-hidden rounded-2xl bg-brand px-3 py-3 text-white shadow-lg shadow-brand/20 lg:mt-8 lg:p-8" aria-labelledby="countdown-title">
-      <div aria-hidden className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/10" />
-      <div aria-hidden className="absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-accent/25" />
-
-      <h2 id="countdown-title" className="relative text-center font-display text-base font-semibold italic text-accent lg:text-left lg:text-2xl">
-        {t('waiting.countdown')}
-      </h2>
-
-      {left.done ? (
-        <p className="relative mt-2 text-center text-xl font-extrabold lg:mt-4 lg:text-left lg:text-2xl">{t('waiting.dday')}</p>
-      ) : (
-        <div className="relative mt-2 grid grid-cols-4 gap-2 lg:mt-5 lg:gap-4" role="timer" aria-live="off">
-          {values.map((v, i) => (
-            <div key={i} className="rounded-xl bg-white/10 px-1 py-1.5 text-center ring-1 ring-white/15 backdrop-blur lg:py-5">
-              <span className="block overflow-hidden">
-                <span key={v} className="animate-tick block font-mono text-2xl font-bold tabular-nums lg:text-5xl">
-                  {String(v).padStart(2, '0')}
-                </span>
-              </span>
-              <span className="block text-[10px] font-semibold uppercase tracking-wider text-white/75 lg:mt-1 lg:text-xs">{units[i]}</span>
-            </div>
-          ))}
+    <div className="mt-4 flex items-center gap-5 lg:mt-10 lg:gap-8">
+      {/* Hoja de calendario */}
+      <div className="relative w-24 shrink-0 -rotate-3 lg:w-48" role="img" aria-label={formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}>
+        <span aria-hidden className="absolute -top-2 left-[22%] z-10 h-4 w-2 rounded-full bg-slate-300 ring-2 ring-ink lg:-top-3.5 lg:h-7 lg:w-2.5" />
+        <span aria-hidden className="absolute -top-2 right-[22%] z-10 h-4 w-2 rounded-full bg-slate-300 ring-2 ring-ink lg:-top-3.5 lg:h-7 lg:w-2.5" />
+        <div className="overflow-hidden rounded-xl bg-white text-center text-ink shadow-2xl shadow-black/50 lg:rounded-2xl">
+          <div className="bg-brand pb-1 pt-2.5 text-[11px] font-extrabold uppercase tracking-[0.2em] text-white lg:pb-2.5 lg:pt-5 lg:text-base">
+            {formatDate(EVENT_DATE, { month: 'long' })}
+          </div>
+          <div className="font-display text-5xl font-bold leading-none lg:text-[7.5rem]" style={{ paddingTop: '0.08em' }}>
+            {formatDate(EVENT_DATE, { day: 'numeric' })}
+          </div>
+          <div className="pb-1.5 text-xs font-semibold capitalize text-slate-500 lg:pb-4 lg:text-lg">{weekday}</div>
         </div>
-      )}
-    </section>
+      </div>
+
+      {/* Cuánto falta */}
+      <div className="min-w-0">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/60 lg:text-sm">{t('waiting.kicker')}</p>
+        <p className="mt-1 whitespace-nowrap font-display text-3xl font-bold italic leading-tight text-accent lg:text-5xl xl:text-6xl">{headline}</p>
+        {!left.done && (
+          <p className="mt-1.5 font-mono text-sm tabular-nums text-white/70 lg:mt-3 lg:text-base" aria-live="off">
+            {t('waiting.remaining', { d: left.days, h: pad(left.hours), m: pad(left.minutes) })}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Lacre: «Vos rendez-vous sont sous scellés. Le 25 novembre, cette page vous dévoilera tout.» */
+function Sealed() {
+  const { t } = useI18n()
+  return (
+    <div className="flex items-center gap-4 lg:mt-12">
+      <span aria-hidden className="relative grid h-14 w-14 shrink-0 rotate-12 place-items-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#ff4d7a,#DF0140_45%,#8a0028)] shadow-lg shadow-black/40 ring-4 ring-brand/30 lg:h-16 lg:w-16">
+        <span className="absolute inset-1.5 rounded-full border-2 border-dashed border-white/25" />
+        <Heart className="h-6 w-6 fill-white/90 text-white/90" />
+      </span>
+      <p className="text-[15px] leading-snug text-white/80 lg:text-lg">
+        <strong className="block font-semibold text-white">{t('waiting.sealedTitle')}</strong>
+        {t('waiting.sealedText')}
+      </p>
+    </div>
+  )
+}
+
+function EditButton({ onClick }) {
+  const { t } = useI18n()
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-white/30 px-5 text-base font-bold text-white transition hover:border-white/60 hover:bg-white/10 lg:mt-10 lg:w-auto"
+    >
+      <PencilLine className="h-5 w-5" /> {t('waiting.edit')}
+    </button>
   )
 }

@@ -12,9 +12,13 @@ export default function VipCard({
   name, role, branch, photo, offers = [], needs = [], superpowers = [], animated = false, className = '',
   photoClassName = 'aspect-[4/5]', // alto de la foto (más baja en la pantalla de espera móvil)
   onAddPhoto, // si no hay foto: la zona de iniciales se vuelve un botón «Ajouter une photo»
+  variant = 'card', // 'card' = foto + bloque blanco con temas · 'poster' = foto a toda la tarjeta, todo encima
 }) {
   const { t } = useI18n()
   const hasDetails = offers.length > 0 || needs.length > 0 || superpowers.length > 0
+  if (variant === 'poster') {
+    return <Poster {...{ name, role, branch, photo, offers, needs, superpowers, className, onAddPhoto, t }} />
+  }
 
   return (
     <article
@@ -51,15 +55,6 @@ export default function VipCard({
         {animated && (
           <div aria-hidden className="animate-shine pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
         )}
-
-        {/* Cabecera: marca + VIP */}
-        <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
-          <span className="flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-sm font-extrabold tracking-tight text-ink shadow-sm backdrop-blur">
-            <Heart className="h-3.5 w-3.5 fill-brand text-brand" />
-            <span>co<span className="text-brand">finder</span></span>
-          </span>
-          <span className="rounded-full bg-accent px-3 py-1 font-display text-sm font-bold italic text-ink shadow-sm">{t('match.pass')}</span>
-        </div>
 
         {/* Nombre, cargo y filial sobre la imagen */}
         <div className="absolute inset-x-0 bottom-0 p-5 text-white">
@@ -100,6 +95,75 @@ function TagGroup({ title, tags, className }) {
   return (
     <div>
       <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{title}</p>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">
+        {tags.map((x) => <span key={x} className={`rounded-full px-3 py-1 text-sm font-semibold ${className}`}>{x}</span>)}
+      </div>
+    </div>
+  )
+}
+
+/** Póster: la foto llena la tarjeta (alto libre, p. ej. toda la pantalla en desktop) y la información va encima */
+function Poster({ name, role, branch, photo, offers, needs, superpowers, className, onAddPhoto, t }) {
+  return (
+    <article
+      aria-label={name}
+      className={`relative flex w-full flex-col justify-end overflow-hidden rounded-3xl bg-gradient-to-br from-brand via-[#b30036] to-[#4d0018] shadow-2xl shadow-black/40 ring-1 ring-white/10 ${className}`}
+    >
+      {photo ? (
+        <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      ) : (
+        <>
+          <Heart aria-hidden className="absolute -right-16 -top-10 h-80 w-80 rotate-12 fill-white/10 text-transparent" />
+          <Heart aria-hidden className="absolute -left-16 top-1/3 h-56 w-56 -rotate-12 fill-accent/15 text-transparent" />
+          {onAddPhoto ? (
+            <button
+              type="button"
+              onClick={onAddPhoto}
+              className="absolute left-1/2 top-[30%] z-10 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-white px-5 py-3 text-base font-bold text-brand shadow-xl transition hover:scale-105"
+            >
+              <Camera className="h-5 w-5" /> {t('register.photoAdd')}
+            </button>
+          ) : (
+            <span aria-hidden className="absolute inset-x-0 top-[30%] -translate-y-1/2 text-center font-display text-8xl font-bold italic text-white/95">
+              {initialsOf(name)}
+            </span>
+          )}
+        </>
+      )}
+
+      {/* Degradado para leer todo sobre la foto */}
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 via-45% to-transparent to-75%" />
+
+      <div className="relative p-5 text-white lg:p-8">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-bold uppercase tracking-wider backdrop-blur">
+          <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgb(52_211_153/0.3)]" /> {t('match.ready')}
+        </span>
+        <p className="mt-2 font-display text-3xl font-bold leading-tight lg:text-5xl">{name || '—'}</p>
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-base text-white/85 lg:text-lg">
+          {role && <span>{role}</span>}
+          {branch && <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" /> {branch}</span>}
+        </p>
+
+        <div className="mt-4 space-y-2.5 lg:mt-6 lg:space-y-3">
+          <PosterTags title={t('waiting.masters')} tags={offers} className="bg-brand text-white" />
+          <PosterTags title={t('waiting.explores')} tags={needs} className="bg-accent text-ink" />
+          {superpowers.length > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-white/65">{t('waiting.superpowers')}</p>
+              <SuperpowerChips ids={superpowers} size="sm" className="mt-1.5 [&>span]:bg-white/15 [&>span]:backdrop-blur" />
+            </div>
+          )}
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function PosterTags({ title, tags, className }) {
+  if (!tags.length) return null
+  return (
+    <div>
+      <p className="text-xs font-bold uppercase tracking-wider text-white/65">{title}</p>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {tags.map((x) => <span key={x} className={`rounded-full px-3 py-1 text-sm font-semibold ${className}`}>{x}</span>)}
       </div>
