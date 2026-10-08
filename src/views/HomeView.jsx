@@ -12,7 +12,6 @@ import RoundCardView from './RoundCardView'
  * pantallas del día del evento sin tener mesa: sigue viendo su tarjeta VIP y la cuenta atrás.
  */
 export default function HomeView() {
-  const { event, currentUser } = useApp()
-  const seated = event.rounds.some((r) => r.tables.some((t) => t.members.includes(currentUser?.id)))
-  return event.round && seated ? <RoundCardView /> : <WaitingView />
+  const { event, seatedEver } = useApp()
+  return event.round && seatedEver ? <RoundCardView /> : <WaitingView />
 }

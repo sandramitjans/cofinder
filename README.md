@@ -13,7 +13,9 @@ npm run build
 Configuración opcional en un fichero `.env`:
 
 ```
-VITE_MOD_PIN=2026                              # PIN del panel de moderadora (por defecto 2026)
+VITE_SUPABASE_URL=…                            # sin estas dos variables → modo local (localStorage)
+VITE_SUPABASE_ANON_KEY=…
+VITE_MOD_PIN=2026                              # solo modo local; en producción el PIN está en la base de datos
 VITE_EVENT_DATE=2026-11-25T00:00:00+01:00      # fin de la cuenta atrás (por defecto, medianoche del 25/11)
 ```
 
@@ -87,9 +89,26 @@ Con 3 mesas de 4–5 es matemáticamente imposible no repetir ninguna pareja a p
 (una mesa solo puede tomar 1 persona de cada mesa anterior sin repetir). El algoritmo alcanza el
 mínimo (4 parejas con 13 personas) y nunca repite temas.
 
-## Limitación actual: sincronización
+## Base de datos (Supabase)
 
-Los datos viven en `localStorage`: se sincronizan entre pestañas del mismo navegador (panel +
-proyector), pero **no entre dispositivos**. Para el evento real hace falta un backend compartido
-en tiempo real (p. ej. Supabase con Realtime): tabla `participants` + tabla `event`, y el PIN
-verificado en servidor.
+Proyecto `cofinder` (eu-west-3, París). Las claves públicas están en `netlify.toml`.
+
+| Pieza | Qué es | Quién accede |
+|---|---|---|
+| `public.participants` | Perfiles. Nunca se borran: «Supprimer» los marca como `removed` | Clave pública: **solo insertar**. No se puede listar |
+| `private.event_state` | Rondas y mesas completas | Solo a través de funciones con PIN |
+| `public.event_status` | Señal sin datos personales (ronda, versión) | Lectura pública + tiempo real |
+| `private.settings` | Hash bcrypt del PIN | Nadie desde fuera |
+
+Funciones (RPC):
+- Participante: `get_my_profile(id)`, `get_my_table(id)` → su perfil y, el día del evento, solo sus compañeros de mesa.
+- Moderadora (todas exigen el PIN, bloqueo tras 10 fallos en 10 min): `mod_check_pin`, `mod_get_state`,
+  `mod_set_event`, `mod_delete_participant`, `mod_add_demo`, `mod_clear_demo`, `mod_set_pin`.
+
+Cambiar el PIN (desde el SQL editor de Supabase o la consola del navegador con el panel abierto):
+
+```sql
+select public.mod_set_pin('PIN_ACTUAL', 'PIN_NUEVO');
+```
+
+El panel y el proyector refrescan el estado cada 4 s; los móviles reciben el cambio de ronda en tiempo real.

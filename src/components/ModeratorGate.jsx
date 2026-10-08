@@ -9,13 +9,14 @@ export default function ModeratorGate() {
   const { gateOpen, closeGate, unlockModerator } = useApp()
   const { t } = useI18n()
   const [pin, setPin] = useState('')
-  const [error, setError] = useState(false)
+  const [error, setError] = useState(null) // null | 'wrong' | 'locked' | 'network'
+  const [busy, setBusy] = useState(false)
   const inputRef = useRef(null)
 
   useEffect(() => {
     if (!gateOpen) return
     setPin('')
-    setError(false)
+    setError(null)
     setTimeout(() => inputRef.current?.focus(), 50)
     const onKey = (e) => e.key === 'Escape' && closeGate()
     window.addEventListener('keydown', onKey)
@@ -24,12 +25,16 @@ export default function ModeratorGate() {
 
   if (!gateOpen) return null
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
-    if (!unlockModerator(pin)) {
-      setError(true)
+    if (busy) return
+    setBusy(true)
+    const res = await unlockModerator(pin) // 'ok' | 'invalid_pin' | 'locked' | 'network'
+    setBusy(false)
+    if (res !== 'ok') {
+      setError(res === 'invalid_pin' ? 'wrong' : res)
       setPin('')
-      inputRef.current?.focus()
+      setTimeout(() => inputRef.current?.focus(), 0)
     }
   }
 
@@ -58,15 +63,15 @@ export default function ModeratorGate() {
           autoComplete="off"
           maxLength={8}
           value={pin}
-          onChange={(e) => { setPin(e.target.value); setError(false) }}
+          onChange={(e) => { setPin(e.target.value); setError(null) }}
           className={`mt-5 w-full rounded-xl border py-3 text-center font-mono text-2xl tracking-[0.5em] focus:outline-none focus:ring-4 ${
             error ? 'border-brand ring-4 ring-brand/15' : 'border-slate-200 focus:border-brand focus:ring-brand/15'
           }`}
-          aria-invalid={error}
+          aria-invalid={!!error}
           aria-label={t('gate.pin')}
         />
-        <p className={`mt-2 h-4 text-xs font-medium text-brand ${error ? '' : 'invisible'}`}>{t('gate.wrong')}</p>
-        <Button type="submit" className="mt-3 w-full" disabled={!pin}>{t('gate.enter')}</Button>
+        <p role="alert" className={`mt-2 min-h-4 text-xs font-medium text-brand ${error ? '' : 'invisible'}`}>{t(`gate.${error ?? 'wrong'}`)}</p>
+        <Button type="submit" className="mt-3 w-full" disabled={!pin || busy}>{busy ? t('gate.checking') : t('gate.enter')}</Button>
       </form>
     </div>
   )

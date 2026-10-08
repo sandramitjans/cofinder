@@ -48,7 +48,8 @@ export default function RegisterView() {
   const [form, setForm] = useState(() => loadDraft() ?? EMPTY)
   const [restored, setRestored] = useState(() => !!loadDraft() && !isEmpty(loadDraft()))
   const [errors, setErrors] = useState({})
-  const [phase, setPhase] = useState('form') // form → fading → matched
+  const [phase, setPhase] = useState('form') // form → saving → fading → matched
+  const [saveError, setSaveError] = useState(false)
   const saved = useRef(null)
 
   const set = (key, value) => patch({ [key]: value })
@@ -106,15 +107,20 @@ export default function RegisterView() {
     return !first
   }
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
     if (phase !== 'form' || !validate()) return
     // Los temas propios sin marcar en ninguna columna no aportan nada: se descartan
     const customTopics = form.customTopics.filter((c) => form.offers.includes(c) || form.needs.includes(c))
     const data = { ...form, customTopics, name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country) }
-    try { localStorage.removeItem(DRAFT_KEY) } catch { /* noop */ }
     saved.current = data
-    register(data, { stay: true }) // se guarda ya; la animación es solo escenografía
+    setSaveError(false)
+    setPhase('saving')
+    // Se guarda primero en la base de datos; la animación es solo escenografía.
+    // Si falla la red, el borrador sigue intacto y se puede volver a intentar.
+    const ok = await register(data, { stay: true })
+    if (!ok) { setPhase('form'); setSaveError(true); return }
+    try { localStorage.removeItem(DRAFT_KEY) } catch { /* noop */ }
     setPhase('fading')
   }
 
@@ -227,8 +233,13 @@ export default function RegisterView() {
               )}
             </div>
 
+            {saveError && (
+              <p role="alert" className="rounded-xl border border-brand/30 bg-brand-soft p-4 text-base font-semibold text-brand-dark">
+                {t('register.saveError')}
+              </p>
+            )}
             <Button type="submit" icon={Heart} className="w-full py-4 text-base" disabled={phase !== 'form'}>
-              {t('register.submit')}
+              {phase === 'saving' ? t('register.saving') : t('register.submit')}
             </Button>
             <p className="flex items-center justify-center gap-1.5 text-sm text-slate-600">
               <Save className="h-4 w-4" /> {t('register.draftSaved')}

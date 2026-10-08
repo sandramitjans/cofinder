@@ -67,6 +67,8 @@ export const DICT = {
       errCountry: 'Indiquez votre filiale ou département.',
       errTags: 'Choisissez au moins un sujet.',
       submit: 'Valider mon profil de match',
+      saving: 'Enregistrement…',
+      saveError: 'Oups, la connexion a échoué. Rien n’est perdu\u00A0: vérifiez votre réseau et réessayez.',
     },
 
     attract: {
@@ -126,7 +128,7 @@ export const DICT = {
     },
 
     gate: {
-      title: 'Accès réservé', text: 'Saisissez le code PIN.', wrong: 'Code incorrect', enter: 'Entrer', close: 'Fermer', pin: 'Code PIN',
+      title: 'Accès réservé', text: 'Saisissez le code PIN.', wrong: 'Code incorrect', locked: 'Trop d’essais. Réessayez dans 10 minutes.', network: 'Pas de connexion. Réessayez.', checking: 'Vérification…', enter: 'Entrer', close: 'Fermer', pin: 'Code PIN',
     },
 
     panel: {
@@ -274,6 +276,8 @@ export const DICT = {
       errCountry: 'Please enter your branch or department.',
       errTags: 'Pick at least one topic.',
       submit: 'Validate my match profile',
+      saving: 'Saving…',
+      saveError: 'Oops, the connection failed. Nothing is lost: check your network and try again.',
     },
 
     attract: {
@@ -333,7 +337,7 @@ export const DICT = {
     },
 
     gate: {
-      title: 'Restricted access', text: 'Enter the PIN.', wrong: 'Wrong PIN', enter: 'Enter', close: 'Close', pin: 'PIN',
+      title: 'Restricted access', text: 'Enter the PIN.', wrong: 'Wrong PIN', locked: 'Too many attempts. Try again in 10 minutes.', network: 'No connection. Try again.', checking: 'Checking…', enter: 'Enter', close: 'Close', pin: 'PIN',
     },
 
     panel: {
