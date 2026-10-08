@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, Gem, Heart, PencilLine } from 'lucide-react'
+import { CheckCircle2, Gem, PencilLine } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { EVENT_DATE, VIEWS } from '../constants'
@@ -11,9 +11,7 @@ import VipCard from '../components/ui/VipCard'
 import PublicFooter from '../components/layout/PublicFooter'
 import { SuperpowerChips } from '../components/ui/SuperpowerPicker'
 
-const ROTATE_MS = 5000
-
-/** Pantalla de espera tras validar el perfil: cuenta atrás al 25/11 + frases de Cupidon + tarjeta VIP */
+/** Pantalla de espera tras validar el perfil: cuenta atrás al 25/11 + tarjeta VIP */
 export default function WaitingView() {
   const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt } = useApp()
   const { t, topic, country, formatDate } = useI18n()
@@ -47,7 +45,6 @@ export default function WaitingView() {
         </div>
 
         <Countdown />
-        <CupidMessages />
 
         {/* Tarjeta VIP + resumen del perfil */}
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -122,48 +119,6 @@ function Countdown() {
           ))}
         </div>
       )}
-    </section>
-  )
-}
-
-function CupidMessages() {
-  const { t, lang } = useI18n()
-  const messages = t('waiting.messages')
-  const [index, setIndex] = useState(0)
-  const [paused, setPaused] = useState(false)
-
-  useEffect(() => {
-    if (paused) return
-    const timer = setInterval(() => setIndex((i) => (i + 1) % messages.length), ROTATE_MS)
-    return () => clearInterval(timer)
-  }, [paused, messages.length])
-
-  return (
-    <section
-      className="mt-6 rounded-2xl border-l-4 border-brand bg-white p-5 shadow-sm ring-1 ring-slate-200"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
-    >
-      <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-600">
-        <Heart className="animate-heartbeat h-4 w-4 fill-brand text-brand" /> {t('waiting.messagesTitle')}
-      </p>
-      <p key={`${lang}-${index}`} className="animate-message-in mt-3 min-h-[3.5rem] font-display text-xl italic leading-snug text-ink sm:text-2xl">
-        {lang === 'fr' ? `«\u00A0${messages[index]}\u00A0»` : `“${messages[index]}”`}
-      </p>
-      <div className="mt-3 flex gap-1.5">
-        {messages.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setIndex(i)}
-            aria-label={`${i + 1}/${messages.length}`}
-            aria-current={i === index}
-            className={`h-1.5 rounded-full transition-all ${i === index ? 'w-6 bg-brand' : 'w-1.5 bg-slate-200 hover:bg-slate-300'}`}
-          />
-        ))}
-      </div>
     </section>
   )
 }
