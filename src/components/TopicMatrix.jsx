@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, Plus, X } from 'lucide-react'
+import { Ban, Check, Plus, X } from 'lucide-react'
 import { MAX_TAGS, TOPICS } from '../constants'
 import { useI18n } from '../context/I18nContext'
 import { DICT } from '../lib/i18n'
 import { MAX_CUSTOM_LENGTH, MAX_CUSTOM_TOPICS, isCustom, makeCustom, normalizeText, topicKey } from '../lib/topics'
 
 const COLS = {
-  offers: { label: 'register.bring', count: 'register.countBring', max: 'register.maxBring', on: 'border-brand bg-brand text-white shadow-sm shadow-brand/25', dot: 'bg-brand' },
-  needs: { label: 'register.seek', count: 'register.countSeek', max: 'register.maxSeek', on: 'border-accent bg-accent text-ink shadow-sm shadow-accent/30', dot: 'bg-accent' },
+  offers: { other: 'needs', taken: 'register.inSeek', label: 'register.bring', count: 'register.countBring', max: 'register.maxBring', on: 'border-brand bg-brand text-white shadow-sm shadow-brand/25', dot: 'bg-brand' },
+  needs: { other: 'offers', taken: 'register.inBring', label: 'register.seek', count: 'register.countSeek', max: 'register.maxSeek', on: 'border-accent bg-accent text-ink shadow-sm shadow-accent/30', dot: 'bg-accent' },
 }
 
 // Etiquetas de los temas de la lista en todos los idiomas, para detectar duplicados al escribir «Autre»
@@ -21,7 +21,7 @@ const KNOWN = new Map(
  */
 export default function TopicMatrix({ offers, needs, customTopics, onChange, errors = {} }) {
   const { t, topic } = useI18n()
-  const [notice, setNotice] = useState(null) // { id, col } — aviso de máximo junto a la fila pulsada
+  const [notice, setNotice] = useState(null) // { id, col, kind: 'max' | 'taken' } — aviso junto a la fila pulsada
   const [draft, setDraft] = useState('')
   const [otherMsg, setOtherMsg] = useState(null)
   const [flash, setFlash] = useState(null)
@@ -39,8 +39,10 @@ export default function TopicMatrix({ offers, needs, customTopics, onChange, err
     if (list.includes(id)) {
       onChange({ [col]: list.filter((x) => x !== id) })
       setNotice(null)
+    } else if (lists[COLS[col].other].includes(id)) {
+      setNotice({ id, col, kind: 'taken' }) // un tema solo puede estar en una columna
     } else if (list.length >= MAX_TAGS) {
-      setNotice({ id, col })
+      setNotice({ id, col, kind: 'max' })
     } else {
       onChange({ [col]: [...list, id] })
     }
@@ -126,6 +128,7 @@ export default function TopicMatrix({ offers, needs, customTopics, onChange, err
                 <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex">
                   {Object.entries(COLS).map(([col, c]) => {
                     const on = lists[col].includes(id)
+                    const blocked = !on && lists[c.other].includes(id)
                     return (
                       <button
                         key={col}
@@ -134,12 +137,15 @@ export default function TopicMatrix({ offers, needs, customTopics, onChange, err
                         data-tag={id}
                         onClick={() => toggle(id, col)}
                         aria-pressed={on}
+                        aria-disabled={blocked || undefined}
                         aria-describedby={`topic-${id}`}
                         className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border px-4 text-[15px] font-semibold transition-all duration-150 active:scale-95 sm:min-w-[8.5rem] ${
-                          on ? c.on : 'border-slate-300 bg-white text-slate-700 hover:border-slate-500'
+                          on ? c.on
+                            : blocked ? 'border-dashed border-slate-300 bg-slate-50 text-slate-400'
+                            : 'border-slate-300 bg-white text-slate-700 hover:border-slate-500'
                         }`}
                       >
-                        {on ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4 text-slate-500" />}
+                        {on ? <Check className="h-4 w-4" /> : blocked ? <Ban className="h-4 w-4" /> : <Plus className="h-4 w-4 text-slate-500" />}
                         {t(c.label)}
                       </button>
                     )
@@ -148,7 +154,7 @@ export default function TopicMatrix({ offers, needs, customTopics, onChange, err
               </div>
               {notice?.id === id && (
                 <p role="alert" className="mt-2 rounded-lg bg-brand-soft px-3 py-2 text-sm font-semibold text-brand">
-                  {t(COLS[notice.col].max, { max: MAX_TAGS })}
+                  {notice.kind === 'taken' ? t(COLS[notice.col].taken) : t(COLS[notice.col].max, { max: MAX_TAGS })}
                 </p>
               )}
               {unanswered && notice?.id !== id && (

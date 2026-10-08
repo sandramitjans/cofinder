@@ -57,7 +57,7 @@ const formFromProfile = (p, countryLabel) => {
     country: countryLabel(p.country) ?? '',
     photo: p.photo || '',
     offers: [...(p.offers ?? [])],
-    needs: [...(p.needs ?? [])],
+    needs: (p.needs ?? []).filter((x) => !(p.offers ?? []).includes(x)), // un tema, una sola columna
     customTopics: [...new Set([...(p.customTopics ?? []), ...used])],
     superpowers: [...(p.superpowers ?? [])],
   }
@@ -134,7 +134,8 @@ export default function RegisterView({ mode = 'create' }) {
     if (phase !== 'form' || !validate()) return
     // Los temas propios sin marcar en ninguna columna no aportan nada: se descartan
     const customTopics = form.customTopics.filter((c) => form.offers.includes(c) || form.needs.includes(c))
-    const data = { ...form, customTopics, name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country) }
+    const needs = form.needs.filter((x) => !form.offers.includes(x))
+    const data = { ...form, needs, customTopics, name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country) }
     saved.current = data
     setSaveError(false)
     setPhase('saving')
