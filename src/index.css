@@ -1,0 +1,143 @@
+@import "tailwindcss";
+
+/* Tokens de marca Cofinder → clases bg-brand, text-accent, ring-brand/30, font-display… */
+@theme {
+  --color-brand: #DF0140;
+  --color-brand-dark: #B80035;
+  --color-brand-soft: #FDE6EC;
+  --color-accent: #fdc100;
+  --color-accent-soft: #FFF6D6;
+  --color-ink: #12121a;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", ui-serif, Georgia, serif;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+}
+
+/* Fondo suave de "velada VIP": destellos rojos y dorados */
+.vip-glow {
+  background-image:
+    radial-gradient(60rem 30rem at 110% -10%, rgb(223 1 64 / 0.10), transparent 60%),
+    radial-gradient(40rem 24rem at -10% 110%, rgb(253 193 0 / 0.14), transparent 60%);
+}
+
+/* ---------- Animaciones ---------- */
+@keyframes view-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-view-in { animation: view-in 280ms ease-out backwards; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+.animate-shake { animation: shake 320ms ease-in-out; }
+
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-pop-in { animation: pop-in 450ms cubic-bezier(.2,.8,.2,1) backwards; }
+
+/* Formulario que se desvanece al validar */
+@keyframes form-out {
+  to { opacity: 0; transform: translateY(-12px) scale(0.98); filter: blur(6px); }
+}
+.animate-form-out { animation: form-out 550ms cubic-bezier(.4,0,.2,1) forwards; pointer-events: none; }
+
+/* El sello cae sobre la tarjeta VIP */
+@keyframes stamp-in {
+  0%   { opacity: 0; transform: rotate(-4deg) scale(2.6); }
+  55%  { opacity: 1; transform: rotate(-13deg) scale(0.92); }
+  72%  { transform: rotate(-11deg) scale(1.05); }
+  100% { opacity: 1; transform: rotate(-12deg) scale(1); }
+}
+.animate-stamp { animation: stamp-in 620ms cubic-bezier(.5,0,.3,1.4) 1100ms backwards; }
+
+/* Onda de tinta tras el impacto */
+@keyframes ink-ring {
+  from { opacity: 0.45; transform: rotate(-12deg) scale(0.9); }
+  to   { opacity: 0; transform: rotate(-12deg) scale(1.6); }
+}
+.animate-ink-ring { animation: ink-ring 700ms ease-out 1450ms both; }
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-rise-in { animation: rise-in 500ms ease-out backwards; }
+
+/* Check de éxito dibujándose */
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.animate-draw { stroke-dasharray: 30; stroke-dashoffset: 30; animation: draw 450ms ease-out 1900ms forwards; }
+
+/* Cambio de dígito en la cuenta atrás */
+@keyframes tick {
+  from { opacity: 0; transform: translateY(-35%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-tick { animation: tick 350ms cubic-bezier(.2,.8,.2,1); }
+
+/* Frases rotativas */
+@keyframes message-in {
+  from { opacity: 0; transform: translateY(8px); filter: blur(3px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.animate-message-in { animation: message-in 600ms ease-out; }
+
+/* Brillo de la barra de intriga al llegar al 100 % */
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+.animate-shimmer {
+  background-image: linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 0.35) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+/* Tarjeta VIP: entra girando sobre su eje */
+@keyframes card-flip {
+  from { opacity: 0; transform: perspective(1200px) rotateY(-75deg) translateY(24px) scale(0.9); }
+  60%  { opacity: 1; }
+  to   { opacity: 1; transform: perspective(1200px) rotateY(0) translateY(0) scale(1); }
+}
+.animate-card-flip { animation: card-flip 850ms cubic-bezier(.2,.8,.2,1) backwards; transform-origin: 30% 50%; }
+
+/* Reflejo que recorre la tarjeta */
+@keyframes shine {
+  from { transform: translateX(-130%) skewX(-20deg); }
+  to   { transform: translateX(260%) skewX(-20deg); }
+}
+.animate-shine { animation: shine 1.1s ease-in-out 750ms both; }
+
+/* Corazones que salen tras el sello */
+@keyframes heart-float {
+  0%   { opacity: 0; transform: translate(0, 0) scale(0.3) rotate(0deg); }
+  20%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx, 0px), -150px) scale(1.1) rotate(var(--rot, 0deg)); }
+}
+.animate-heart { animation: heart-float 1.7s ease-out both; }
+
+/* Latido suave (corazón del panel de marca) */
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.12); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.08); }
+}
+.animate-heartbeat { animation: heartbeat 1.8s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+}
