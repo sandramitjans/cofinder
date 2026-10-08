@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, Gem, PencilLine } from 'lucide-react'
+import { Camera, CheckCircle2, PencilLine } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { EVENT_DATE, VIEWS } from '../constants'
@@ -9,7 +9,6 @@ import LangSwitch from '../components/ui/LangSwitch'
 import Stamp from '../components/ui/Stamp'
 import VipCard from '../components/ui/VipCard'
 import PublicFooter from '../components/layout/PublicFooter'
-import { SuperpowerChips } from '../components/ui/SuperpowerPicker'
 
 /** Pantalla de espera tras validar el perfil: cuenta atrás al 25/11 + tarjeta VIP */
 export default function WaitingView() {
@@ -46,30 +45,28 @@ export default function WaitingView() {
 
         <Countdown />
 
-        {/* Tarjeta VIP + resumen del perfil */}
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex items-center justify-between gap-3">
-            <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-600">
-              <Gem className="h-4 w-4 text-accent" /> {t('waiting.yourFile')}
+        {/* Tarjeta VIP (ficha de match) */}
+        <section className="mx-auto mt-8 max-w-sm" aria-label={t('waiting.yourFile')}>
+          <VipCard
+            photo={currentUser.photo}
+            name={currentUser.name}
+            role={currentUser.role}
+            branch={country(currentUser.country)}
+            offers={currentUser.offers.map(topic)}
+            needs={currentUser.needs.map(topic)}
+            superpowers={currentUser.superpowers ?? []}
+          />
+          {canEditProfile && !currentUser.photo && (
+            <p className="mt-4 flex items-center gap-2 rounded-xl border border-accent bg-accent-soft p-3 text-[15px] text-ink">
+              <Camera className="h-5 w-5 shrink-0" />
+              <span>{t('waiting.photoNudge')}</span>
             </p>
-            <span className="text-sm font-bold text-brand">{t('waiting.status')}</span>
-          </div>
-          <div className="mx-auto mt-4 max-w-sm">
-            <VipCard photo={currentUser.photo} name={currentUser.name} role={currentUser.role} branch={country(currentUser.country)} />
-          </div>
-          <TagRow title={t('waiting.masters')} tags={currentUser.offers.map(topic)} className="bg-brand-soft text-brand" />
-          <TagRow title={t('waiting.explores')} tags={currentUser.needs.map(topic)} className="bg-accent-soft text-slate-800" />
-          {currentUser.superpowers?.length > 0 && (
-            <div className="mt-4">
-              <p className="text-sm font-semibold uppercase tracking-wider text-slate-600">{t('waiting.superpowers')}</p>
-              <SuperpowerChips ids={currentUser.superpowers} className="mt-1.5" />
-            </div>
           )}
           {canEditProfile && (
             <button
               type="button"
               onClick={() => navigate(VIEWS.EDIT)}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-brand py-3.5 text-base font-bold text-brand transition hover:bg-brand-soft"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-brand bg-white py-3.5 text-base font-bold text-brand transition hover:bg-brand-soft"
             >
               <PencilLine className="h-5 w-5" /> {t('waiting.edit')}
             </button>
@@ -120,16 +117,5 @@ function Countdown() {
         </div>
       )}
     </section>
-  )
-}
-
-function TagRow({ title, tags, className }) {
-  return (
-    <div className="mt-4">
-      <p className="text-sm font-semibold uppercase tracking-wider text-slate-600">{title}</p>
-      <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {tags.map((x) => <span key={x} className={`rounded-full px-3 py-1 text-sm font-medium ${className}`}>{x}</span>)}
-      </div>
-    </div>
   )
 }
