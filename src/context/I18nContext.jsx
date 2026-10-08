@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { DEFAULT_LANG, LANGS } from '../constants'
 import { DICT, translate } from '../lib/i18n'
+import { customLabel, isCustom } from '../lib/topics'
 
 const I18nContext = createContext(null)
 const LANG_KEY = 'cofinder:lang'
@@ -23,7 +24,7 @@ export function I18nProvider({ children }) {
 
   const setLang = useCallback((l) => LANGS.includes(l) && setLangState(l), [])
   const t = useCallback((key, vars) => translate(lang, key, vars), [lang])
-  const topic = useCallback((id) => translate(lang, `topics.${id}`), [lang])
+  const topic = useCallback((id) => (isCustom(id) ? customLabel(id) : translate(lang, `topics.${id}`)), [lang])
   // Filiale / Département: identificador conocido → traducido; texto libre → tal cual
   const country = useCallback((id) => DICT[lang]?.countries?.[id] ?? id ?? '', [lang])
   const superpower = useCallback((id) => translate(lang, `superpowers.${id}`), [lang])

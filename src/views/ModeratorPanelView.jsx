@@ -134,6 +134,7 @@ export default function ModeratorPanelView() {
               <div className="col-span-2 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 lg:col-span-1">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('panel.quality', { n: event.round })}</p>
                 <ul className="mt-2 space-y-1 text-sm">
+                  <Quality ok={!stats.overLimitPairs} label={t('panel.overLimit')} value={stats.overLimitPairs} />
                   <Quality ok={!stats.repeatedPairs} label={t('panel.repeatedPairs')} value={stats.repeatedPairs} />
                   <Quality ok={!stats.repeatedTopics} label={t('panel.repeatedTopics')} value={stats.repeatedTopics} />
                   <Quality ok={!stats.tablesWithoutExpert} label={t('panel.noExpert')} value={stats.tablesWithoutExpert} />

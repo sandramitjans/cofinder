@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Briefcase, Building2, Gem, Heart, Lightbulb, Sparkles, Sprout, User, UserRound } from 'lucide-react'
+import { Briefcase, Building2, CheckCircle2, Save, Gem, Heart, Lightbulb, RotateCcw, Sparkles, User, UserRound } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { COUNTRIES, MAX_SUPERPOWERS, VIEWS } from '../constants'
@@ -7,7 +7,7 @@ import { DICT } from '../lib/i18n'
 import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
 import Field from '../components/ui/Field'
-import TagPicker from '../components/ui/TagPicker'
+import TopicMatrix from '../components/TopicMatrix'
 import SuperpowerPicker from '../components/ui/SuperpowerPicker'
 import PhotoPicker from '../components/ui/PhotoPicker'
 import LangSwitch from '../components/ui/LangSwitch'
@@ -16,7 +16,18 @@ import PublicFooter from '../components/layout/PublicFooter'
 import MatchScene from './MatchScene'
 
 // `country` guarda «Filiale / Département» (texto libre, con sugerencias de filiales)
-const EMPTY = { name: '', role: '', country: '', photo: '', offers: [], needs: [], superpowers: [] }
+const EMPTY = { name: '', role: '', country: '', photo: '', offers: [], needs: [], customTopics: [], superpowers: [] }
+
+// Borrador automático: se guarda en este dispositivo y se borra al validar el perfil
+const DRAFT_KEY = 'cofinder:draft'
+const loadDraft = () => {
+  try {
+    const d = JSON.parse(localStorage.getItem(DRAFT_KEY))
+    return d && typeof d === 'object' ? { ...EMPTY, ...d } : null
+  } catch { return null }
+}
+const isEmpty = (f) => !f.name.trim() && !f.role.trim() && !f.country.trim() && !f.photo
+  && !f.offers.length && !f.needs.length && !f.customTopics.length && !f.superpowers.length
 
 /** Si el texto coincide con una filial conocida (en cualquier idioma), guarda su identificador */
 const normalizeBranch = (text) => {
@@ -34,15 +45,52 @@ const normalizeBranch = (text) => {
 export default function RegisterView() {
   const { register, navigate } = useApp()
   const { t, country } = useI18n()
-  const [form, setForm] = useState(EMPTY)
+  const [form, setForm] = useState(() => loadDraft() ?? EMPTY)
+  const [restored, setRestored] = useState(() => !!loadDraft() && !isEmpty(loadDraft()))
   const [errors, setErrors] = useState({})
   const [phase, setPhase] = useState('form') // form → fading → matched
   const saved = useRef(null)
 
-  const set = (key, value) => {
-    setForm((f) => ({ ...f, [key]: value }))
-    if (errors[key]) setErrors((er) => ({ ...er, [key]: undefined }))
+  const set = (key, value) => patch({ [key]: value })
+
+  // Aplica varios cambios a la vez y limpia los errores de los campos tocados
+  const patch = (changes) => {
+    setForm((f) => ({ ...f, ...changes }))
+    setErrors((er) => {
+      const next = { ...er }
+      Object.keys(changes).forEach((k) => { next[k] = undefined })
+      return next
+    })
   }
+
+  // Guardado automático del borrador (con un pequeño retardo para no escribir en cada tecla)
+  useEffect(() => {
+    if (phase !== 'form') return
+    const timer = setTimeout(() => {
+      try {
+        if (isEmpty(form)) localStorage.removeItem(DRAFT_KEY)
+        else localStorage.setItem(DRAFT_KEY, JSON.stringify(form))
+      } catch { /* sin almacenamiento: el formulario sigue funcionando */ }
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [form, phase])
+
+  const resetDraft = () => {
+    try { localStorage.removeItem(DRAFT_KEY) } catch { /* noop */ }
+    setForm(EMPTY)
+    setErrors({})
+    setRestored(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // Lo que falta para poder validar, en lenguaje natural
+  const missing = [
+    form.name.trim().length < 2 && t('register.missName'),
+    !form.role.trim() && t('register.missRole'),
+    !form.country.trim() && t('register.missCountry'),
+    !form.offers.length && t('register.missBring'),
+    !form.needs.length && t('register.missSeek'),
+  ].filter(Boolean)
 
   const validate = () => {
     const er = {}
@@ -53,14 +101,18 @@ export default function RegisterView() {
     if (!form.needs.length) er.needs = t('register.errTags')
     setErrors(er)
     const first = Object.keys(er)[0]
-    if (first) document.querySelector(`[data-field="${first}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const target = first === 'offers' || first === 'needs' ? 'topics' : first
+    if (first) document.querySelector(`[data-field="${target}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     return !first
   }
 
   const submit = (e) => {
     e.preventDefault()
     if (phase !== 'form' || !validate()) return
-    const data = { ...form, name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country) }
+    // Los temas propios sin marcar en ninguna columna no aportan nada: se descartan
+    const customTopics = form.customTopics.filter((c) => form.offers.includes(c) || form.needs.includes(c))
+    const data = { ...form, customTopics, name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country) }
+    try { localStorage.removeItem(DRAFT_KEY) } catch { /* noop */ }
     saved.current = data
     register(data, { stay: true }) // se guarda ya; la animación es solo escenografía
     setPhase('fading')
@@ -105,6 +157,15 @@ export default function RegisterView() {
           </div>
 
           <form onSubmit={submit} noValidate className="mt-6 space-y-6">
+            {restored && (
+              <div className="flex flex-col gap-2 rounded-xl border border-accent bg-accent-soft p-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-base font-medium text-ink">{t('register.draftRestored')}</p>
+                <button type="button" onClick={resetDraft} className="inline-flex shrink-0 items-center gap-1.5 self-start text-[15px] font-semibold text-brand underline-offset-4 hover:underline sm:self-auto">
+                  <RotateCcw className="h-4 w-4" /> {t('register.draftReset')}
+                </button>
+              </div>
+            )}
+
             {/* 1 · Profil */}
             <Card n={1} icon={UserRound} title={t('register.step1')} subtitle={t('register.step1Sub')}>
               <div className="mt-5">
@@ -133,21 +194,15 @@ export default function RegisterView() {
               </div>
             </Card>
 
-            {/* 2 · Compétences: una sola lista, dos selecciones independientes */}
-            <Card n={2} icon={Lightbulb} tone="brand" title={t('register.step2')} subtitle={t('register.step2Sub')}>
-              <SubBlock field="offers" id="pick-offer" icon={Lightbulb} tone="brand" title={t('register.offerTitle')} tag={t('register.offerTag')} subtitle={t('register.offerSub')}>
-                <TagPicker tone="offer" labelledBy="pick-offer" value={form.offers} onChange={(v) => set('offers', v)} alsoIn={form.needs} error={errors.offers} />
-              </SubBlock>
-
-              <div aria-hidden className="relative my-6 border-t border-dashed border-slate-200">
-                <span className="absolute left-1/2 top-0 grid h-7 w-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white ring-1 ring-slate-200">
-                  <Heart className="h-3.5 w-3.5 fill-brand text-brand" />
-                </span>
-              </div>
-
-              <SubBlock field="needs" id="pick-need" icon={Sprout} tone="accent" title={t('register.needTitle')} tag={t('register.needTag')} subtitle={t('register.needSub')}>
-                <TagPicker tone="need" labelledBy="pick-need" value={form.needs} onChange={(v) => set('needs', v)} alsoIn={form.offers} error={errors.needs} />
-              </SubBlock>
+            {/* 2 · Compétences: una sola lista con «J'apporte» / «Je cherche» + temas propios */}
+            <Card n={2} icon={Lightbulb} tone="brand" title={t('register.step2')} subtitle={t('register.step2Sub')} field="topics">
+              <TopicMatrix
+                offers={form.offers}
+                needs={form.needs}
+                customTopics={form.customTopics}
+                onChange={patch}
+                errors={{ offers: errors.offers && t('register.missBring'), needs: errors.needs && t('register.missSeek') }}
+              />
             </Card>
 
             {/* 3 · Arme secrète */}
@@ -157,9 +212,27 @@ export default function RegisterView() {
               </div>
             </Card>
 
+            <div aria-live="polite">
+              {missing.length ? (
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                  <p className="text-base font-bold text-ink">{t('register.missing')}</p>
+                  <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-base text-slate-700">
+                    {missing.map((m) => <li key={m}>{m}</li>)}
+                  </ul>
+                </div>
+              ) : (
+                <p className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-base font-semibold text-emerald-800">
+                  <CheckCircle2 className="h-5 w-5 shrink-0" /> {t('register.allReady')}
+                </p>
+              )}
+            </div>
+
             <Button type="submit" icon={Heart} className="w-full py-4 text-base" disabled={phase !== 'form'}>
               {t('register.submit')}
             </Button>
+            <p className="flex items-center justify-center gap-1.5 text-sm text-slate-600">
+              <Save className="h-4 w-4" /> {t('register.draftSaved')}
+            </p>
           </form>
         </div>
         <PublicFooter />
@@ -217,7 +290,7 @@ const TAGS = { brand: 'bg-brand-soft text-brand', accent: 'bg-accent-soft text-i
 function Card({ n, icon: Icon, tone = 'ink', title, tag, subtitle, field, labelId, children }) {
   const { t } = useI18n()
   return (
-    <fieldset data-field={field} className="relative rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+    <fieldset data-field={field} className="relative min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
       <legend className="sr-only">{title}</legend>
       <p className="text-sm font-bold uppercase tracking-wider text-brand">{t('register.stepOf', { n, total: 3 })}</p>
       <div className="mt-2 flex items-center gap-3">
@@ -228,18 +301,5 @@ function Card({ n, icon: Icon, tone = 'ink', title, tag, subtitle, field, labelI
       {subtitle && <p className="mt-2 text-base leading-relaxed text-slate-700">{subtitle}</p>}
       {children}
     </fieldset>
-  )
-}
-
-function SubBlock({ field, id, icon: Icon, tone, title, tag, subtitle, children }) {
-  return (
-    <div data-field={field} className="mt-6">
-      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${TAGS[tone]}`}>
-        <Icon className="h-3.5 w-3.5" /> {tag}
-      </span>
-      <h3 id={id} className="mt-2 text-lg font-bold leading-snug text-ink">{title}</h3>
-      <p className="mb-4 mt-1 text-base text-slate-700">{subtitle}</p>
-      {children}
-    </div>
   )
 }
