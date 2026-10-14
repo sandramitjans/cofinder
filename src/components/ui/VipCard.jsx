@@ -119,7 +119,7 @@ function Poster({ name, role, branch, photo, offers, needs, superpowers, classNa
             <button
               type="button"
               onClick={onAddPhoto}
-              className="absolute left-1/2 top-[30%] z-10 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-white px-5 py-3 text-base font-bold text-brand shadow-xl transition hover:scale-105"
+              className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-white px-4 py-2.5 text-[15px] font-bold text-brand shadow-xl transition hover:scale-105 lg:left-6 lg:top-6 lg:px-5 lg:py-3 lg:text-base"
             >
               <Camera className="h-5 w-5" /> {t('register.photoAdd')}
             </button>
