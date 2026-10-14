@@ -51,7 +51,7 @@ export default function WaitingView() {
             onAddPhoto={canEditProfile ? edit : undefined}
             className="aspect-[6/7] lg:aspect-auto lg:h-full"
           />
-          <div className="pointer-events-none absolute right-3 top-4 z-10 lg:right-6 lg:top-6">
+          <div className="pointer-events-none absolute right-3 top-[4.25rem] z-10 lg:right-6 lg:top-6">
             <Stamp size="sm" top={t('match.stampTop')} bottom={t('match.stampBottom')} label={t('match.stampLabel')} />
           </div>
         </div>
