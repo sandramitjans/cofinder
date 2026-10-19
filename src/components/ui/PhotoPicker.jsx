@@ -40,7 +40,7 @@ export default function PhotoPicker({ value, name, subtitle, onChange }) {
           className="group relative shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/30"
           aria-label={value ? t('register.photoChange') : t('register.photoAdd')}
         >
-          <Avatar name={name || '?'} photo={value} size="xl" />
+          <Avatar name={name || '?'} photo={value} size="xl" tone="bg-ink text-white" />
           <span className="absolute -bottom-1.5 -right-1.5 grid h-9 w-9 place-items-center rounded-full bg-brand text-ink shadow-md ring-2 ring-white transition group-hover:scale-105">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
           </span>

@@ -19,7 +19,8 @@ const SIZES = {
   xl: 'h-24 w-24 text-3xl',
 }
 
-export default function Avatar({ name, photo, size = 'md', className = '' }) {
+// `tone` fija el color de fondo (si no, sale del nombre y cambia mientras se escribe)
+export default function Avatar({ name, photo, size = 'md', tone, className = '' }) {
   if (photo) {
     return (
       <img
@@ -30,7 +31,7 @@ export default function Avatar({ name, photo, size = 'md', className = '' }) {
     )
   }
   return (
-    <div aria-hidden className={`${SIZES[size]} ${variantFor(name)} grid shrink-0 place-items-center rounded-xl font-bold ring-2 ring-white ${className}`}>
+    <div aria-hidden className={`${SIZES[size]} ${tone ?? variantFor(name)} grid shrink-0 place-items-center rounded-xl font-bold ring-2 ring-white ${className}`}>
       {initialsOf(name)}
     </div>
   )
