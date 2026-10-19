@@ -171,139 +171,135 @@ export default function RegisterView({ mode = 'create' }) {
   const step = STEP_OF_SCREEN[screen]
 
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-      <BrandPanel />
+    <section className="vip-glow flex min-h-dvh flex-col px-5 pt-6 sm:px-10 lg:pt-8">
+      <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4">
+        <Logo />
+        <LangSwitch />
+      </div>
 
-      <section className="vip-glow flex min-h-dvh flex-col px-5 pt-6 sm:px-10 lg:pt-10">
-        <div className={`mx-auto w-full max-w-xl flex-1 ${phase === 'fading' ? 'animate-form-out' : ''}`}>
-          <div className="flex items-center justify-between gap-4">
-            <span className="lg:hidden"><Logo /></span>
-            <LangSwitch className="ml-auto" />
-          </div>
+      <div className={`mx-auto w-full max-w-2xl flex-1 ${phase === 'fading' ? 'animate-form-out' : ''}`}>
+        {editing && (
+          <header className="mt-8">
+            <p className="inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold uppercase tracking-wide text-ink">
+              <Gem className="h-3.5 w-3.5" /> {t('register.editKicker')}
+            </p>
+            <p className="mt-4 max-w-lg text-lg leading-relaxed text-slate-700">{t('register.editSubtitle')}</p>
+          </header>
+        )}
 
-          {editing && (
-            <header className="mt-8">
-              <p className="inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold uppercase tracking-wide text-ink">
-                <Gem className="h-3.5 w-3.5" /> {t('register.editKicker')}
-              </p>
-              <p className="mt-4 max-w-lg text-lg leading-relaxed text-slate-700">{t('register.editSubtitle')}</p>
-            </header>
+        <StepProgress step={step} onJump={editing ? (n) => goTo([0, 1, 2, 4][n]) : null} />
+
+        {/* Indice d'attractivité, siempre visible */}
+        <div className="sticky top-3 z-10 mt-5">
+          <AttractivenessMeter value={score} />
+        </div>
+
+        <form onSubmit={submit} noValidate className="mt-6 space-y-6">
+          {restored && screen === 1 && (
+            <div className="flex flex-col gap-2 rounded-xl border border-accent bg-accent-soft p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-base font-medium text-ink">{t('register.draftRestored')}</p>
+              <button type="button" onClick={resetDraft} className="inline-flex shrink-0 items-center gap-1.5 self-start text-[15px] font-semibold text-brand-dark underline-offset-4 hover:underline sm:self-auto">
+                <RotateCcw className="h-4 w-4" /> {t('register.draftReset')}
+              </button>
+            </div>
           )}
 
-          <StepProgress step={step} onJump={editing ? (n) => goTo([0, 1, 2, 4][n]) : null} />
-
-          {/* Indice d'attractivité, siempre visible */}
-          <div className="sticky top-3 z-10 mt-5">
-            <AttractivenessMeter value={score} />
-          </div>
-
-          <form onSubmit={submit} noValidate className="mt-6 space-y-6">
-            {restored && screen === 1 && (
-              <div className="flex flex-col gap-2 rounded-xl border border-accent bg-accent-soft p-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-base font-medium text-ink">{t('register.draftRestored')}</p>
-                <button type="button" onClick={resetDraft} className="inline-flex shrink-0 items-center gap-1.5 self-start text-[15px] font-semibold text-brand-dark underline-offset-4 hover:underline sm:self-auto">
-                  <RotateCcw className="h-4 w-4" /> {t('register.draftReset')}
-                </button>
-              </div>
-            )}
-
-            {/* 1 · Profil */}
-            {screen === 1 && (
-              <Card key="profile" icon={UserRound} title={t('register.step1')} subtitle={t('register.step1Sub')}>
-                <div className="mt-5">
-                  <PhotoPicker
-                    value={form.photo}
-                    name={form.name}
-                    subtitle={[form.role || t('register.previewRole'), form.country ? country(form.country) : t('register.previewCountry')].join(' · ')}
-                    onChange={(v) => set('photo', v)}
-                  />
-                </div>
-                <div className="mt-4 space-y-4">
-                  <div data-field="name">
-                    <Field label={t('register.name')} name="name" icon={User} placeholder={t('register.namePh')} autoComplete="name" value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} />
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div data-field="role">
-                      <Field label={t('register.role')} name="role" icon={Briefcase} placeholder={t('register.rolePh')} autoComplete="organization-title" value={form.role} onChange={(e) => set('role', e.target.value)} error={errors.role} />
-                    </div>
-                    <div data-field="country">
-                      <Field label={t('register.country')} name="country" icon={Building2} placeholder={t('register.countryPh')} list="branch-suggestions" autoComplete="off" value={form.country} onChange={(e) => set('country', e.target.value)} error={errors.country} />
-                      <datalist id="branch-suggestions">
-                        {COUNTRIES.map((c) => <option key={c} value={country(c)} />)}
-                      </datalist>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {/* 2 · Compétences, en dos partes: primero lo que domina, luego lo que quiere explorar */}
-            {(screen === 2 || screen === 3) && (
-              <Card
-                key={screen === 2 ? 'offers' : 'needs'}
-               
-                icon={Lightbulb}
-                tone="brand"
-                title={t(screen === 2 ? 'register.skillsBringTitle' : 'register.skillsSeekTitle')}
-                tag={t('register.skillsPart', { n: screen - 1 })}
-                subtitle={t(screen === 2 ? 'register.skillsBringSub' : 'register.skillsSeekSub', { max: MAX_TAGS })}
-                field={screen === 2 ? 'offers' : 'needs'}
-              >
-                <TopicPicker
-                  col={screen === 2 ? 'offers' : 'needs'}
-                  offers={form.offers}
-                  needs={form.needs}
-                  customTopics={form.customTopics}
-                  onChange={patch}
-                  error={screen === 2 ? errors.offers : errors.needs}
+          {/* 1 · Profil */}
+          {screen === 1 && (
+            <Card key="profile" icon={UserRound} title={t('register.step1')} subtitle={t('register.step1Sub')}>
+              <div className="mt-5">
+                <PhotoPicker
+                  value={form.photo}
+                  name={form.name}
+                  subtitle={[form.role || t('register.previewRole'), form.country ? country(form.country) : t('register.previewCountry')].join(' · ')}
+                  onChange={(v) => set('photo', v)}
                 />
-              </Card>
-            )}
-
-            {/* 3 · Arme secrète */}
-            {screen === 4 && (
-              <Card key="power" icon={Sparkles} tone="ink" title={t('register.step3')} tag={t('register.step3Tag')} subtitle={t('register.step3Sub', { max: MAX_SUPERPOWERS })} field="superpowers" labelId="pick-power">
-                <div className="mt-4">
-                  <SuperpowerPicker labelledBy="pick-power" value={form.superpowers} onChange={(v) => set('superpowers', v)} />
+              </div>
+              <div className="mt-4 space-y-4">
+                <div data-field="name">
+                  <Field label={t('register.name')} name="name" icon={User} placeholder={t('register.namePh')} autoComplete="name" value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} />
                 </div>
-              </Card>
-            )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div data-field="role">
+                    <Field label={t('register.role')} name="role" icon={Briefcase} placeholder={t('register.rolePh')} autoComplete="organization-title" value={form.role} onChange={(e) => set('role', e.target.value)} error={errors.role} />
+                  </div>
+                  <div data-field="country">
+                    <Field label={t('register.country')} name="country" icon={Building2} placeholder={t('register.countryPh')} list="branch-suggestions" autoComplete="off" value={form.country} onChange={(e) => set('country', e.target.value)} error={errors.country} />
+                    <datalist id="branch-suggestions">
+                      {COUNTRIES.map((c) => <option key={c} value={country(c)} />)}
+                    </datalist>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
 
-            {saveError && (
-              <p role="alert" className="rounded-xl border border-accent/30 bg-accent-soft p-4 text-base font-semibold text-accent-dark">
-                {t('register.saveError')}
-              </p>
-            )}
+          {/* 2 · Compétences, en dos partes: primero lo que domina, luego lo que quiere explorar */}
+          {(screen === 2 || screen === 3) && (
+            <Card
+              key={screen === 2 ? 'offers' : 'needs'}
+             
+              icon={Lightbulb}
+              tone="brand"
+              title={t(screen === 2 ? 'register.skillsBringTitle' : 'register.skillsSeekTitle')}
+              tag={t('register.skillsPart', { n: screen - 1 })}
+              subtitle={t(screen === 2 ? 'register.skillsBringSub' : 'register.skillsSeekSub', { max: MAX_TAGS })}
+              field={screen === 2 ? 'offers' : 'needs'}
+            >
+              <TopicPicker
+                col={screen === 2 ? 'offers' : 'needs'}
+                offers={form.offers}
+                needs={form.needs}
+                customTopics={form.customTopics}
+                onChange={patch}
+                error={screen === 2 ? errors.offers : errors.needs}
+              />
+            </Card>
+          )}
 
-            <div className="flex gap-3">
-              {screen > 1 && (
-                <Button type="button" variant="outline" icon={ArrowLeft} onClick={() => goTo(screen - 1)} disabled={phase !== 'form'} className="py-4 text-base">
-                  {t('register.back')}
-                </Button>
-              )}
-              {screen < LAST ? (
-                <Button type="submit" iconRight={ArrowRight} className="flex-1 py-4 text-base">{t('register.next')}</Button>
-              ) : (
-                <Button type="submit" icon={Heart} className="flex-1 py-4 text-base" disabled={phase !== 'form'}>
-                  {phase === 'saving' ? t('register.saving') : t(editing ? 'register.editSave' : 'register.submit')}
-                </Button>
-              )}
-            </div>
-            {editing ? (
-              <button type="button" onClick={() => navigate(VIEWS.HOME)} disabled={phase !== 'form'}
-                className="w-full rounded-xl border border-slate-300 bg-white py-3.5 text-base font-semibold text-slate-700 hover:bg-slate-50">
-                {t('register.editCancel')}
-              </button>
+          {/* 3 · Arme secrète */}
+          {screen === 4 && (
+            <Card key="power" icon={Sparkles} tone="ink" title={t('register.step3')} tag={t('register.step3Tag')} subtitle={t('register.step3Sub', { max: MAX_SUPERPOWERS })} field="superpowers" labelId="pick-power">
+              <div className="mt-4">
+                <SuperpowerPicker labelledBy="pick-power" value={form.superpowers} onChange={(v) => set('superpowers', v)} />
+              </div>
+            </Card>
+          )}
+
+          {saveError && (
+            <p role="alert" className="rounded-xl border border-accent/30 bg-accent-soft p-4 text-base font-semibold text-accent-dark">
+              {t('register.saveError')}
+            </p>
+          )}
+
+          <div className="flex gap-3">
+            {screen > 1 && (
+              <Button type="button" variant="outline" icon={ArrowLeft} onClick={() => goTo(screen - 1)} disabled={phase !== 'form'} className="py-4 text-base">
+                {t('register.back')}
+              </Button>
+            )}
+            {screen < LAST ? (
+              <Button type="submit" iconRight={ArrowRight} className="flex-1 py-4 text-base">{t('register.next')}</Button>
             ) : (
-              <p className="flex items-center justify-center gap-1.5 text-sm text-slate-600">
-                <Save className="h-4 w-4" /> {t('register.draftSaved')}
-              </p>
+              <Button type="submit" icon={Heart} className="flex-1 py-4 text-base" disabled={phase !== 'form'}>
+                {phase === 'saving' ? t('register.saving') : t(editing ? 'register.editSave' : 'register.submit')}
+              </Button>
             )}
-          </form>
-        </div>
-        <PublicFooter />
-      </section>
-    </div>
+          </div>
+          {editing ? (
+            <button type="button" onClick={() => navigate(VIEWS.HOME)} disabled={phase !== 'form'}
+              className="w-full rounded-xl border border-slate-300 bg-white py-3.5 text-base font-semibold text-slate-700 hover:bg-slate-50">
+              {t('register.editCancel')}
+            </button>
+          ) : (
+            <p className="flex items-center justify-center gap-1.5 text-sm text-slate-600">
+              <Save className="h-4 w-4" /> {t('register.draftSaved')}
+            </p>
+          )}
+        </form>
+      </div>
+      <PublicFooter />
+    </section>
   )
 }
 
@@ -382,49 +378,6 @@ function Landing({ resume, onStart }) {
 
       <PublicFooter />
     </div>
-  )
-}
-
-/** Panel lateral de marca: dos tarjetas que hacen «match» */
-function BrandPanel() {
-  const { t } = useI18n()
-  return (
-    <aside className="relative hidden overflow-hidden bg-ink text-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:justify-between lg:p-12">
-      <div aria-hidden className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-white/10" />
-      <div aria-hidden className="absolute -bottom-40 -left-24 h-[28rem] w-[28rem] rounded-full bg-accent/20" />
-
-      <div className="relative flex items-center justify-between">
-        <Logo size="lg" inverted />
-        <span className="rounded-full border border-accent/60 px-3 py-1 text-xs font-bold tracking-[0.3em] text-accent">{t('register.vip')}</span>
-      </div>
-
-      {/* Ilustración: dos perfiles + corazón */}
-      <div aria-hidden className="relative mx-auto mt-6 h-44 w-72">
-        <div className="absolute left-0 top-4 w-40 -rotate-6 rounded-2xl bg-white p-4 text-ink shadow-2xl">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent font-bold text-ink">A</div>
-          <div className="mt-3 h-2 w-24 rounded bg-slate-200" />
-          <div className="mt-2 flex gap-1"><span className="h-4 w-12 rounded-full bg-brand-soft" /><span className="h-4 w-9 rounded-full bg-brand-soft" /></div>
-        </div>
-        <div className="absolute right-0 top-0 w-40 rotate-6 rounded-2xl bg-brand p-4 text-ink shadow-2xl">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-ink font-bold text-brand">B</div>
-          <div className="mt-3 h-2 w-20 rounded bg-ink/20" />
-          <div className="mt-2 flex gap-1"><span className="h-4 w-10 rounded-full bg-ink/25" /><span className="h-4 w-12 rounded-full bg-ink/25" /></div>
-        </div>
-        <span className="absolute left-1/2 top-[62%] grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white shadow-xl ring-4 ring-accent">
-          <Heart className="animate-heartbeat h-7 w-7 fill-accent text-accent" />
-        </span>
-      </div>
-
-      <div className="relative max-w-md">
-        <h2 className="font-display text-4xl font-medium leading-[1.1] xl:text-5xl">{t('register.panelTitle')}</h2>
-        <p className="mt-4 text-lg text-white/85">{t('register.panelText')}</p>
-        <p className="mt-6 border-l-2 border-accent pl-4 text-lg italic text-white/90">{t('register.panelQuote')}</p>
-      </div>
-
-      <p className="relative flex items-center gap-2 text-sm text-white/70">
-        <Gem className="h-4 w-4 text-accent" /> {t('register.panelFooter')}
-      </p>
-    </aside>
   )
 }
 
