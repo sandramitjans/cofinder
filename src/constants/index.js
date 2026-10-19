@@ -33,6 +33,16 @@ export const TOPICS = [
   'customer_journey', 'operational_efficiency', 'risk_management', 'compliance', 'cofidis_ninja',
 ]
 
+// Los mismos 20 temas agrupados en familias, solo para mostrarlos en el formulario.
+// El reparto en mesas sigue trabajando con los identificadores de TOPICS.
+export const TOPIC_FAMILIES = [
+  { id: 'acquisition', topics: ['paid_performance', 'affiliates', 'geo', 'social_strategy', 'b2b'] },
+  { id: 'brand', topics: ['branding', 'mass_media', 'public_relations', 'guerrilla'] },
+  { id: 'customer', topics: ['customer_journey', 'customer_success', 'emailing_loyalty'] },
+  { id: 'data', topics: ['ai_guru', 'analytics', 'product_management'] },
+  { id: 'business', topics: ['pnl', 'operational_efficiency', 'risk_management', 'compliance', 'cofidis_ninja'] },
+]
+
 // Superpoderes de oficina (la touche fun). No intervienen en el algoritmo de mesas.
 export const SUPERPOWERS = [
   { id: 'charisma', emoji: '🎤' },

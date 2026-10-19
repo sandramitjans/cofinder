@@ -75,6 +75,26 @@ export const DICT = {
       submit: 'Valider mon profil de match',
       saving: 'Enregistrement…',
       saveError: 'Oups, la connexion a échoué. Rien n’est perdu\u00A0: vérifiez votre réseau et réessayez.',
+      // Landing y navegación por pasos
+      landingHow: 'Trois étapes, environ trois minutes.',
+      landingCta: 'Créer mon profil',
+      landingResume: 'Reprendre mon profil',
+      landingNote: 'Votre brouillon est enregistré sur cet appareil.',
+      navProfile: 'Profil', navSkills: 'Compétences', navPower: 'Arme secrète',
+      next: 'Suivant', back: 'Retour',
+      skillsPart: 'Partie {n} sur 2',
+      skillsBringTitle: 'Ce que vous maîtrisez',
+      skillsBringSub: 'Choisissez de 1 à {max} sujets que vous maîtrisez et pouvez partager.',
+      skillsSeekTitle: 'Ce que vous souhaitez explorer',
+      skillsSeekSub: 'Choisissez de 1 à {max} sujets à explorer ou améliorer. Ceux que vous maîtrisez déjà sont grisés.',
+      families: {
+        acquisition: 'Acquisition & Performance',
+        brand: 'Marque & Communication',
+        customer: 'Client & Fidélisation',
+        data: 'Data, IA & Produit',
+        business: 'Pilotage & Business',
+        custom: 'Vos sujets',
+      },
     },
 
     attract: {
@@ -302,6 +322,26 @@ export const DICT = {
       submit: 'Validate my match profile',
       saving: 'Saving…',
       saveError: 'Oops, the connection failed. Nothing is lost: check your network and try again.',
+      // Landing and step navigation
+      landingHow: 'Three steps, about three minutes.',
+      landingCta: 'Create my profile',
+      landingResume: 'Resume my profile',
+      landingNote: 'Your draft is saved on this device.',
+      navProfile: 'Profile', navSkills: 'Skills', navPower: 'Secret weapon',
+      next: 'Next', back: 'Back',
+      skillsPart: 'Part {n} of 2',
+      skillsBringTitle: 'What you master',
+      skillsBringSub: 'Pick 1 to {max} topics you master and can share.',
+      skillsSeekTitle: 'What you’d like to explore',
+      skillsSeekSub: 'Pick 1 to {max} topics to explore or improve. The ones you already master are greyed out.',
+      families: {
+        acquisition: 'Acquisition & Performance',
+        brand: 'Brand & Communication',
+        customer: 'Customer & Loyalty',
+        data: 'Data, AI & Product',
+        business: 'Management & Business',
+        custom: 'Your topics',
+      },
     },
 
     attract: {
