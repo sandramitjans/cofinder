@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Briefcase, Building2, Check, Save, Gem, Heart, Lightbulb, RotateCcw, Sparkles, User, UserRound } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Briefcase, Building2, Save, Gem, Heart, Lightbulb, RotateCcw, Sparkles, User, UserRound } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { COUNTRIES, MAX_SUPERPOWERS, MAX_TAGS, VIEWS } from '../constants'
@@ -68,7 +68,6 @@ const formFromProfile = (p, countryLabel) => {
 // Pantallas del formulario: 0 = landing, 1 = perfil, 2 = «Je maîtrise», 3 = «J’explore», 4 = arme secrète.
 // Las pantallas 2 y 3 son las dos partes del paso «Compétences».
 const LAST = 4
-const STEP_OF_SCREEN = [0, 1, 2, 2, 3]
 
 export default function RegisterView({ mode = 'create' }) {
   const editing = mode === 'edit'
@@ -168,7 +167,6 @@ export default function RegisterView({ mode = 'create' }) {
   if (screen === 0) return <Landing resume={restored} onStart={() => goTo(1)} />
 
   const score = attractivenessScore(form)
-  const step = STEP_OF_SCREEN[screen]
 
   return (
     <section className="vip-glow flex min-h-dvh flex-col px-5 pt-6 sm:px-10 lg:pt-8">
@@ -177,7 +175,7 @@ export default function RegisterView({ mode = 'create' }) {
         <LangSwitch />
       </div>
 
-      <div className={`mx-auto w-full max-w-6xl flex-1 ${phase === 'fading' ? 'animate-form-out' : ''}`}>
+      <div className={`mx-auto w-full max-w-xl flex-1 ${phase === 'fading' ? 'animate-form-out' : ''}`}>
         {editing && (
           <header className="mt-8">
             <p className="inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold uppercase tracking-wide text-ink">
@@ -187,13 +185,24 @@ export default function RegisterView({ mode = 'create' }) {
           </header>
         )}
 
-        {/* Pasos e índice de atractividad en una sola línea */}
-        <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-end lg:gap-8">
-          <StepProgress step={step} onJump={editing ? (n) => goTo([0, 1, 2, 4][n]) : null} />
+        {/* Solo el índice de atractividad, centrado */}
+        <div className="mt-8">
           <AttractivenessMeter value={score} />
         </div>
 
-        <form onSubmit={submit} noValidate className="mt-6 space-y-6">
+        {/* Retour, fuera del formulario */}
+        {(screen > 1 || !editing) && (
+          <button
+            type="button"
+            onClick={() => goTo(screen - 1)}
+            disabled={phase !== 'form'}
+            className="mt-6 inline-flex items-center gap-1.5 rounded-lg py-1 text-[15px] font-semibold text-slate-600 transition hover:text-ink disabled:opacity-50"
+          >
+            <ArrowLeft className="h-4 w-4" /> {t('register.back')}
+          </button>
+        )}
+
+        <form onSubmit={submit} noValidate className="mt-4 space-y-6">
           {restored && screen === 1 && (
             <div className="flex flex-col gap-2 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-[15px] font-medium text-ink">{t('register.draftRestored')}</p>
@@ -207,15 +216,10 @@ export default function RegisterView({ mode = 'create' }) {
           {screen === 1 && (
             <Card key="profile" icon={UserRound} title={t('register.step1')} subtitle={t('register.step1Sub')}>
               <div className="mt-5">
-                <PhotoPicker
-                  value={form.photo}
-                  name={form.name}
-                  subtitle={[form.role || t('register.previewRole'), form.country ? country(form.country) : t('register.previewCountry')].join(' · ')}
-                  onChange={(v) => set('photo', v)}
-                />
+                <PhotoPicker value={form.photo} name={form.name} onChange={(v) => set('photo', v)} />
               </div>
-              <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div data-field="name" className="sm:col-span-2 lg:col-span-1">
+              <div className="mt-6 space-y-4">
+                <div data-field="name">
                   <Field label={t('register.name')} name="name" icon={User} placeholder={t('register.namePh')} autoComplete="name" value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} />
                 </div>
                 <div data-field="role">
@@ -270,16 +274,11 @@ export default function RegisterView({ mode = 'create' }) {
             </p>
           )}
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-            {screen > 1 || !editing ? (
-              <Button type="button" variant="outline" icon={ArrowLeft} onClick={() => goTo(screen - 1)} disabled={phase !== 'form'} className="py-4 text-base">
-                {t('register.back')}
-              </Button>
-            ) : <span />}
+          <div className="flex flex-col">
             {screen < LAST ? (
-              <Button type="submit" iconRight={ArrowRight} className="py-4 text-base sm:min-w-56">{t('register.next')}</Button>
+              <Button type="submit" iconRight={ArrowRight} className="py-4 text-base">{t('register.next')}</Button>
             ) : (
-              <Button type="submit" icon={Heart} className="py-4 text-base sm:min-w-72" disabled={phase !== 'form'}>
+              <Button type="submit" icon={Heart} className="py-4 text-base" disabled={phase !== 'form'}>
                 {phase === 'saving' ? t('register.saving') : t(editing ? 'register.editSave' : 'register.submit')}
               </Button>
             )}
@@ -302,38 +301,6 @@ export default function RegisterView({ mode = 'create' }) {
 }
 
 const STEPS = ['register.navProfile', 'register.navSkills', 'register.navPower']
-
-/** Barra de progreso de los 3 pasos (al modificar el perfil, cada paso es un atajo) */
-function StepProgress({ step, onJump }) {
-  const { t } = useI18n()
-  return (
-    <nav aria-label={t('register.stepOf', { n: step, total: 3 })}>
-      <p className="text-sm font-bold uppercase tracking-wider text-brand-dark">{t('register.stepOf', { n: step, total: 3 })}</p>
-      <ol className="mt-3 grid grid-cols-3 gap-2">
-        {STEPS.map((key, i) => {
-          const n = i + 1
-          const state = n < step ? 'done' : n === step ? 'current' : 'todo'
-          const label = (
-            <>
-              <span className={`block h-1.5 rounded-full ${state === 'todo' ? 'bg-slate-200' : 'bg-brand'}`} />
-              <span className={`mt-2 flex items-center gap-1 text-sm ${state === 'current' ? 'font-bold text-ink' : 'font-medium text-slate-500'}`}>
-                {state === 'done' && <Check className="h-3.5 w-3.5 text-mint-dark" />}
-                {t(key)}
-              </span>
-            </>
-          )
-          return (
-            <li key={key} aria-current={state === 'current' ? 'step' : undefined}>
-              {onJump ? (
-                <button type="button" onClick={() => onJump(n)} className="block w-full text-left">{label}</button>
-              ) : label}
-            </li>
-          )
-        })}
-      </ol>
-    </nav>
-  )
-}
 
 /** Landing de entrada (a la que llega el email): invitación, cómo funciona y un único CTA */
 function Landing({ resume, onStart }) {
@@ -405,7 +372,7 @@ function Recap({ form, onEdit }) {
       <h2 id="recap-title" className="font-display text-xl font-medium text-ink">{t('register.recapTitle')}</h2>
       <dl className="mt-4 divide-y divide-slate-100">
         {rows.map((r) => (
-          <div key={r.label} className="grid gap-2 py-3 sm:grid-cols-[12rem_minmax(0,1fr)_auto] sm:items-center sm:gap-4">
+          <div key={r.label} className="grid gap-2 py-3 sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-center sm:gap-4">
             <dt className="text-sm font-bold uppercase tracking-wider text-slate-500">{r.label}</dt>
             <dd className="min-w-0">{r.body}</dd>
             {r.screen !== 4 && (

@@ -24,7 +24,7 @@ const KNOWN = new Map(
 /**
  * Selección de temas para UNA columna (`col`: «Je maîtrise» = offers, «J’explore» = needs).
  * Arriba, el resumen de las dos columnas (se puede quitar un tema desde ahí). Debajo, las familias,
- * todas abiertas: en escritorio una columna por familia. Un tema ya elegido en la otra columna
+ * todas abiertas. Un tema ya elegido en la otra columna
  * aparece bloqueado y dice dónde está. «Autre sujet» abre el campo para añadir hasta 3 temas
  * propios, que se marcan directamente en la columna actual.
  */
@@ -109,7 +109,7 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
           onClick={() => toggle(id)}
           aria-pressed={on}
           aria-disabled={blocked || undefined}
-          className={`flex min-h-11 w-full items-center gap-2 rounded-xl border px-3 py-2 text-left text-[15px] font-semibold leading-snug lg:text-sm transition-all duration-150 active:scale-[0.98] ${
+          className={`flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-left text-[15px] font-semibold leading-snug transition-all duration-150 active:scale-[0.98] ${
             on ? c.on
               : blocked ? 'border-dashed border-slate-300 bg-slate-50 text-slate-400'
               : 'border-slate-300 bg-white text-slate-700 hover:border-slate-500'
@@ -176,14 +176,14 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
         <p role="alert" className="mt-4 rounded-lg bg-accent-soft px-3 py-2 text-sm font-semibold text-accent-dark">{noticeText}</p>
       )}
 
-      {/* Familias: una columna por familia en escritorio */}
-      <div className="mt-6 grid gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-5">
+      {/* Familias, todas abiertas */}
+      <div className="mt-6 space-y-5">
         {TOPIC_FAMILIES.map((g) => (
           <section key={g.id} aria-labelledby={`family-${g.id}`}>
-            <h3 id={`family-${g.id}`} className="border-b border-slate-200 pb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+            <h3 id={`family-${g.id}`} className="text-xs font-bold uppercase tracking-wider text-slate-500">
               {t(`register.families.${g.id}`)}
             </h3>
-            <ul className="mt-3 space-y-2">{g.topics.map(chip)}</ul>
+            <ul className="mt-3 flex flex-wrap gap-2">{g.topics.map(chip)}</ul>
           </section>
         ))}
       </div>
@@ -195,7 +195,7 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
         {customTopics.length > 0 && (
           <section aria-labelledby="family-custom" className="mb-4">
             <h3 id="family-custom" className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('register.families.custom')}</h3>
-            <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">{customTopics.map(chip)}</ul>
+            <ul className="mt-3 flex flex-wrap gap-2">{customTopics.map(chip)}</ul>
           </section>
         )}
 

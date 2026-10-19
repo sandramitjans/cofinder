@@ -11,7 +11,7 @@ export default function SuperpowerPicker({ value, onChange, labelledBy }) {
 
   return (
     <div>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" role="group" aria-labelledby={labelledBy}>
+      <div className="grid gap-2 sm:grid-cols-2" role="group" aria-labelledby={labelledBy}>
         {SUPERPOWERS.map(({ id, emoji }) => {
           const selected = value.includes(id)
           const disabled = !selected && full
