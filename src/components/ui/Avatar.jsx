@@ -3,10 +3,10 @@ export const initialsOf = (name = '') =>
   name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?'
 
 const VARIANTS = [
-  'bg-brand text-white',
+  'bg-brand text-ink',
   'bg-accent text-slate-900',
   'bg-slate-900 text-white',
-  'bg-brand-soft text-brand',
+  'bg-brand-soft text-brand-dark',
 ]
 
 const variantFor = (seed = '') =>

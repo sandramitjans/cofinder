@@ -40,7 +40,7 @@ export default function RoundCardView() {
           <Message icon={Hourglass} title={t('round.unseatedTitle')} text={t('round.unseatedText')} />
         ) : (
           <div key={`${event.round}-${table.id}`} className="animate-pop-in overflow-hidden rounded-xl bg-white shadow-xl shadow-slate-900/5 ring-1 ring-slate-200">
-            <div className="bg-brand px-6 pb-6 pt-5 text-white">
+            <div className="bg-ink px-6 pb-6 pt-5 text-white">
               <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-white/70">
                 <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> {t('round.table', { n: table.id })}</span>
                 <span className={`flex items-center gap-1.5 font-mono text-sm normal-case tracking-normal ${timer.done ? 'text-accent' : 'text-white'}`}>

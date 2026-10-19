@@ -1,7 +1,7 @@
 import { useId } from 'react'
 
 /**
- * Sello de tinta en rojo corporativo, a dos líneas: «PROFIL VALIDÉ / ♥ & MATCH READY ! ♥».
+ * Sello de tinta en coral, a dos líneas: «PROFIL VALIDÉ / ♥ & MATCH READY ! ♥».
  * Borde doble y textura irregular (filtro SVG). `animated` lo hace caer con impacto.
  */
 export default function Stamp({ top, bottom, label, size = 'lg', animated = false, className = '' }) {
@@ -21,12 +21,12 @@ export default function Stamp({ top, bottom, label, size = 'lg', animated = fals
           <feComponentTransfer><feFuncA type="discrete" tableValues="0 1 1 1 1 1 0.85 1" /></feComponentTransfer>
         </filter>
       </svg>
-      {animated && <span aria-hidden className={`animate-ink-ring absolute inset-0 -rotate-12 rounded-xl border-4 border-brand`} />}
+      {animated && <span aria-hidden className={`animate-ink-ring absolute inset-0 -rotate-12 rounded-xl border-4 border-accent`} />}
       <span
         role="img"
         aria-label={label}
         style={{ filter: `url(#${filterId})` }}
-        className={`inline-flex -rotate-12 flex-col items-center rounded-xl border-brand bg-white/60 text-center font-extrabold uppercase leading-none text-brand outline outline-brand ${sizes.box} ${animated ? 'animate-stamp' : ''}`}
+        className={`inline-flex -rotate-12 flex-col items-center rounded-xl border-accent bg-white/60 text-center font-extrabold uppercase leading-none text-accent outline outline-accent ${sizes.box} ${animated ? 'animate-stamp' : ''}`}
       >
         <span className={`tracking-[0.12em] ${sizes.top}`}>{top}</span>
         <span className={`mt-1 tracking-[0.2em] ${sizes.bottom}`}>♥ {bottom} ♥</span>

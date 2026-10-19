@@ -178,8 +178,8 @@ export default function RegisterView({ mode = 'create' }) {
               <Gem className="h-3.5 w-3.5" /> {t(editing ? 'register.editKicker' : 'register.kicker')}
             </p>
             <h1 className="mt-4 tracking-tight">
-              <span className="block text-lg font-bold text-brand">{t('register.titleBrand')}</span>
-              <span className="block font-display text-4xl font-bold italic leading-[1.05] sm:text-5xl">{t('register.titleMain')}</span>
+              <span className="block text-lg font-bold text-brand-dark">{t('register.titleBrand')}</span>
+              <span className="block font-display text-4xl font-medium leading-[1.05] sm:text-5xl">{t('register.titleMain')}</span>
             </h1>
             <p className="mt-4 max-w-lg text-lg leading-relaxed text-slate-700">{t(editing ? 'register.editSubtitle' : 'register.subtitle')}</p>
           </header>
@@ -193,7 +193,7 @@ export default function RegisterView({ mode = 'create' }) {
             {restored && (
               <div className="flex flex-col gap-2 rounded-xl border border-accent bg-accent-soft p-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-base font-medium text-ink">{t('register.draftRestored')}</p>
-                <button type="button" onClick={resetDraft} className="inline-flex shrink-0 items-center gap-1.5 self-start text-[15px] font-semibold text-brand underline-offset-4 hover:underline sm:self-auto">
+                <button type="button" onClick={resetDraft} className="inline-flex shrink-0 items-center gap-1.5 self-start text-[15px] font-semibold text-brand-dark underline-offset-4 hover:underline sm:self-auto">
                   <RotateCcw className="h-4 w-4" /> {t('register.draftReset')}
                 </button>
               </div>
@@ -254,14 +254,14 @@ export default function RegisterView({ mode = 'create' }) {
                   </ul>
                 </div>
               ) : (
-                <p className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-base font-semibold text-emerald-800">
+                <p className="flex items-center gap-2 rounded-xl border border-mint/40 bg-mint-soft p-4 text-base font-semibold text-mint-dark">
                   <CheckCircle2 className="h-5 w-5 shrink-0" /> {t('register.allReady')}
                 </p>
               )}
             </div>
 
             {saveError && (
-              <p role="alert" className="rounded-xl border border-brand/30 bg-brand-soft p-4 text-base font-semibold text-brand-dark">
+              <p role="alert" className="rounded-xl border border-accent/30 bg-accent-soft p-4 text-base font-semibold text-accent-dark">
                 {t('register.saveError')}
               </p>
             )}
@@ -290,7 +290,7 @@ export default function RegisterView({ mode = 'create' }) {
 function BrandPanel() {
   const { t } = useI18n()
   return (
-    <aside className="relative hidden overflow-hidden bg-brand text-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:justify-between lg:p-12">
+    <aside className="relative hidden overflow-hidden bg-ink text-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:justify-between lg:p-12">
       <div aria-hidden className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-white/10" />
       <div aria-hidden className="absolute -bottom-40 -left-24 h-[28rem] w-[28rem] rounded-full bg-accent/20" />
 
@@ -302,24 +302,24 @@ function BrandPanel() {
       {/* Ilustración: dos perfiles + corazón */}
       <div aria-hidden className="relative mx-auto mt-6 h-44 w-72">
         <div className="absolute left-0 top-4 w-40 -rotate-6 rounded-2xl bg-white p-4 text-ink shadow-2xl">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent font-bold">A</div>
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent font-bold text-ink">A</div>
           <div className="mt-3 h-2 w-24 rounded bg-slate-200" />
           <div className="mt-2 flex gap-1"><span className="h-4 w-12 rounded-full bg-brand-soft" /><span className="h-4 w-9 rounded-full bg-brand-soft" /></div>
         </div>
-        <div className="absolute right-0 top-0 w-40 rotate-6 rounded-2xl bg-ink p-4 shadow-2xl">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand font-bold">B</div>
-          <div className="mt-3 h-2 w-20 rounded bg-white/20" />
-          <div className="mt-2 flex gap-1"><span className="h-4 w-10 rounded-full bg-accent/40" /><span className="h-4 w-12 rounded-full bg-accent/40" /></div>
+        <div className="absolute right-0 top-0 w-40 rotate-6 rounded-2xl bg-brand p-4 text-ink shadow-2xl">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-ink font-bold text-brand">B</div>
+          <div className="mt-3 h-2 w-20 rounded bg-ink/20" />
+          <div className="mt-2 flex gap-1"><span className="h-4 w-10 rounded-full bg-ink/25" /><span className="h-4 w-12 rounded-full bg-ink/25" /></div>
         </div>
-        <span className="absolute left-1/2 top-[62%] grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-accent shadow-xl ring-4 ring-brand">
-          <Heart className="animate-heartbeat h-7 w-7 fill-brand text-brand" />
+        <span className="absolute left-1/2 top-[62%] grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white shadow-xl ring-4 ring-accent">
+          <Heart className="animate-heartbeat h-7 w-7 fill-accent text-accent" />
         </span>
       </div>
 
       <div className="relative max-w-md">
-        <h2 className="font-display text-4xl font-bold italic leading-[1.1] xl:text-5xl">{t('register.panelTitle')}</h2>
+        <h2 className="font-display text-4xl font-medium leading-[1.1] xl:text-5xl">{t('register.panelTitle')}</h2>
         <p className="mt-4 text-lg text-white/85">{t('register.panelText')}</p>
-        <p className="mt-6 border-l-2 border-accent pl-4 font-display text-lg italic text-white/90">{t('register.panelQuote')}</p>
+        <p className="mt-6 border-l-2 border-accent pl-4 text-lg italic text-white/90">{t('register.panelQuote')}</p>
       </div>
 
       <p className="relative flex items-center gap-2 text-sm text-white/70">
@@ -329,15 +329,15 @@ function BrandPanel() {
   )
 }
 
-const BADGES = { brand: 'bg-brand text-white', accent: 'bg-accent text-ink', ink: 'bg-ink text-accent' }
-const TAGS = { brand: 'bg-brand-soft text-brand', accent: 'bg-accent-soft text-ink', ink: 'bg-ink text-accent' }
+const BADGES = { brand: 'bg-brand text-ink', accent: 'bg-accent text-ink', ink: 'bg-ink text-accent' }
+const TAGS = { brand: 'bg-brand-soft text-brand-dark', accent: 'bg-accent-soft text-ink', ink: 'bg-ink text-accent' }
 
 function Card({ n, icon: Icon, tone = 'ink', title, tag, subtitle, field, labelId, children }) {
   const { t } = useI18n()
   return (
     <fieldset data-field={field} className="relative min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
       <legend className="sr-only">{title}</legend>
-      <p className="text-sm font-bold uppercase tracking-wider text-brand">{t('register.stepOf', { n, total: 3 })}</p>
+      <p className="text-sm font-bold uppercase tracking-wider text-brand-dark">{t('register.stepOf', { n, total: 3 })}</p>
       <div className="mt-2 flex items-center gap-3">
         <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${BADGES[tone]}`}><Icon className="h-5 w-5" /></span>
         <h2 id={labelId} className="text-xl font-bold leading-tight text-ink sm:text-2xl">{title}</h2>

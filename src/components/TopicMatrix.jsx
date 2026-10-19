@@ -6,7 +6,7 @@ import { DICT } from '../lib/i18n'
 import { MAX_CUSTOM_LENGTH, MAX_CUSTOM_TOPICS, isCustom, makeCustom, normalizeText, topicKey } from '../lib/topics'
 
 const COLS = {
-  offers: { other: 'needs', taken: 'register.inSeek', label: 'register.bring', count: 'register.countBring', max: 'register.maxBring', on: 'border-brand bg-brand text-white shadow-sm shadow-brand/25', dot: 'bg-brand' },
+  offers: { other: 'needs', taken: 'register.inSeek', label: 'register.bring', count: 'register.countBring', max: 'register.maxBring', on: 'border-brand bg-brand text-ink shadow-sm shadow-brand/25', dot: 'bg-brand' },
   needs: { other: 'offers', taken: 'register.inBring', label: 'register.seek', count: 'register.countSeek', max: 'register.maxSeek', on: 'border-accent bg-accent text-ink shadow-sm shadow-accent/30', dot: 'bg-accent' },
 }
 
@@ -88,7 +88,7 @@ export default function TopicMatrix({ offers, needs, customTopics, onChange, err
           <span
             key={col}
             className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-bold ${
-              lists[col].length >= MAX_TAGS ? 'border-brand/40 bg-brand-soft text-brand' : 'border-slate-200 bg-slate-50 text-slate-800'
+              lists[col].length >= MAX_TAGS ? 'border-accent/40 bg-accent-soft text-accent-dark' : 'border-slate-200 bg-slate-50 text-slate-800'
             }`}
           >
             <span className={`h-2.5 w-2.5 rounded-full ${c.dot}`} />
@@ -153,7 +153,7 @@ export default function TopicMatrix({ offers, needs, customTopics, onChange, err
                 </div>
               </div>
               {notice?.id === id && (
-                <p role="alert" className="mt-2 rounded-lg bg-brand-soft px-3 py-2 text-sm font-semibold text-brand">
+                <p role="alert" className="mt-2 rounded-lg bg-accent-soft px-3 py-2 text-sm font-semibold text-accent-dark">
                   {notice.kind === 'taken' ? t(COLS[notice.col].taken) : t(COLS[notice.col].max, { max: MAX_TAGS })}
                 </p>
               )}
@@ -167,7 +167,7 @@ export default function TopicMatrix({ offers, needs, customTopics, onChange, err
 
       {/* Errores de validación */}
       {(errors.offers || errors.needs) && (
-        <div role="alert" className="mt-3 space-y-1 text-sm font-semibold text-brand">
+        <div role="alert" className="mt-3 space-y-1 text-sm font-semibold text-accent-dark">
           {errors.offers && <p>{errors.offers}</p>}
           {errors.needs && <p>{errors.needs}</p>}
         </div>
@@ -197,7 +197,7 @@ export default function TopicMatrix({ offers, needs, customTopics, onChange, err
             <Plus className="h-4 w-4" /> {t('register.otherAdd')}
           </button>
         </div>
-        <p className={`mt-2 text-sm ${otherMsg ? 'font-semibold text-brand' : 'text-slate-600'}`} aria-live="polite">
+        <p className={`mt-2 text-sm ${otherMsg ? 'font-semibold text-accent-dark' : 'text-slate-600'}`} aria-live="polite">
           {otherMsg?.kind === 'exists' && t('register.otherExists')}
           {otherMsg?.kind === 'full' && t('register.otherFull', { max: MAX_CUSTOM_TOPICS })}
           {!otherMsg && (customTopics.length >= MAX_CUSTOM_TOPICS

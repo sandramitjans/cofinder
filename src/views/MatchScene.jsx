@@ -8,12 +8,12 @@ const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce
 
 // Corazones que salen del sello: desplazamiento horizontal, giro y retardo
 const HEARTS = [
-  { x: '8%', dx: '-60px', rot: '-25deg', delay: 1350, size: 'text-2xl', color: 'text-brand' },
+  { x: '8%', dx: '-60px', rot: '-25deg', delay: 1350, size: 'text-2xl', color: 'text-accent' },
   { x: '22%', dx: '-20px', rot: '15deg', delay: 1450, size: 'text-lg', color: 'text-accent' },
-  { x: '40%', dx: '10px', rot: '-10deg', delay: 1400, size: 'text-3xl', color: 'text-brand' },
+  { x: '40%', dx: '10px', rot: '-10deg', delay: 1400, size: 'text-3xl', color: 'text-accent' },
   { x: '58%', dx: '30px', rot: '20deg', delay: 1500, size: 'text-xl', color: 'text-accent' },
-  { x: '74%', dx: '55px', rot: '-15deg', delay: 1380, size: 'text-2xl', color: 'text-brand' },
-  { x: '88%', dx: '80px', rot: '30deg', delay: 1550, size: 'text-lg', color: 'text-brand' },
+  { x: '74%', dx: '55px', rot: '-15deg', delay: 1380, size: 'text-2xl', color: 'text-accent' },
+  { x: '88%', dx: '80px', rot: '30deg', delay: 1550, size: 'text-lg', color: 'text-accent' },
 ]
 
 /**
@@ -59,10 +59,10 @@ export default function MatchScene({ profile, onDone }) {
 
       <div className="mt-20 flex flex-col items-center text-center">
         <svg viewBox="0 0 48 48" className="h-14 w-14 animate-rise-in [animation-delay:1750ms]" aria-hidden>
-          <circle cx="24" cy="24" r="22" className="fill-accent" />
-          <path d="M15 24.5l6 6 12-13" fill="none" stroke="#12121a" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="animate-draw" />
+          <circle cx="24" cy="24" r="22" className="fill-mint" />
+          <path d="M15 24.5l6 6 12-13" fill="none" stroke="#20202E" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="animate-draw" />
         </svg>
-        <h1 className="mt-4 animate-rise-in font-display text-2xl font-bold italic tracking-tight [animation-delay:1900ms] sm:text-3xl">{t('match.title')}</h1>
+        <h1 className="mt-4 animate-rise-in font-display text-2xl font-medium tracking-tight [animation-delay:1900ms] sm:text-3xl">{t('match.title')}</h1>
         <p className="mt-2 animate-rise-in text-slate-600 [animation-delay:2050ms]">{t('match.text')}</p>
       </div>
     </div>

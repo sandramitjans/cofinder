@@ -34,7 +34,7 @@ export default function ProjectorView() {
         {event.round > 0 && !event.finished && (
           <div className="flex items-center gap-6">
             <span className="rounded-full bg-accent px-5 py-2 text-lg font-bold text-ink">{t('projector.roundOf', { n: event.round, total: TOTAL_ROUNDS })}</span>
-            <span className={`rounded-xl px-5 py-2 font-mono text-4xl font-bold tabular-nums ${timer.done ? 'animate-pulse bg-brand text-white' : 'bg-ink text-white'}`}>
+            <span className={`rounded-xl px-5 py-2 font-mono text-4xl font-bold tabular-nums ${timer.done ? 'animate-pulse bg-accent text-ink' : 'bg-ink text-white'}`}>
               {timer.label}
             </span>
           </div>
@@ -51,13 +51,13 @@ export default function ProjectorView() {
       <main className="flex flex-1 flex-col px-8 pb-8">
         {event.finished ? (
           <Center>
-            <PartyPopper className="h-20 w-20 text-brand" />
+            <PartyPopper className="h-20 w-20 text-brand-dark" />
             <h1 className="mt-6 text-6xl font-extrabold tracking-tight">{t('projector.thanks')}</h1>
             <p className="mt-4 text-2xl text-slate-500">{t('projector.summary', { rounds: event.round, people: participants.length })}</p>
           </Center>
         ) : !currentRound ? (
           <Center>
-            <h1 className="text-6xl font-extrabold tracking-tight">{t('projector.welcome')} <span className="text-brand">Cofinder</span></h1>
+            <h1 className="text-6xl font-extrabold tracking-tight">{t('projector.welcome')} <span className="text-brand-dark">Cofinder</span></h1>
             <p className="mt-4 text-2xl text-slate-500">{t('projector.soon')}</p>
             <div className="mt-12 flex max-w-5xl flex-wrap justify-center gap-4">
               {participants.map((p, i) => (
@@ -73,7 +73,7 @@ export default function ProjectorView() {
           <div key={event.round} className={`mx-auto grid w-full flex-1 content-center gap-6 md:grid-cols-2 ${GRID[Math.min(currentRound.tables.length, 4)]}`}>
             {currentRound.tables.map((tb, i) => (
               <article key={tb.id} className="animate-pop-in overflow-hidden rounded-xl bg-white shadow-lg shadow-slate-900/5 ring-1 ring-slate-200" style={{ animationDelay: `${i * 120}ms` }}>
-                <div className="bg-brand px-6 py-5 text-white">
+                <div className="bg-ink px-6 py-5 text-white">
                   <p className="text-sm font-semibold uppercase tracking-widest text-white/70">{t('round.table', { n: tb.id })}</p>
                   <h2 className="mt-1 text-3xl font-extrabold leading-tight tracking-tight">{topic(tb.topic)}</h2>
                 </div>

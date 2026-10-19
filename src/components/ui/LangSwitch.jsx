@@ -22,9 +22,9 @@ export default function LangSwitch({ dark = false, className = '' }) {
             aria-pressed={active}
             lang={l}
             title={t(`lang.${l}`)}
-            className={`min-h-9 rounded-full px-3.5 py-1.5 uppercase tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+            className={`min-h-9 rounded-full px-3.5 py-1.5 uppercase tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
               active
-                ? 'bg-brand text-white shadow-sm'
+                ? 'bg-brand text-ink shadow-sm'
                 : dark ? 'text-white/80 hover:text-white' : 'text-slate-600 hover:text-slate-900'
             }`}
           >

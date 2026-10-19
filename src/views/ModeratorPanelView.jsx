@@ -60,7 +60,7 @@ export default function ModeratorPanelView() {
           <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-brand">{t('panel.control')}</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-brand-dark">{t('panel.control')}</p>
                 <h1 className="mt-1 text-2xl font-bold tracking-tight">{status}</h1>
               </div>
               {live && (
@@ -147,12 +147,12 @@ export default function ModeratorPanelView() {
         {/* Mesas de la ronda actual */}
         {currentRound && (
           <section>
-            <h2 className="mb-3 flex items-center gap-2 text-lg font-bold"><UsersRound className="h-5 w-5 text-brand" /> {t('panel.tablesTitle', { n: event.round })}</h2>
+            <h2 className="mb-3 flex items-center gap-2 text-lg font-bold"><UsersRound className="h-5 w-5 text-brand-dark" /> {t('panel.tablesTitle', { n: event.round })}</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {currentRound.tables.map((tb) => (
                 <div key={tb.id} className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
                   <p className="text-xs font-semibold text-slate-400">{t('panel.table', { n: tb.id })}</p>
-                  <p className="text-lg font-bold text-brand">{topic(tb.topic)}</p>
+                  <p className="text-lg font-bold text-brand-dark">{topic(tb.topic)}</p>
                   <ul className="mt-3 space-y-2">
                     {tb.members.map((id) => {
                       const p = byId.get(id)
@@ -176,7 +176,7 @@ export default function ModeratorPanelView() {
         {/* Participantes */}
         <section className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4">
-            <h2 className="flex items-center gap-2 text-lg font-bold"><Users className="h-5 w-5 text-brand" /> {t('panel.participants', { n: participants.length })}</h2>
+            <h2 className="flex items-center gap-2 text-lg font-bold"><Users className="h-5 w-5 text-brand-dark" /> {t('panel.participants', { n: participants.length })}</h2>
             {hasDemo
               ? <Button variant="ghost" icon={RefreshCcw} className="py-2" onClick={confirmThen(t('panel.confirmClearDemo'), clearDemo)}>{t('panel.clearDemo')}</Button>
               : <Button variant="outline" icon={UserPlus} className="py-2" onClick={seedDemo}>{t('panel.addDemo')}</Button>}
@@ -200,7 +200,7 @@ export default function ModeratorPanelView() {
                     </div>
                   </div>
                   <div className="flex flex-1 flex-wrap gap-1">
-                    {p.offers.map((x) => <span key={x} className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-medium text-brand">{topic(x)}</span>)}
+                    {p.offers.map((x) => <span key={x} className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-medium text-brand-dark">{topic(x)}</span>)}
                     {p.needs.map((x) => <span key={x} className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-slate-700">{topic(x)}</span>)}
                     {(p.superpowers ?? []).map((x) => (
                       <span key={x} title={superpower(x)} className="rounded-full bg-ink px-2 py-0.5 text-[11px] font-medium text-white">
@@ -210,7 +210,7 @@ export default function ModeratorPanelView() {
                   </div>
                   <button
                     onClick={confirmThen(t('panel.confirmRemove', { name: p.name }), () => removeParticipant(p.id))}
-                    className="self-end rounded-lg p-2 text-slate-400 hover:bg-brand-soft hover:text-brand sm:self-auto"
+                    className="self-end rounded-lg p-2 text-slate-400 hover:bg-accent-soft hover:text-accent-dark sm:self-auto"
                     aria-label={t('panel.remove', { name: p.name })}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -243,7 +243,7 @@ function Quality({ ok, label, value }) {
   return (
     <li className="flex items-center justify-between">
       <span className="flex items-center gap-2">
-        {ok ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <AlertTriangle className="h-4 w-4 text-amber-500" />} {label}
+        {ok ? <CheckCircle2 className="h-4 w-4 text-mint-dark" /> : <AlertTriangle className="h-4 w-4 text-accent-dark" />} {label}
       </span>
       <span className="font-semibold tabular-nums">{value}</span>
     </li>
@@ -253,7 +253,7 @@ function Quality({ ok, label, value }) {
 function Notice({ children }) {
   return (
     <p className="mt-4 flex items-start gap-2 rounded-xl bg-accent-soft p-3 text-sm text-slate-700">
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /> {children}
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-accent-dark" /> {children}
     </p>
   )
 }

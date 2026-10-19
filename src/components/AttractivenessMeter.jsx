@@ -22,10 +22,10 @@ export default function AttractivenessMeter({ value }) {
   const max = value >= 100
 
   return (
-    <div className={`rounded-xl border bg-white/90 p-4 shadow-sm backdrop-blur transition-colors ${max ? 'border-brand/40 shadow-brand/10' : 'border-slate-200'}`}>
+    <div className={`rounded-xl border bg-white/90 p-4 shadow-sm backdrop-blur transition-colors ${max ? 'border-accent/50 shadow-accent/10' : 'border-slate-200'}`}>
       <div className="flex items-center justify-between gap-3">
         <p className="flex items-center gap-2 whitespace-nowrap text-sm font-bold uppercase tracking-wider text-slate-700">
-          <Heart className={`h-3.5 w-3.5 transition-colors ${max ? 'animate-heartbeat fill-brand text-brand' : value ? 'fill-brand/20 text-brand' : ''}`} />
+          <Heart className={`h-3.5 w-3.5 transition-colors ${max ? 'animate-heartbeat fill-accent text-accent' : value ? 'fill-accent/20 text-accent' : ''}`} />
           {t('attract.label')}
         </p>
         <span className="text-sm font-bold tabular-nums text-slate-700">{value} %</span>
@@ -41,7 +41,7 @@ export default function AttractivenessMeter({ value }) {
         className="relative mt-3 h-3 overflow-hidden rounded-full bg-slate-100"
       >
         <div
-          className="relative h-full rounded-full bg-gradient-to-r from-accent via-[#f26a1f] to-brand transition-[width] duration-700 ease-out"
+          className="relative h-full rounded-full bg-gradient-to-r from-accent/50 to-accent transition-[width] duration-700 ease-out"
           style={{ width: `${Math.max(value, 2)}%` }}
         >
           {max && <div className="animate-shimmer absolute inset-0 rounded-full" />}
@@ -51,7 +51,7 @@ export default function AttractivenessMeter({ value }) {
         ))}
       </div>
 
-      <p key={level} aria-hidden className={`animate-rise-in mt-2 text-base font-semibold ${max ? 'text-brand' : 'text-slate-700'}`}>
+      <p key={level} aria-hidden className={`animate-rise-in mt-2 text-base font-semibold ${max ? 'text-accent-dark' : 'text-slate-700'}`}>
         {levels[level]}
       </p>
     </div>

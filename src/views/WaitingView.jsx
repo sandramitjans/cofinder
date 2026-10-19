@@ -66,11 +66,11 @@ export default function WaitingView() {
         <section className="order-2 px-4 pb-4 pt-3 lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:p-0">
           <div className="mx-auto w-full max-w-sm lg:mx-0 lg:max-w-xl">
             {justUpdated && (
-              <p role="status" className="animate-pop-in mb-4 flex items-center gap-2 rounded-xl bg-emerald-400/15 px-3 py-2.5 text-[15px] font-semibold text-emerald-200 ring-1 ring-emerald-300/30">
+              <p role="status" className="animate-pop-in mb-4 flex items-center gap-2 rounded-xl bg-mint/15 px-3 py-2.5 text-[15px] font-semibold text-mint ring-1 ring-mint/30">
                 <CheckCircle2 className="h-5 w-5 shrink-0" /> {t('waiting.updated')}
               </p>
             )}
-            <h1 className="font-display text-xl font-bold italic leading-tight tracking-tight lg:text-5xl">
+            <h1 className="font-display text-xl font-medium leading-tight tracking-tight lg:text-5xl">
               {t('waiting.saved')}
             </h1>
             <DateBlock />
@@ -117,10 +117,10 @@ function DateBlock() {
         <span aria-hidden className="absolute -top-2 left-[22%] z-10 h-4 w-2 rounded-full bg-slate-300 ring-2 ring-ink lg:-top-3.5 lg:h-7 lg:w-2.5" />
         <span aria-hidden className="absolute -top-2 right-[22%] z-10 h-4 w-2 rounded-full bg-slate-300 ring-2 ring-ink lg:-top-3.5 lg:h-7 lg:w-2.5" />
         <div className="overflow-hidden rounded-xl bg-white text-center text-ink shadow-2xl shadow-black/50 lg:rounded-2xl">
-          <div className="bg-brand pb-1 pt-2.5 text-[11px] font-extrabold uppercase tracking-[0.2em] text-white lg:pb-2.5 lg:pt-5 lg:text-base">
+          <div className="bg-accent pb-1 pt-2.5 text-[11px] font-extrabold uppercase tracking-[0.2em] text-ink lg:pb-2.5 lg:pt-5 lg:text-base">
             {formatDate(EVENT_DATE, { month: 'long' })}
           </div>
-          <div className="font-display text-5xl font-bold leading-none lg:text-[7.5rem]" style={{ paddingTop: '0.08em' }}>
+          <div className="font-display text-5xl font-medium leading-none lg:text-[7.5rem]" style={{ paddingTop: '0.08em' }}>
             {formatDate(EVENT_DATE, { day: 'numeric' })}
           </div>
           <div className="pb-1.5 text-xs font-semibold capitalize text-slate-500 lg:pb-4 lg:text-lg">{weekday}</div>
@@ -130,7 +130,7 @@ function DateBlock() {
       {/* Cuánto falta */}
       <div className="min-w-0">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/60 lg:text-sm">{t('waiting.kicker')}</p>
-        <p className="mt-1 whitespace-nowrap font-display text-3xl font-bold italic leading-tight text-accent lg:text-5xl xl:text-6xl">{headline}</p>
+        <p className="mt-1 whitespace-nowrap font-display text-3xl font-medium leading-tight text-accent lg:text-5xl xl:text-6xl">{headline}</p>
         {!left.done && (
           <p className="mt-1.5 font-mono text-sm tabular-nums text-white/70 lg:mt-3 lg:text-base" aria-live="off">
             {t('waiting.remaining', { d: left.days, h: pad(left.hours), m: pad(left.minutes) })}
@@ -146,7 +146,7 @@ function Sealed() {
   const { t } = useI18n()
   return (
     <div className="flex items-center gap-4 lg:mt-12">
-      <span aria-hidden className="relative grid h-14 w-14 shrink-0 rotate-12 place-items-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#ff4d7a,#DF0140_45%,#8a0028)] shadow-lg shadow-black/40 ring-4 ring-brand/30 lg:h-16 lg:w-16">
+      <span aria-hidden className="relative grid h-14 w-14 shrink-0 rotate-12 place-items-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#FF9474,#FF6238_45%,#B8400F)] shadow-lg shadow-black/40 ring-4 ring-accent/30 lg:h-16 lg:w-16">
         <span className="absolute inset-1.5 rounded-full border-2 border-dashed border-white/25" />
         <Heart className="h-6 w-6 fill-white/90 text-white/90" />
       </span>

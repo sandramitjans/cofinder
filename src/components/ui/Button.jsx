@@ -1,5 +1,5 @@
 const VARIANTS = {
-  primary: 'bg-brand text-white hover:bg-brand-dark focus-visible:ring-brand/40 shadow-sm shadow-brand/20',
+  primary: 'bg-brand text-ink hover:brightness-95 focus-visible:ring-brand/40 shadow-sm shadow-brand/20',
   accent: 'bg-accent text-slate-900 hover:brightness-95 focus-visible:ring-accent/50',
   ghost: 'bg-transparent text-slate-600 hover:bg-slate-100 focus-visible:ring-slate-300',
   outline: 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 focus-visible:ring-slate-300',

@@ -26,7 +26,7 @@ export default function VipCard({
       aria-label={name}
     >
       {/* Foto (o iniciales) a sangre */}
-      <div className={`relative w-full overflow-hidden bg-gradient-to-br from-brand via-[#c1003a] to-[#6e0021] ${photoClassName}`}>
+      <div className={`relative w-full overflow-hidden bg-gradient-to-br from-brand via-brand-dark to-ink ${photoClassName}`}>
         {photo ? (
           <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
@@ -34,7 +34,7 @@ export default function VipCard({
             <Heart aria-hidden className="absolute -right-10 -top-6 h-56 w-56 rotate-12 fill-white/10 text-transparent" />
             <Heart aria-hidden className="absolute -bottom-8 -left-12 h-44 w-44 -rotate-12 fill-accent/20 text-transparent" />
             {!onAddPhoto && (
-              <span aria-hidden className="absolute inset-0 grid place-items-center pb-20 font-display text-6xl font-bold italic text-white/95 sm:pb-24 sm:text-8xl">
+              <span aria-hidden className="absolute inset-0 grid place-items-center pb-20 font-display text-6xl font-medium text-white/95 sm:pb-24 sm:text-8xl">
                 {initialsOf(name)}
               </span>
             )}
@@ -42,7 +42,7 @@ export default function VipCard({
               <button
                 type="button"
                 onClick={onAddPhoto}
-                className="absolute left-4 top-[42%] z-10 inline-flex -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-white px-4 py-2.5 text-[15px] font-bold text-brand shadow-lg transition hover:scale-105"
+                className="absolute left-4 top-[42%] z-10 inline-flex -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-white px-4 py-2.5 text-[15px] font-bold text-brand-dark shadow-lg transition hover:scale-105"
               >
                 <Camera className="h-4 w-4" /> {t('register.photoAdd')}
               </button>
@@ -60,10 +60,10 @@ export default function VipCard({
         <div className="absolute inset-x-0 bottom-0 p-5 text-white">
           {!animated && (
             <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-bold uppercase tracking-wider backdrop-blur">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgb(52_211_153/0.3)]" /> {t('match.ready')}
+              <span className="h-2 w-2 rounded-full bg-mint shadow-[0_0_0_3px_rgb(53_201_139/0.3)]" /> {t('match.ready')}
             </span>
           )}
-          <p className="font-display text-3xl font-bold leading-tight drop-shadow-sm">{name || '—'}</p>
+          <p className="font-display text-3xl font-medium leading-tight drop-shadow-sm">{name || '—'}</p>
           {role && <p className="mt-1 text-base font-medium text-white/90">{role}</p>}
           {branch && (
             <p className="mt-0.5 flex items-center gap-1 text-sm text-white/80">
@@ -76,7 +76,7 @@ export default function VipCard({
       {/* Temas como etiquetas */}
       {hasDetails && (
         <div className="space-y-2.5 p-4 lg:space-y-3 lg:p-5">
-          <TagGroup title={t('waiting.masters')} tags={offers} className="bg-brand-soft text-brand" />
+          <TagGroup title={t('waiting.masters')} tags={offers} className="bg-brand-soft text-brand-dark" />
           <TagGroup title={t('waiting.explores')} tags={needs} className="bg-accent-soft text-slate-800" />
           {superpowers.length > 0 && (
             <div>
@@ -107,7 +107,7 @@ function Poster({ name, role, branch, photo, offers, needs, superpowers, classNa
   return (
     <article
       aria-label={name}
-      className={`relative flex w-full flex-col justify-end overflow-hidden rounded-3xl bg-gradient-to-br from-brand via-[#b30036] to-[#4d0018] shadow-2xl shadow-black/40 ring-1 ring-white/10 ${className}`}
+      className={`relative flex w-full flex-col justify-end overflow-hidden rounded-3xl bg-gradient-to-br from-brand via-brand-dark to-ink shadow-2xl shadow-black/40 ring-1 ring-white/10 ${className}`}
     >
       {photo ? (
         <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover" />
@@ -119,12 +119,12 @@ function Poster({ name, role, branch, photo, offers, needs, superpowers, classNa
             <button
               type="button"
               onClick={onAddPhoto}
-              className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-white px-4 py-2.5 text-[15px] font-bold text-brand shadow-xl transition hover:scale-105 lg:left-6 lg:top-6 lg:px-5 lg:py-3 lg:text-base"
+              className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-white px-4 py-2.5 text-[15px] font-bold text-brand-dark shadow-xl transition hover:scale-105 lg:left-6 lg:top-6 lg:px-5 lg:py-3 lg:text-base"
             >
               <Camera className="h-5 w-5" /> {t('register.photoAdd')}
             </button>
           ) : (
-            <span aria-hidden className="absolute inset-x-0 top-[30%] -translate-y-1/2 text-center font-display text-8xl font-bold italic text-white/95">
+            <span aria-hidden className="absolute inset-x-0 top-[30%] -translate-y-1/2 text-center font-display text-8xl font-medium text-white/95">
               {initialsOf(name)}
             </span>
           )}
@@ -136,16 +136,16 @@ function Poster({ name, role, branch, photo, offers, needs, superpowers, classNa
 
       <div className="relative p-5 text-white lg:p-8">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-bold uppercase tracking-wider backdrop-blur">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgb(52_211_153/0.3)]" /> {t('match.ready')}
+          <span className="h-2 w-2 rounded-full bg-mint shadow-[0_0_0_3px_rgb(53_201_139/0.3)]" /> {t('match.ready')}
         </span>
-        <p className="mt-2 font-display text-3xl font-bold leading-tight lg:text-5xl">{name || '—'}</p>
+        <p className="mt-2 font-display text-3xl font-medium leading-tight lg:text-5xl">{name || '—'}</p>
         <p className="mt-1 flex flex-wrap items-center gap-x-2 text-base text-white/85 lg:text-lg">
           {role && <span>{role}</span>}
           {branch && <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" /> {branch}</span>}
         </p>
 
         <div className="mt-4 space-y-2.5 lg:mt-6 lg:space-y-3">
-          <PosterTags title={t('waiting.masters')} tags={offers} className="bg-brand text-white" />
+          <PosterTags title={t('waiting.masters')} tags={offers} className="bg-brand text-ink" />
           <PosterTags title={t('waiting.explores')} tags={needs} className="bg-accent text-ink" />
           {superpowers.length > 0 && (
             <div>
