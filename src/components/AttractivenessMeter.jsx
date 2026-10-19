@@ -22,13 +22,16 @@ export default function AttractivenessMeter({ value }) {
   const max = value >= 100
 
   return (
-    <div className={`rounded-xl border bg-white/90 p-4 shadow-sm backdrop-blur transition-colors ${max ? 'border-accent/50 shadow-accent/10' : 'border-slate-200'}`}>
+    <div className={`rounded-xl border bg-white/90 px-4 py-3 shadow-sm backdrop-blur transition-colors ${max ? 'border-accent/50 shadow-accent/10' : 'border-slate-200'}`}>
       <div className="flex items-center justify-between gap-3">
-        <p className="flex items-center gap-2 whitespace-nowrap text-sm font-bold uppercase tracking-wider text-slate-700">
-          <Heart className={`h-3.5 w-3.5 transition-colors ${max ? 'animate-heartbeat fill-accent text-accent' : value ? 'fill-accent/20 text-accent' : ''}`} />
-          {t('attract.label')}
+        <p className="flex min-w-0 items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
+          <Heart className={`h-3.5 w-3.5 shrink-0 transition-colors ${max ? 'animate-heartbeat fill-accent text-accent' : value ? 'fill-accent/20 text-accent' : ''}`} />
+          <span className="truncate">{t('attract.label')}</span>
         </p>
-        <span className="text-sm font-bold tabular-nums text-slate-700">{value} %</span>
+        <p className="flex shrink-0 items-baseline gap-2 text-sm">
+          <span key={level} aria-hidden className={`animate-rise-in font-semibold ${max ? 'text-accent-dark' : 'text-slate-600'}`}>{levels[level]}</span>
+          <span className="font-bold tabular-nums text-ink">{value} %</span>
+        </p>
       </div>
 
       <div
@@ -38,7 +41,7 @@ export default function AttractivenessMeter({ value }) {
         aria-valuemax={100}
         aria-valuenow={value}
         aria-valuetext={`${value}% — ${levels[level]}`}
-        className="relative mt-3 h-3 overflow-hidden rounded-full bg-slate-100"
+        className="relative mt-2 h-2 overflow-hidden rounded-full bg-slate-100"
       >
         <div
           className="relative h-full rounded-full bg-gradient-to-r from-accent/50 to-accent transition-[width] duration-700 ease-out"
@@ -50,10 +53,6 @@ export default function AttractivenessMeter({ value }) {
           <span key={m} className="absolute top-0 h-full w-0.5 bg-white/80" style={{ left: `${m}%` }} />
         ))}
       </div>
-
-      <p key={level} aria-hidden className={`animate-rise-in mt-2 text-base font-semibold ${max ? 'text-accent-dark' : 'text-slate-700'}`}>
-        {levels[level]}
-      </p>
     </div>
   )
 }

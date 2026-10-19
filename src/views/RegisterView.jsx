@@ -8,7 +8,7 @@ import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
 import Field from '../components/ui/Field'
 import TopicPicker from '../components/TopicPicker'
-import SuperpowerPicker from '../components/ui/SuperpowerPicker'
+import SuperpowerPicker, { SuperpowerChips } from '../components/ui/SuperpowerPicker'
 import PhotoPicker from '../components/ui/PhotoPicker'
 import LangSwitch from '../components/ui/LangSwitch'
 import AttractivenessMeter, { attractivenessScore } from '../components/AttractivenessMeter'
@@ -172,12 +172,12 @@ export default function RegisterView({ mode = 'create' }) {
 
   return (
     <section className="vip-glow flex min-h-dvh flex-col px-5 pt-6 sm:px-10 lg:pt-8">
-      <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
         <Logo />
         <LangSwitch />
       </div>
 
-      <div className={`mx-auto w-full max-w-2xl flex-1 ${phase === 'fading' ? 'animate-form-out' : ''}`}>
+      <div className={`mx-auto w-full max-w-6xl flex-1 ${phase === 'fading' ? 'animate-form-out' : ''}`}>
         {editing && (
           <header className="mt-8">
             <p className="inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold uppercase tracking-wide text-ink">
@@ -187,17 +187,16 @@ export default function RegisterView({ mode = 'create' }) {
           </header>
         )}
 
-        <StepProgress step={step} onJump={editing ? (n) => goTo([0, 1, 2, 4][n]) : null} />
-
-        {/* Indice d'attractivité, siempre visible */}
-        <div className="sticky top-3 z-10 mt-5">
+        {/* Pasos e índice de atractividad en una sola línea */}
+        <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-end lg:gap-8">
+          <StepProgress step={step} onJump={editing ? (n) => goTo([0, 1, 2, 4][n]) : null} />
           <AttractivenessMeter value={score} />
         </div>
 
         <form onSubmit={submit} noValidate className="mt-6 space-y-6">
           {restored && screen === 1 && (
-            <div className="flex flex-col gap-2 rounded-xl border border-accent bg-accent-soft p-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-base font-medium text-ink">{t('register.draftRestored')}</p>
+            <div className="flex flex-col gap-2 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[15px] font-medium text-ink">{t('register.draftRestored')}</p>
               <button type="button" onClick={resetDraft} className="inline-flex shrink-0 items-center gap-1.5 self-start text-[15px] font-semibold text-brand-dark underline-offset-4 hover:underline sm:self-auto">
                 <RotateCcw className="h-4 w-4" /> {t('register.draftReset')}
               </button>
@@ -215,20 +214,18 @@ export default function RegisterView({ mode = 'create' }) {
                   onChange={(v) => set('photo', v)}
                 />
               </div>
-              <div className="mt-4 space-y-4">
-                <div data-field="name">
+              <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div data-field="name" className="sm:col-span-2 lg:col-span-1">
                   <Field label={t('register.name')} name="name" icon={User} placeholder={t('register.namePh')} autoComplete="name" value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} />
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div data-field="role">
-                    <Field label={t('register.role')} name="role" icon={Briefcase} placeholder={t('register.rolePh')} autoComplete="organization-title" value={form.role} onChange={(e) => set('role', e.target.value)} error={errors.role} />
-                  </div>
-                  <div data-field="country">
-                    <Field label={t('register.country')} name="country" icon={Building2} placeholder={t('register.countryPh')} list="branch-suggestions" autoComplete="off" value={form.country} onChange={(e) => set('country', e.target.value)} error={errors.country} />
-                    <datalist id="branch-suggestions">
-                      {COUNTRIES.map((c) => <option key={c} value={country(c)} />)}
-                    </datalist>
-                  </div>
+                <div data-field="role">
+                  <Field label={t('register.role')} name="role" icon={Briefcase} placeholder={t('register.rolePh')} autoComplete="organization-title" value={form.role} onChange={(e) => set('role', e.target.value)} error={errors.role} />
+                </div>
+                <div data-field="country">
+                  <Field label={t('register.country')} name="country" icon={Building2} placeholder={t('register.countryPh')} list="branch-suggestions" autoComplete="off" value={form.country} onChange={(e) => set('country', e.target.value)} error={errors.country} />
+                  <datalist id="branch-suggestions">
+                    {COUNTRIES.map((c) => <option key={c} value={country(c)} />)}
+                  </datalist>
                 </div>
               </div>
             </Card>
@@ -265,6 +262,7 @@ export default function RegisterView({ mode = 'create' }) {
               </div>
             </Card>
           )}
+          {screen === 4 && <Recap form={form} onEdit={goTo} />}
 
           {saveError && (
             <p role="alert" className="rounded-xl border border-accent/30 bg-accent-soft p-4 text-base font-semibold text-accent-dark">
@@ -272,16 +270,16 @@ export default function RegisterView({ mode = 'create' }) {
             </p>
           )}
 
-          <div className="flex gap-3">
-            {screen > 1 && (
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {screen > 1 || !editing ? (
               <Button type="button" variant="outline" icon={ArrowLeft} onClick={() => goTo(screen - 1)} disabled={phase !== 'form'} className="py-4 text-base">
                 {t('register.back')}
               </Button>
-            )}
+            ) : <span />}
             {screen < LAST ? (
-              <Button type="submit" iconRight={ArrowRight} className="flex-1 py-4 text-base">{t('register.next')}</Button>
+              <Button type="submit" iconRight={ArrowRight} className="py-4 text-base sm:min-w-56">{t('register.next')}</Button>
             ) : (
-              <Button type="submit" icon={Heart} className="flex-1 py-4 text-base" disabled={phase !== 'form'}>
+              <Button type="submit" icon={Heart} className="py-4 text-base sm:min-w-72" disabled={phase !== 'form'}>
                 {phase === 'saving' ? t('register.saving') : t(editing ? 'register.editSave' : 'register.submit')}
               </Button>
             )}
@@ -309,7 +307,7 @@ const STEPS = ['register.navProfile', 'register.navSkills', 'register.navPower']
 function StepProgress({ step, onJump }) {
   const { t } = useI18n()
   return (
-    <nav aria-label={t('register.stepOf', { n: step, total: 3 })} className="mt-8">
+    <nav aria-label={t('register.stepOf', { n: step, total: 3 })}>
       <p className="text-sm font-bold uppercase tracking-wider text-brand-dark">{t('register.stepOf', { n: step, total: 3 })}</p>
       <ol className="mt-3 grid grid-cols-3 gap-2">
         {STEPS.map((key, i) => {
@@ -342,13 +340,14 @@ function Landing({ resume, onStart }) {
   const { t } = useI18n()
   return (
     <div className="vip-glow flex min-h-dvh flex-col px-5 pt-6 sm:px-10">
-      <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
         <Logo />
         <LangSwitch />
       </div>
 
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center py-12 text-center">
-        <p className="inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold uppercase tracking-wide text-ink">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center py-10 text-center">
+        <MatchIllustration />
+        <p className="mt-8 inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold uppercase tracking-wide text-ink">
           <Gem className="h-3.5 w-3.5" /> {t('register.kicker')}
         </p>
         <h1 className="mt-6 tracking-tight">
@@ -377,6 +376,67 @@ function Landing({ resume, onStart }) {
       </main>
 
       <PublicFooter />
+    </div>
+  )
+}
+
+/** Resumen del perfil antes de validar, con atajos para corregir cada parte */
+function Recap({ form, onEdit }) {
+  const { t, topic, country } = useI18n()
+  const rows = [
+    { label: t('register.navProfile'), screen: 1, body: <p className="text-base text-ink">{[form.name, form.role, form.country && country(form.country)].filter(Boolean).join(' · ')}</p> },
+    { label: t('waiting.masters'), screen: 2, body: <Tags ids={form.offers} className="bg-brand-soft text-brand-dark" /> },
+    { label: t('waiting.explores'), screen: 3, body: <Tags ids={form.needs} className="bg-accent-soft text-accent-dark" /> },
+    {
+      label: t('waiting.superpowers'),
+      screen: 4,
+      body: form.superpowers.length ? <SuperpowerChips ids={form.superpowers} /> : <p className="text-base text-slate-500">{t('register.recapNone')}</p>,
+    },
+  ]
+  function Tags({ ids, className }) {
+    return (
+      <ul className="flex flex-wrap gap-1.5">
+        {ids.map((id) => <li key={id} className={`rounded-full px-3 py-1 text-sm font-medium ${className}`}>{topic(id)}</li>)}
+      </ul>
+    )
+  }
+  return (
+    <section aria-labelledby="recap-title" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+      <h2 id="recap-title" className="font-display text-xl font-medium text-ink">{t('register.recapTitle')}</h2>
+      <dl className="mt-4 divide-y divide-slate-100">
+        {rows.map((r) => (
+          <div key={r.label} className="grid gap-2 py-3 sm:grid-cols-[12rem_minmax(0,1fr)_auto] sm:items-center sm:gap-4">
+            <dt className="text-sm font-bold uppercase tracking-wider text-slate-500">{r.label}</dt>
+            <dd className="min-w-0">{r.body}</dd>
+            {r.screen !== 4 && (
+              <button type="button" onClick={() => onEdit(r.screen)} className="justify-self-start text-[15px] font-semibold text-brand-dark underline-offset-4 hover:underline">
+                {t('register.recapEdit')}
+              </button>
+            )}
+          </div>
+        ))}
+      </dl>
+    </section>
+  )
+}
+
+/** Ilustración: dos perfiles que hacen «match» */
+function MatchIllustration() {
+  return (
+    <div aria-hidden className="relative mx-auto h-40 w-72 sm:h-44">
+      <div className="absolute left-0 top-4 w-40 -rotate-6 rounded-2xl bg-white p-4 text-left text-ink shadow-xl ring-1 ring-slate-200">
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent font-bold text-ink">A</div>
+        <div className="mt-3 h-2 w-24 rounded bg-slate-200" />
+        <div className="mt-2 flex gap-1"><span className="h-4 w-12 rounded-full bg-brand-soft" /><span className="h-4 w-9 rounded-full bg-brand-soft" /></div>
+      </div>
+      <div className="absolute right-0 top-0 w-40 rotate-6 rounded-2xl bg-brand p-4 text-left text-ink shadow-xl">
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-ink font-bold text-brand">B</div>
+        <div className="mt-3 h-2 w-20 rounded bg-ink/20" />
+        <div className="mt-2 flex gap-1"><span className="h-4 w-10 rounded-full bg-ink/25" /><span className="h-4 w-12 rounded-full bg-ink/25" /></div>
+      </div>
+      <span className="absolute left-1/2 top-[62%] grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white shadow-xl ring-4 ring-accent">
+        <Heart className="animate-heartbeat h-7 w-7 fill-accent text-accent" />
+      </span>
     </div>
   )
 }
