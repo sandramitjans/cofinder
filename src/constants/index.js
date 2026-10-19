@@ -43,6 +43,15 @@ export const TOPIC_FAMILIES = [
   { id: 'business', topics: ['pnl', 'operational_efficiency', 'risk_management', 'compliance', 'cofidis_ninja'] },
 ]
 
+// Emoji de cada tema en el formulario (los temas propios usan ✨)
+export const TOPIC_EMOJI = {
+  paid_performance: '🎯', affiliates: '🤝', geo: '🔎', social_strategy: '📱', b2b: '🏢',
+  branding: '🎨', mass_media: '📺', public_relations: '📣', guerrilla: '💥',
+  customer_journey: '🗺️', customer_success: '🌟', emailing_loyalty: '💌',
+  ai_guru: '🤖', analytics: '📊', product_management: '🧩',
+  pnl: '💵', operational_efficiency: '⚡', risk_management: '🛡️', compliance: '⚖️', cofidis_ninja: '🥷',
+}
+
 // Superpoderes de oficina (la touche fun). No intervienen en el algoritmo de mesas.
 export const SUPERPOWERS = [
   { id: 'charisma', emoji: '🎤' },

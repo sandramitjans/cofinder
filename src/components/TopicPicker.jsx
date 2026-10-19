@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Ban, Check, Plus, X } from 'lucide-react'
-import { MAX_TAGS, TOPICS, TOPIC_FAMILIES } from '../constants'
+import { Ban, Plus, X } from 'lucide-react'
+import { MAX_TAGS, TOPICS, TOPIC_EMOJI, TOPIC_FAMILIES } from '../constants'
 import { useI18n } from '../context/I18nContext'
 import { DICT } from '../lib/i18n'
 import { MAX_CUSTOM_LENGTH, MAX_CUSTOM_TOPICS, isCustom, makeCustom, normalizeText, topicKey } from '../lib/topics'
@@ -8,11 +8,11 @@ import { MAX_CUSTOM_LENGTH, MAX_CUSTOM_TOPICS, isCustom, makeCustom, normalizeTe
 const COLS = {
   offers: {
     other: 'needs', title: 'waiting.masters', taken: 'register.inSeek', blocked: 'register.blockedSeek', count: 'register.countBring', max: 'register.maxBring',
-    on: 'border-brand bg-brand text-ink shadow-sm shadow-brand/25', soft: 'bg-brand-soft text-brand-dark', dot: 'bg-brand',
+    dot: 'bg-brand',
   },
   needs: {
     other: 'offers', title: 'waiting.explores', taken: 'register.inBring', blocked: 'register.blockedBring', count: 'register.countSeek', max: 'register.maxSeek',
-    on: 'border-accent bg-accent text-ink shadow-sm shadow-accent/30', soft: 'bg-accent-soft text-accent-dark', dot: 'bg-accent',
+    dot: 'bg-accent',
   },
 }
 
@@ -23,10 +23,10 @@ const KNOWN = new Map(
 
 /**
  * Selección de temas para UNA columna (`col`: «Je maîtrise» = offers, «J’explore» = needs).
- * Arriba, el resumen de las dos columnas (se puede quitar un tema desde ahí). Debajo, las familias,
- * todas abiertas. Un tema ya elegido en la otra columna
- * aparece bloqueado y dice dónde está. «Autre sujet» abre el campo para añadir hasta 3 temas
- * propios, que se marcan directamente en la columna actual.
+ * Arriba, las MAX_TAGS casillas de la columna con su progreso: al pulsar un tema pasa a la
+ * siguiente casilla libre, y al pulsar una casilla llena se quita. Debajo, los temas disponibles
+ * por familias, como píldoras con emoji. Un tema ya elegido en la otra columna aparece bloqueado
+ * y dice dónde está. «Autre sujet» abre el campo para añadir hasta 3 temas propios.
  */
 export default function TopicPicker({ col, offers, needs, customTopics, onChange, error }) {
   const { t, topic } = useI18n()
@@ -63,9 +63,7 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
     }
   }
 
-  const unselect = (key, id) => onChange({ [key]: lists[key].filter((x) => x !== id) })
-
-  const addOther = (e) => {
+    const addOther = (e) => {
     e?.preventDefault()
     const label = draft.trim()
     if (!label) return
@@ -98,24 +96,27 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
     })
   }
 
+  const emoji = (id) => (isCustom(id) ? '✨' : TOPIC_EMOJI[id])
+
+  // Tema disponible: los ya elegidos en esta columna están en las casillas, no aquí
   const chip = (id) => {
-    const on = list.includes(id)
-    const blocked = !on && other.includes(id)
+    if (list.includes(id)) return null
+    const blocked = other.includes(id)
+    const full = list.length >= MAX_TAGS
     return (
-      <li key={id} className="flex items-start gap-0.5">
+      <li key={id} className="flex items-center">
         <button
           type="button"
           data-tag={id}
           onClick={() => toggle(id)}
-          aria-pressed={on}
-          aria-disabled={blocked || undefined}
-          className={`flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-left text-[15px] font-semibold leading-snug transition-all duration-150 active:scale-[0.98] ${
-            on ? c.on
-              : blocked ? 'border-dashed border-slate-300 bg-slate-50 text-slate-400'
-              : 'border-slate-300 bg-white text-slate-700 hover:border-slate-500'
+          aria-disabled={blocked || full || undefined}
+          className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-left text-[15px] font-semibold leading-snug transition-all duration-150 active:scale-[0.97] ${
+            blocked ? 'border-dashed border-slate-300 bg-slate-50 text-slate-400'
+              : full ? 'border-slate-200 bg-white text-slate-400'
+              : 'border-slate-300 bg-white text-ink hover:border-brand hover:bg-brand-soft'
           } ${flash === id ? 'ring-4 ring-accent/40' : ''}`}
         >
-          {on ? <Check className="h-4 w-4 shrink-0" /> : blocked ? <Ban className="h-4 w-4 shrink-0" /> : <Plus className="h-4 w-4 shrink-0 text-slate-500" />}
+          {blocked ? <Ban className="h-4 w-4 shrink-0" /> : <span aria-hidden className="text-lg leading-none">{emoji(id)}</span>}
           <span className="min-w-0">
             {topic(id)}
             {blocked && <span className="block text-xs font-medium">{t(c.blocked)}</span>}
@@ -139,38 +140,60 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
 
   return (
     <div className="mt-5">
-      {/* Resumen de las dos columnas: lo elegido siempre a la vista */}
-      <div className="grid gap-3 sm:grid-cols-2" aria-live="polite">
-        {Object.entries(COLS).map(([key, k]) => {
-          const items = lists[key]
-          const current = key === col
+      {/* Progreso y casillas de esta columna */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3" aria-live="polite">
+          <div className="flex gap-1" aria-hidden>
+            {Array.from({ length: MAX_TAGS }, (_, i) => (
+              <span key={i} className={`h-2 w-6 rounded-full transition-colors ${i < list.length ? c.dot : 'bg-slate-200'}`} />
+            ))}
+          </div>
+          <span className="text-sm font-bold tabular-nums text-ink">{list.length}/{MAX_TAGS}</span>
+        </div>
+        {list.length > 0 && (
+          <button type="button" onClick={() => onChange({ [col]: [] })} className="text-sm font-medium text-slate-500 underline-offset-4 hover:text-ink hover:underline">
+            {t('register.clearAll')}
+          </button>
+        )}
+      </div>
+
+      <ol className="mt-3 grid grid-cols-5 gap-2 rounded-2xl bg-gradient-to-r from-brand-soft to-accent-soft p-3 sm:gap-3">
+        {Array.from({ length: MAX_TAGS }, (_, i) => {
+          const id = list[i]
           return (
-            <div key={key} className={`rounded-xl border p-3 ${current ? 'border-slate-300 bg-white' : 'border-slate-200 bg-slate-50'}`}>
-              <p className={`flex items-center gap-2 text-sm font-bold ${items.length >= MAX_TAGS && current ? 'text-accent-dark' : 'text-slate-800'}`}>
-                <span className={`h-2.5 w-2.5 rounded-full ${k.dot}`} />
-                {t(k.count, { n: items.length, max: MAX_TAGS })}
-              </p>
-              {items.length > 0 && (
-                <ul className="mt-2 flex flex-wrap gap-1.5">
-                  {items.map((id) => (
-                    <li key={id} className={`inline-flex items-center gap-1 rounded-full py-0.5 pl-2.5 pr-1 text-sm font-medium ${k.soft}`}>
-                      {topic(id)}
-                      <button
-                        type="button"
-                        onClick={() => unselect(key, id)}
-                        className="grid h-6 w-6 place-items-center rounded-full hover:bg-white/70"
-                        aria-label={t('register.otherRemove', { label: topic(id) })}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+            <li key={id ?? `empty-${i}`}>
+              {id ? (
+                <button
+                  type="button"
+                  onClick={() => toggle(id)}
+                  title={t('register.otherRemove', { label: topic(id) })}
+                  aria-label={t('register.otherRemove', { label: topic(id) })}
+                  className="animate-pop-in group relative flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-xl bg-white p-1.5 text-center shadow-sm transition hover:shadow-md"
+                >
+                  <span aria-hidden className="text-2xl leading-none sm:text-3xl">{emoji(id)}</span>
+                  <span className="line-clamp-2 text-[11px] font-semibold leading-tight text-ink sm:text-xs">{topic(id)}</span>
+                  <X aria-hidden className="absolute right-1 top-1 h-3.5 w-3.5 text-slate-400 opacity-0 transition group-hover:opacity-100" />
+                </button>
+              ) : (
+                <span
+                  aria-label={t('register.slotEmpty', { n: i + 1 })}
+                  className="grid aspect-square w-full place-items-center rounded-xl border-2 border-dashed border-slate-300 text-lg font-bold text-slate-400"
+                >
+                  {i + 1}
+                </span>
               )}
-            </div>
+            </li>
           )
         })}
-      </div>
+      </ol>
+
+      {/* Lo elegido en la otra columna, como recordatorio */}
+      {other.length > 0 && (
+        <p className="mt-3 text-sm text-slate-600">
+          <span className="font-semibold text-slate-700">{t(COLS[c.other].title)} :</span>{' '}
+          {other.map((id) => topic(id)).join(' · ')}
+        </p>
+      )}
 
       {noticeText && (
         <p role="alert" className="mt-4 rounded-lg bg-accent-soft px-3 py-2 text-sm font-semibold text-accent-dark">{noticeText}</p>
