@@ -23,6 +23,8 @@ export const TOTAL_ROUNDS = 3
 export const ROUND_MINUTES = 20
 export const TABLE_SIZE = 4
 export const MAX_TAGS = 5
+// Paso 2 del formulario: una sola selección de temas de interés (se guarda en `needs`)
+export const MAX_INTERESTS = 8
 
 // Identificadores estables: los textos visibles están en lib/i18n.js (FR / EN).
 // Una única lista de temas: cada persona hace con ella DOS selecciones independientes (Offre / Demande).

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, Briefcase, Building2, Save, Gem, Heart, Lightbulb, RotateCcw, Sparkles, User, UserRound } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { COUNTRIES, MAX_SUPERPOWERS, MAX_TAGS, VIEWS } from '../constants'
+import { COUNTRIES, MAX_INTERESTS, MAX_SUPERPOWERS, VIEWS } from '../constants'
 import { DICT } from '../lib/i18n'
 import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
@@ -58,16 +58,15 @@ const formFromProfile = (p, countryLabel) => {
     role: p.role ?? '',
     country: countryLabel(p.country) ?? '',
     photo: p.photo || '',
-    offers: [...(p.offers ?? [])],
-    needs: (p.needs ?? []).filter((x) => !(p.offers ?? []).includes(x)), // un tema, una sola columna
+    offers: [],
+    needs: [...new Set([...(p.needs ?? []), ...(p.offers ?? [])])].slice(0, MAX_INTERESTS), // una sola lista de intereses
     customTopics: [...new Set([...(p.customTopics ?? []), ...used])],
     superpowers: [...(p.superpowers ?? [])],
   }
 }
 
-// Pantallas del formulario: 0 = landing, 1 = perfil, 2 = «Je maîtrise», 3 = «J’explore», 4 = arme secrète.
-// Las pantallas 2 y 3 son las dos partes del paso «Compétences».
-const LAST = 4
+// Pantallas del formulario: 0 = landing, 1 = perfil, 2 = temas de interés, 3 = arme secrète.
+const LAST = 3
 
 export default function RegisterView({ mode = 'create' }) {
   const editing = mode === 'edit'
@@ -126,8 +125,7 @@ export default function RegisterView({ mode = 'create' }) {
       if (!form.role.trim()) er.role = t('register.errRole')
       if (!form.country.trim()) er.country = t('register.errCountry')
     }
-    if (screen === 2 && !form.offers.length) er.offers = t('register.errTags')
-    if (screen === 3 && !form.needs.length) er.needs = t('register.errTags')
+    if (screen === 2 && form.needs.length !== MAX_INTERESTS) er.needs = t('register.errInterests', { max: MAX_INTERESTS, n: form.needs.length })
     setErrors(er)
     const first = Object.keys(er)[0]
     if (first) document.querySelector(`[data-field="${first}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -139,9 +137,9 @@ export default function RegisterView({ mode = 'create' }) {
     if (phase !== 'form' || !validate()) return
     if (screen < LAST) return goTo(screen + 1)
     // Los temas propios sin marcar en ninguna columna no aportan nada: se descartan
-    const customTopics = form.customTopics.filter((c) => form.offers.includes(c) || form.needs.includes(c))
-    const needs = form.needs.filter((x) => !form.offers.includes(x))
-    const data = { ...form, needs, customTopics, name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country) }
+    // Los temas elegidos se guardan como `needs`; el reparto en mesas agrupa por interés
+    const customTopics = form.customTopics.filter((c) => form.needs.includes(c))
+    const data = { ...form, offers: [], customTopics, name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country) }
     saved.current = data
     setSaveError(false)
     setPhase('saving')
@@ -175,7 +173,7 @@ export default function RegisterView({ mode = 'create' }) {
         <LangSwitch />
       </div>
 
-      <div className={`mx-auto w-full max-w-xl flex-1 ${phase === 'fading' ? 'animate-form-out' : ''}`}>
+      <div className={`mx-auto w-full max-w-4xl flex-1 ${phase === 'fading' ? 'animate-form-out' : ''}`}>
         {editing && (
           <header className="mt-8">
             <p className="inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold uppercase tracking-wide text-ink">
@@ -215,10 +213,9 @@ export default function RegisterView({ mode = 'create' }) {
           {/* 1 · Profil */}
           {screen === 1 && (
             <Card key="profile" icon={UserRound} title={t('register.step1')} subtitle={t('register.step1Sub')}>
-              <div className="mt-5">
-                <PhotoPicker value={form.photo} name={form.name} onChange={(v) => set('photo', v)} />
-              </div>
-              <div className="mt-6 space-y-4">
+              <div className="mt-6 grid gap-6 md:grid-cols-[18rem_minmax(0,1fr)] md:items-start md:gap-8">
+              <PhotoPicker value={form.photo} name={form.name} onChange={(v) => set('photo', v)} />
+              <div className="space-y-4">
                 <div data-field="name">
                   <Field label={t('register.name')} name="name" icon={User} placeholder={t('register.namePh')} autoComplete="name" value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} />
                 </div>
@@ -232,41 +229,41 @@ export default function RegisterView({ mode = 'create' }) {
                   </datalist>
                 </div>
               </div>
+              </div>
             </Card>
           )}
 
-          {/* 2 · Compétences, en dos partes: primero lo que domina, luego lo que quiere explorar */}
-          {(screen === 2 || screen === 3) && (
+          {/* 2 · Temas de interés: una sola selección */}
+          {screen === 2 && (
             <Card
-              key={screen === 2 ? 'offers' : 'needs'}
-             
+              key="interests"
               icon={Lightbulb}
               tone="brand"
-              title={t(screen === 2 ? 'register.skillsBringTitle' : 'register.skillsSeekTitle')}
-              tag={t('register.skillsPart', { n: screen - 1 })}
-              subtitle={t(screen === 2 ? 'register.skillsBringSub' : 'register.skillsSeekSub', { max: MAX_TAGS })}
-              field={screen === 2 ? 'offers' : 'needs'}
+              title={t('register.interestsTitle')}
+              subtitle={t('register.interestsSub', { max: MAX_INTERESTS })}
+              field="needs"
             >
               <TopicPicker
-                col={screen === 2 ? 'offers' : 'needs'}
-                offers={form.offers}
+                col="needs"
+                max={MAX_INTERESTS}
+                offers={[]}
                 needs={form.needs}
                 customTopics={form.customTopics}
                 onChange={patch}
-                error={screen === 2 ? errors.offers : errors.needs}
+                error={errors.needs}
               />
             </Card>
           )}
 
           {/* 3 · Arme secrète */}
-          {screen === 4 && (
+          {screen === 3 && (
             <Card key="power" icon={Sparkles} tone="ink" title={t('register.step3')} tag={t('register.step3Tag')} subtitle={t('register.step3Sub', { max: MAX_SUPERPOWERS })} field="superpowers" labelId="pick-power">
               <div className="mt-4">
                 <SuperpowerPicker labelledBy="pick-power" value={form.superpowers} onChange={(v) => set('superpowers', v)} />
               </div>
             </Card>
           )}
-          {screen === 4 && <Recap form={form} onEdit={goTo} />}
+          {screen === 3 && <Recap form={form} onEdit={goTo} />}
 
           {saveError && (
             <p role="alert" className="rounded-xl border border-accent/30 bg-accent-soft p-4 text-base font-semibold text-accent-dark">
@@ -352,11 +349,10 @@ function Recap({ form, onEdit }) {
   const { t, topic, country } = useI18n()
   const rows = [
     { label: t('register.navProfile'), screen: 1, body: <p className="text-base text-ink">{[form.name, form.role, form.country && country(form.country)].filter(Boolean).join(' · ')}</p> },
-    { label: t('waiting.masters'), screen: 2, body: <Tags ids={form.offers} className="bg-brand-soft text-brand-dark" /> },
-    { label: t('waiting.explores'), screen: 3, body: <Tags ids={form.needs} className="bg-accent-soft text-accent-dark" /> },
+    { label: t('register.navSkills'), screen: 2, body: <Tags ids={form.needs} className="bg-brand-soft text-brand-dark" /> },
     {
       label: t('waiting.superpowers'),
-      screen: 4,
+      screen: 3,
       body: form.superpowers.length ? <SuperpowerChips ids={form.superpowers} /> : <p className="text-base text-slate-500">{t('register.recapNone')}</p>,
     },
   ]
@@ -375,7 +371,7 @@ function Recap({ form, onEdit }) {
           <div key={r.label} className="grid gap-2 py-3 sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-center sm:gap-4">
             <dt className="text-sm font-bold uppercase tracking-wider text-slate-500">{r.label}</dt>
             <dd className="min-w-0">{r.body}</dd>
-            {r.screen !== 4 && (
+            {r.screen !== 3 && (
               <button type="button" onClick={() => onEdit(r.screen)} className="justify-self-start text-[15px] font-semibold text-brand-dark underline-offset-4 hover:underline">
                 {t('register.recapEdit')}
               </button>

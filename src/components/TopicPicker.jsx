@@ -12,7 +12,7 @@ const COLS = {
   },
   needs: {
     other: 'offers', title: 'waiting.explores', taken: 'register.inBring', blocked: 'register.blockedBring', count: 'register.countSeek', max: 'register.maxSeek',
-    dot: 'bg-accent',
+    dot: 'bg-brand',
   },
 }
 
@@ -23,12 +23,12 @@ const KNOWN = new Map(
 
 /**
  * Selección de temas para UNA columna (`col`: «Je maîtrise» = offers, «J’explore» = needs).
- * Arriba, las MAX_TAGS casillas de la columna con su progreso: al pulsar un tema pasa a la
+ * Arriba, las `max` casillas de la columna con su progreso: al pulsar un tema pasa a la
  * siguiente casilla libre, y al pulsar una casilla llena se quita. Debajo, los temas disponibles
  * por familias, como píldoras con emoji. Un tema ya elegido en la otra columna aparece bloqueado
  * y dice dónde está. «Autre sujet» abre el campo para añadir hasta 3 temas propios.
  */
-export default function TopicPicker({ col, offers, needs, customTopics, onChange, error }) {
+export default function TopicPicker({ col, offers, needs, customTopics, onChange, error, max = MAX_TAGS }) {
   const { t, topic } = useI18n()
   const c = COLS[col]
   const lists = { offers, needs }
@@ -55,7 +55,7 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
       setNotice(null)
     } else if (other.includes(id)) {
       setNotice({ id, kind: 'taken' }) // un tema solo puede estar en una columna
-    } else if (list.length >= MAX_TAGS) {
+    } else if (list.length >= max) {
       setNotice({ id, kind: 'max' })
     } else {
       onChange({ [col]: [...list, id] })
@@ -82,7 +82,7 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
     }
     const id = makeCustom(label)
     const changes = { customTopics: [...customTopics, id] }
-    if (list.length < MAX_TAGS) changes[col] = [...list, id]
+    if (list.length < max) changes[col] = [...list, id]
     onChange(changes)
     setDraft('')
     setOtherMsg(null)
@@ -102,7 +102,7 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
   const chip = (id) => {
     if (list.includes(id)) return null
     const blocked = other.includes(id)
-    const full = list.length >= MAX_TAGS
+    const full = list.length >= max
     return (
       <li key={id} className="flex items-center">
         <button
@@ -136,7 +136,7 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
     )
   }
 
-  const noticeText = notice && (notice.kind === 'taken' ? t(c.taken) : t(c.max, { max: MAX_TAGS }))
+  const noticeText = notice && (notice.kind === 'taken' ? t(c.taken) : t(c.max, { max }))
 
   return (
     <div className="mt-5">
@@ -144,11 +144,11 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3" aria-live="polite">
           <div className="flex gap-1" aria-hidden>
-            {Array.from({ length: MAX_TAGS }, (_, i) => (
+            {Array.from({ length: max }, (_, i) => (
               <span key={i} className={`h-2 w-6 rounded-full transition-colors ${i < list.length ? c.dot : 'bg-slate-200'}`} />
             ))}
           </div>
-          <span className="text-sm font-bold tabular-nums text-ink">{list.length}/{MAX_TAGS}</span>
+          <span className="text-sm font-bold tabular-nums text-ink">{list.length}/{max}</span>
         </div>
         {list.length > 0 && (
           <button type="button" onClick={() => onChange({ [col]: [] })} className="text-sm font-medium text-slate-500 underline-offset-4 hover:text-ink hover:underline">
@@ -157,8 +157,8 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
         )}
       </div>
 
-      <ol className="mt-3 grid grid-cols-5 gap-2 rounded-2xl bg-gradient-to-r from-brand-soft to-accent-soft p-3 sm:gap-3">
-        {Array.from({ length: MAX_TAGS }, (_, i) => {
+      <ol className={`mt-3 grid gap-2 rounded-2xl ${max > 5 ? 'grid-cols-4 sm:grid-cols-8' : 'grid-cols-5'} bg-gradient-to-r from-brand-soft to-accent-soft p-3 sm:gap-3`}>
+        {Array.from({ length: max }, (_, i) => {
           const id = list[i]
           return (
             <li key={id ?? `empty-${i}`}>

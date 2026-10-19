@@ -8,8 +8,7 @@ export function attractivenessScore({ name, role, country, offers, needs, superp
   else if (name.trim()) s += 6
   if (role.trim()) s += 10
   if (country.trim()) s += 10
-  s += Math.min(offers.length, 2) * 12.5
-  s += Math.min(needs.length, 2) * 12.5
+  s += Math.min(offers.length + needs.length, 8) * 6.25
   if (superpowers.length) s += 15 // el «Irrésistible !» exige un arma secreta
   return Math.round(s)
 }

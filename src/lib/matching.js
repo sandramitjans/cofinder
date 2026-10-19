@@ -208,6 +208,7 @@ export function roleOf(person, topic) {
 /** Indicadores de calidad de una ronda para el panel */
 export function roundStats(round, previousRounds, byId) {
   const history = buildHistory(previousRounds)
+  const anyExpert = [...byId.values()].some((p) => p?.offers?.length)
   let repeatedPairs = 0
   let overLimitPairs = 0
   let repeatedTopics = 0
@@ -222,7 +223,7 @@ export function roundStats(round, previousRounds, byId) {
         if (met >= MAX_MEETINGS_PER_PAIR) overLimitPairs++
       }
     })
-    if (!t.members.some((id) => (byId.get(id)?.offers ?? []).some((x) => topicKey(x) === key))) tablesWithoutExpert++
+    if (anyExpert && !t.members.some((id) => (byId.get(id)?.offers ?? []).some((x) => topicKey(x) === key))) tablesWithoutExpert++
   }
   return { repeatedPairs, overLimitPairs, repeatedTopics, tablesWithoutExpert }
 }
