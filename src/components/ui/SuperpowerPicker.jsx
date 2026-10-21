@@ -25,7 +25,7 @@ export default function SuperpowerPicker({ value, onChange, labelledBy }) {
               aria-pressed={selected}
               className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-[15px] font-medium lg:px-4 lg:py-3.5 lg:text-base transition-all duration-150 active:scale-[0.98] ${
                 selected
-                  ? 'border-ink bg-ink text-white shadow-md shadow-ink/20'
+                  ? 'border-brand bg-brand-soft text-ink shadow-md shadow-brand/20'
                   : disabled
                     ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
                     : 'border-slate-300 bg-white text-slate-800 hover:border-slate-500'
@@ -40,7 +40,7 @@ export default function SuperpowerPicker({ value, onChange, labelledBy }) {
                 {emoji}
               </span>
               <span className="flex-1 leading-snug">{superpower(id)}</span>
-              {selected && <Check className="h-4 w-4 shrink-0 text-accent" />}
+              {selected && <Check className="h-4 w-4 shrink-0 text-brand-dark" />}
             </button>
           )
         })}

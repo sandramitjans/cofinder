@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Briefcase, Building2, Save, Gem, Heart, Lightbulb, RotateCcw, Sparkles, User, UserRound } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Briefcase, Building2, ChevronsRight, Save, Gem, Heart, Lightbulb, RotateCcw, Sparkles, User, UserRound } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { COUNTRIES, MAX_INTERESTS, MAX_SUPERPOWERS, VIEWS } from '../constants'
@@ -167,7 +167,7 @@ export default function RegisterView({ mode = 'create' }) {
   const score = attractivenessScore(form)
 
   return (
-    <section className="vip-glow flex min-h-dvh flex-col overflow-x-clip px-5 pt-6 sm:px-10 lg:px-12 lg:pt-8">
+    <section className="theme-dark vip-glow flex min-h-dvh flex-col overflow-x-clip px-5 pt-6 sm:px-10 lg:px-12 lg:pt-8">
       <div className={`mx-auto flex w-full items-center justify-between gap-4 ${WIDTH}`}>
         <Logo />
         <LangSwitch />
@@ -325,7 +325,7 @@ const WIDTH = 'max-w-6xl 2xl:max-w-7xl'
 function Landing({ resume, onStart }) {
   const { t } = useI18n()
   return (
-    <div className="vip-glow flex min-h-dvh flex-col px-5 pt-6 sm:px-10 lg:px-12 lg:pt-8">
+    <div className="theme-dark vip-glow flex min-h-dvh flex-col px-5 pt-6 sm:px-10 lg:px-12 lg:pt-8">
       <div className={`mx-auto flex w-full ${WIDTH} items-center justify-between gap-4`}>
         <Logo />
         <LangSwitch />
@@ -354,9 +354,14 @@ function Landing({ resume, onStart }) {
         <button
           type="button"
           onClick={onStart}
-          className="mt-10 inline-flex min-h-16 w-full max-w-sm items-center justify-center gap-3 rounded-2xl bg-brand px-10 text-lg font-bold text-ink shadow-lg shadow-brand/30 transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/40 active:scale-[0.98] sm:w-auto sm:text-xl lg:min-h-18 lg:px-14 lg:text-2xl"
+          className="group mt-10 flex w-full max-w-md items-center gap-4 rounded-full bg-slate-100 p-2 pr-6 text-lg font-bold text-ink shadow-xl shadow-black/40 ring-1 ring-slate-200 transition hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/50 active:scale-[0.98] sm:text-xl lg:max-w-lg lg:p-2.5 lg:pr-8 lg:text-2xl"
         >
-          {t(resume ? 'register.landingResume' : 'register.landingCta')} <ArrowRight className="h-5 w-5 lg:h-6 lg:w-6" />
+          {/* Pastilla deslizante: corazón rojo a la izquierda, texto al centro y chevrons a la derecha */}
+          <span aria-hidden className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-brand shadow-lg shadow-brand/40 transition-transform duration-300 group-hover:translate-x-1 lg:h-16 lg:w-16">
+            <Heart className="text-on-color h-6 w-6 fill-current lg:h-7 lg:w-7" />
+          </span>
+          <span className="flex-1 text-center">{t(resume ? 'register.landingResume' : 'register.landingCta')}</span>
+          <ChevronsRight aria-hidden className="h-6 w-6 shrink-0 text-slate-500 transition group-hover:translate-x-1 group-hover:text-brand-dark lg:h-7 lg:w-7" />
         </button>
         <p className="mt-4 text-sm text-slate-600 lg:text-base">{t(resume ? 'register.landingNote' : 'register.landingHow')}</p>
       </main>
@@ -426,8 +431,8 @@ function MatchIllustration() {
   )
 }
 
-const BADGES = { brand: 'bg-brand text-ink', accent: 'bg-accent text-ink', ink: 'bg-ink text-accent' }
-const TAGS = { brand: 'bg-brand-soft text-brand-dark', accent: 'bg-accent-soft text-ink', ink: 'bg-ink text-accent' }
+const BADGES = { brand: 'bg-brand text-ink', accent: 'bg-accent text-ink', ink: 'bg-slate-100 text-accent ring-1 ring-slate-200' }
+const TAGS = { brand: 'bg-brand-soft text-brand-dark', accent: 'bg-accent-soft text-ink', ink: 'bg-accent-soft text-accent-dark' }
 
 function Card({ icon: Icon, tone = 'ink', title, tag, subtitle, field, labelId, children }) {
   return (

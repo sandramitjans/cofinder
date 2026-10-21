@@ -75,6 +75,75 @@
     radial-gradient(40rem 24rem at -10% 110%, rgb(255 98 56 / 0.12), transparent 60%);
 }
 
+/* ---------- Tema oscuro «noche VIP» (landing y formulario de registro) ----------
+   Inspirado en la referencia de app de citas: fondo casi negro, superficies grafito,
+   brillo rojo-naranja desde abajo y una rejilla muy tenue. Se activa con la clase
+   .theme-dark en la raíz de la vista: redefine los tokens solo dentro de ella, así el
+   resto de la app (panel, proyector…) sigue con el tema claro.
+   Con la escala invertida, «bg-white» pasa a ser la superficie grafito y «ink» el texto claro. */
+.theme-dark {
+  color-scheme: dark;
+  /* Rojo-naranja: acción principal y selección (botones, temas elegidos, progreso) */
+  --color-brand: #F2441D;
+  --color-brand-dark: #FF8A66;   /* texto sobre fondo oscuro */
+  --color-brand-soft: #3A1810;
+  /* Naranja cálido: énfasis, corazones, índice */
+  --color-accent: #FF7A2F;
+  --color-accent-dark: #FFA06B;
+  --color-accent-soft: #3A2214;
+  /* Verde: confirmaciones */
+  --color-mint: #4CC764;
+  --color-mint-dark: #7BE08F;
+  --color-mint-soft: #13301C;
+  /* Neutros invertidos */
+  --color-ink: #F5F5F7;
+  --color-paper: #121214;
+  --color-cloud: #232327;
+  --color-white: #1E1E22;
+  --color-black: #000;
+  --color-slate-50: #19191C;
+  --color-slate-100: #26262B;
+  --color-slate-200: #323238;
+  --color-slate-300: #43434B;
+  --color-slate-400: #6E6E78;
+  --color-slate-500: #9A9AA5;
+  --color-slate-600: #B0B0BA;
+  --color-slate-700: #C8C8D0;
+  --color-slate-800: #E2E2E8;
+  --color-slate-900: #F5F5F7;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+}
+.theme-dark.vip-glow {
+  background-image:
+    radial-gradient(70rem 32rem at 50% 115%, rgb(214 58 16 / 0.55), transparent 70%),
+    radial-gradient(40rem 22rem at 100% -10%, rgb(242 68 29 / 0.16), transparent 65%),
+    linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 96px 96px, 96px 96px;
+  background-attachment: fixed;
+}
+/* Dentro del tema oscuro, devuelve los neutros claros a una pieza concreta (la tarjeta VIP),
+   que tiene su propio fondo de foto/degradado y espera blanco = blanco. Mantiene los colores vivos del tema. */
+.theme-dark .neutral-light {
+  --color-ink: #20202E;
+  --color-white: #fff;
+  --color-paper: #F8F8FB;
+  --color-slate-50: #F8F8FB;
+  --color-slate-100: #EDEDF3;
+  --color-slate-200: #DCDCE5;
+  --color-slate-300: #C3C3D0;
+  --color-slate-400: #9898A8;
+  --color-slate-500: #686878;
+  --color-slate-600: #575766;
+  --color-slate-700: #454553;
+  --color-slate-800: #32323F;
+  --color-slate-900: #20202E;
+  color: var(--color-ink);
+}
+/* Texto siempre blanco (sobre fotos y rellenos de color), independiente del tema */
+.text-on-color { color: #fff; }
+
 /* ---------- Animaciones ---------- */
 @keyframes view-in {
   from { opacity: 0; transform: translateY(8px); }

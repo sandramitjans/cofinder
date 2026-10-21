@@ -37,17 +37,17 @@ export default function PhotoPicker({ value, name, onChange }) {
       <button
         type="button"
         onClick={pick}
-        className="group relative mx-auto block aspect-square w-full max-w-72 overflow-hidden lg:max-w-none rounded-3xl bg-gradient-to-br from-brand via-brand-dark to-ink shadow-lg shadow-brand/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/40"
+        className="group relative mx-auto block aspect-square w-full max-w-72 overflow-hidden lg:max-w-none rounded-3xl bg-gradient-to-br from-[#FF6A3D] via-[#C8290F] to-[#2A0905] shadow-lg shadow-brand/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/40"
         aria-label={value ? t('register.photoChange') : t('register.photoAdd')}
       >
         {value ? (
           <img src={value} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
-          <span aria-hidden className="absolute inset-0 grid place-items-center font-display text-7xl font-medium text-white/95 lg:text-8xl">
+          <span aria-hidden className="absolute inset-0 grid place-items-center text-on-color font-display text-7xl font-medium opacity-95 lg:text-8xl">
             {initialsOf(name)}
           </span>
         )}
-        <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/70 to-transparent pb-4 pt-10 text-[15px] font-semibold text-white lg:pb-5 lg:text-base">
+        <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/70 to-transparent text-on-color pb-4 pt-10 text-[15px] font-semibold lg:pb-5 lg:text-base">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
           {value ? t('register.photoChange') : t('register.photoAdd')}
         </span>

@@ -32,11 +32,11 @@ export default function MatchScene({ profile, onDone }) {
   }, [])
 
   return (
-    <div className="vip-glow flex min-h-dvh flex-col items-center justify-center bg-gradient-to-b from-white to-brand-soft px-5 py-10" aria-live="polite">
+    <div className="theme-dark vip-glow flex min-h-dvh flex-col items-center justify-center px-5 py-10" aria-live="polite">
       <div className="mb-10 animate-rise-in"><Logo /></div>
 
       <div className="relative w-full max-w-sm">
-        <VipCard animated photo={profile?.photo} name={profile?.name} role={profile?.role} branch={profile && country(profile.country)} />
+        <div className="neutral-light"><VipCard animated photo={profile?.photo} name={profile?.name} role={profile?.role} branch={profile && country(profile.country)} /></div>
 
         {/* Corazones */}
         <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-6">
