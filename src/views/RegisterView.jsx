@@ -167,7 +167,7 @@ export default function RegisterView({ mode = 'create' }) {
   const score = attractivenessScore(form)
 
   return (
-    <section className="theme-dark vip-glow flex min-h-dvh flex-col overflow-x-clip px-5 pt-6 sm:px-10 lg:px-12 lg:pt-8">
+    <section className="theme-warm vip-glow flex min-h-dvh flex-col overflow-x-clip px-5 pt-6 sm:px-10 lg:px-12 lg:pt-8">
       <div className={`mx-auto flex w-full items-center justify-between gap-4 ${WIDTH}`}>
         <Logo />
         <LangSwitch />
@@ -325,7 +325,7 @@ const WIDTH = 'max-w-6xl 2xl:max-w-7xl'
 function Landing({ resume, onStart }) {
   const { t } = useI18n()
   return (
-    <div className="theme-dark vip-glow flex min-h-dvh flex-col px-5 pt-6 sm:px-10 lg:px-12 lg:pt-8">
+    <div className="theme-warm vip-glow flex min-h-dvh flex-col px-5 pt-6 sm:px-10 lg:px-12 lg:pt-8">
       <div className={`mx-auto flex w-full ${WIDTH} items-center justify-between gap-4`}>
         <Logo />
         <LangSwitch />
@@ -431,7 +431,7 @@ function MatchIllustration() {
   )
 }
 
-const BADGES = { brand: 'bg-brand text-ink', accent: 'bg-accent text-ink', ink: 'bg-slate-100 text-accent ring-1 ring-slate-200' }
+const BADGES = { brand: 'bg-brand text-ink', accent: 'bg-accent text-ink', ink: 'bg-slate-100 text-brand-dark ring-1 ring-slate-200' }
 const TAGS = { brand: 'bg-brand-soft text-brand-dark', accent: 'bg-accent-soft text-ink', ink: 'bg-accent-soft text-accent-dark' }
 
 function Card({ icon: Icon, tone = 'ink', title, tag, subtitle, field, labelId, children }) {
