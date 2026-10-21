@@ -1,40 +1,62 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
-  AlertTriangle, CheckCircle2, Flag, LayoutGrid, Lock, Monitor, Play, RefreshCcw, RotateCcw, Shuffle, TimerReset,
-  Trash2, UserPlus, Users, UsersRound,
+  AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Coffee, Eraser, Flag, LayoutGrid, Loader2, Lock, Monitor,
+  RefreshCcw, RotateCcw, Shuffle, Sparkles, TimerReset, Trash2, UserPlus, Users,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { TOTAL_ROUNDS, VIEWS } from '../constants'
-import { roleOf, roundStats, tableSizes } from '../lib/matching'
+import { PAUSE_AFTER_ROUND, PAUSE_MINUTES, VIEWS } from '../constants'
+import { planStats, tableRange } from '../lib/matching'
+import { topicKey } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
-import RoleBadge from '../components/ui/RoleBadge'
 import LangSwitch from '../components/ui/LangSwitch'
 import { SUPERPOWERS } from '../constants'
 
 export default function ModeratorPanelView() {
   const {
     navigate, lockModerator, participants, currentUser, event, currentRound,
-    startNextRound, regenerateRound, restartTimer, finishEvent, resetEvent,
+    planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
+    advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
     removeParticipant, seedDemo, clearDemo,
   } = useApp()
   const { t, topic, country, superpower } = useI18n()
-  const timer = useCountdown(event.finished ? null : currentRound?.startedAt)
   const byId = useMemo(() => new Map(participants.map((p) => [p.id, p])), [participants])
-  const sizes = tableSizes(participants.length)
-  const stats = currentRound ? roundStats(currentRound, event.rounds.slice(0, event.round - 1), byId) : null
   const hasDemo = participants.some((p) => p.demo)
+  const hasPlan = event.rounds.length > 0
   const live = event.round > 0 && !event.finished
+  const total = event.rounds.length
+  const stats = useMemo(() => (hasPlan ? planStats(event.rounds.map((r) => ({ tables: r.plan })), byId) : null), [hasPlan, event.rounds, byId])
+  const [kMin, kMax] = tableRange(participants.length)
 
-  // Personas registradas después de generar la ronda actual (todavía sin mesa)
-  const seated = new Set(currentRound?.tables.flatMap((x) => x.members) ?? [])
-  const unseated = live ? participants.filter((p) => !seated.has(p.id)) : []
+  // Fase del tour en pantalla
+  const r = live ? currentRound : null
+  const phase = !r ? null : r.pauseStartedAt ? 'pause' : r.startedAt ? 'talk' : r.revealed ? 'reveal' : 'intro'
+  const timer = useCountdown(phase === 'talk' ? r.startedAt : null)
+  const pauseTimer = useCountdown(phase === 'pause' ? r.pauseStartedAt : null, PAUSE_MINUTES)
+  const shownTimer = phase === 'pause' ? pauseTimer : timer
+
+  // Qué hará el botón «Suivant»
+  let nextLabel = t('panel.launch')
+  if (event.finished) nextLabel = null
+  else if (r) {
+    if (r.revealed < r.plan.length) nextLabel = t('panel.nextReveal', { k: r.revealed + 1, n: r.plan.length })
+    else if (!r.startedAt) nextLabel = t('panel.nextTimer')
+    else if (event.round === PAUSE_AFTER_ROUND && event.round < total && !r.pauseStartedAt) nextLabel = t('panel.nextPause')
+    else if (event.round < total) nextLabel = t('panel.nextRound', { n: event.round + 1 })
+    else nextLabel = t('panel.finish')
+  }
+
+  // Personas inscritas después de generar el plan (sin mesa en los tours que faltan)
+  const planned = new Set(event.rounds.slice(Math.max(0, event.round)).flatMap((x) => x.plan.flatMap((tb) => tb.members)))
+  const unplanned = hasPlan && !event.finished && event.round < total ? participants.filter((p) => !planned.has(p.id)) : []
 
   const confirmThen = (msg, fn) => () => window.confirm(msg) && fn()
-  const status = event.finished ? t('panel.statusDone') : event.round ? t('panel.statusLive', { n: event.round }) : t('panel.statusReady')
+  const status = event.finished ? t('panel.statusDone')
+    : live ? t(`panel.phase.${phase}`, { n: event.round, k: r.revealed, total: r.plan.length })
+      : hasPlan ? t('panel.statusPlanned') : t('panel.statusReady')
 
   return (
     <div className="min-h-dvh bg-slate-100">
@@ -55,7 +77,7 @@ export default function ModeratorPanelView() {
       </header>
 
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
-        {/* Control de rondas */}
+        {/* Control de la soirée */}
         <section className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
           <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -63,63 +85,60 @@ export default function ModeratorPanelView() {
                 <p className="text-xs font-bold uppercase tracking-widest text-brand-dark">{t('panel.control')}</p>
                 <h1 className="mt-1 text-2xl font-bold tracking-tight">{status}</h1>
               </div>
-              {live && (
-                <div className={`rounded-xl px-4 py-2 text-right ${timer.done ? 'bg-accent' : 'bg-ink text-white'}`}>
-                  <p className="font-mono text-3xl font-bold tabular-nums">{timer.done ? '00:00' : timer.label}</p>
-                  <p className="text-[11px] font-medium opacity-70">{timer.done ? t('panel.timeUp') : t('panel.remaining')}</p>
+              {(phase === 'talk' || phase === 'pause') && (
+                <div className={`rounded-xl px-4 py-2 text-right ${shownTimer.done ? 'bg-accent' : 'bg-ink text-white'}`}>
+                  <p className="font-mono text-3xl font-bold tabular-nums">{shownTimer.label}</p>
+                  <p className="text-[11px] font-medium opacity-70">{shownTimer.done ? t('panel.timeUp') : phase === 'pause' ? t('panel.pauseLeft') : t('panel.remaining')}</p>
                 </div>
               )}
             </div>
 
-            <ol className="mt-6 grid grid-cols-3 gap-2">
-              {Array.from({ length: TOTAL_ROUNDS }, (_, i) => {
-                const n = i + 1
-                const done = n < event.round || (event.finished && n <= event.round)
-                const current = n === event.round && !event.finished
-                return (
-                  <li key={n} className={`rounded-xl border-2 px-3 py-2.5 text-sm ${
-                    current ? 'border-brand bg-brand-soft' : done ? 'border-transparent bg-slate-100' : 'border-dashed border-slate-200'
-                  }`}>
-                    <div className="flex items-center justify-between font-semibold">
-                      {t('panel.round', { n })}
-                      {done && <CheckCircle2 className="h-4 w-4 text-slate-400" />}
-                      {current && <span className="h-2 w-2 animate-pulse rounded-full bg-brand" />}
-                    </div>
-                    {current && (
-                      <div className="mt-2 h-1 overflow-hidden rounded-full bg-white">
-                        <div className="h-full bg-brand transition-all duration-1000" style={{ width: `${timer.progress * 100}%` }} />
-                      </div>
-                    )}
-                  </li>
-                )
-              })}
-            </ol>
+            {hasPlan && (
+              <ol className="mt-6 grid grid-cols-4 gap-2 sm:grid-cols-8">
+                {event.rounds.map((_, i) => {
+                  const n = i + 1
+                  const done = n < event.round || (event.finished && n <= event.round)
+                  const current = n === event.round && !event.finished
+                  return (
+                    <li key={n} className={`relative rounded-xl border-2 px-2 py-2 text-center text-sm ${
+                      current ? 'border-brand bg-brand-soft' : done ? 'border-transparent bg-slate-100' : 'border-dashed border-slate-200'
+                    }`}>
+                      <span className="font-semibold">{n}</span>
+                      {done && <CheckCircle2 className="absolute right-1 top-1 h-3.5 w-3.5 text-slate-400" />}
+                      {current && <span className="absolute right-1.5 top-1.5 h-2 w-2 animate-pulse rounded-full bg-brand" />}
+                      {n === PAUSE_AFTER_ROUND && n < total && <Coffee className="absolute -right-2 top-1/2 z-10 h-4 w-4 -translate-y-1/2 rounded-full bg-white text-accent-dark" aria-label={t('panel.pauseMark')} />}
+                    </li>
+                  )
+                })}
+              </ol>
+            )}
 
             <div className="mt-6 flex flex-wrap gap-2">
-              {!event.round && (
-                <Button icon={Play} onClick={startNextRound} disabled={participants.length < 2}>{t('panel.start', { n: 1 })}</Button>
-              )}
-              {live && event.round < TOTAL_ROUNDS && (
-                <Button icon={Play} onClick={confirmThen(t('panel.confirmNext', { n: event.round + 1 }), startNextRound)}>
-                  {t('panel.start', { n: event.round + 1 })}
+              {!hasPlan && (
+                <Button icon={planning ? Loader2 : Sparkles} onClick={generatePlan} disabled={planning || participants.length < 2} className={planning ? '[&>svg]:animate-spin' : ''}>
+                  {planning ? t('panel.planning') : t('panel.generate')}
                 </Button>
               )}
-              {live && event.round === TOTAL_ROUNDS && (
-                <Button icon={Flag} onClick={confirmThen(t('panel.confirmFinish'), finishEvent)}>{t('panel.finish')}</Button>
+              {hasPlan && nextLabel && (
+                <Button icon={ChevronRight} onClick={event.round === total && r?.startedAt ? confirmThen(t('panel.confirmFinish'), advance) : advance}>{nextLabel}</Button>
               )}
-              {live && (
-                <>
-                  <Button variant="outline" icon={Shuffle} onClick={confirmThen(t('panel.confirmRegenerate'), regenerateRound)}>{t('panel.regenerate')}</Button>
-                  <Button variant="outline" icon={TimerReset} onClick={restartTimer}>{t('panel.restartTimer')}</Button>
-                </>
+              {event.round > 0 && (
+                <Button variant="outline" icon={ChevronLeft} onClick={stepBack}>{t('panel.back')}</Button>
+              )}
+              {(phase === 'talk' || phase === 'pause') && (
+                <Button variant="outline" icon={TimerReset} onClick={restartTimer}>{t('panel.restartTimer')}</Button>
+              )}
+              {live && event.round < total && (
+                <Button variant="ghost" icon={Flag} onClick={confirmThen(t('panel.confirmFinish'), finishEvent)}>{t('panel.finish')}</Button>
               )}
               {event.round > 0 && (
                 <Button variant="ghost" icon={RotateCcw} onClick={confirmThen(t('panel.confirmReset'), resetEvent)}>{t('panel.reset')}</Button>
               )}
             </div>
+            {hasPlan && !event.finished && <p className="mt-3 text-xs text-slate-500">{t('panel.keysHint')}</p>}
 
-            {participants.length > 0 && participants.length < 6 && !event.round && <Notice>{t('panel.fewPeople')}</Notice>}
-            {unseated.length > 0 && <Notice>{t('panel.unseated', { n: unseated.length })}</Notice>}
+            {!hasPlan && participants.length > 0 && participants.length < 6 && <Notice>{t('panel.fewPeople')}</Notice>}
+            {unplanned.length > 0 && <Notice>{t('panel.unplanned', { n: unplanned.length })}</Notice>}
           </div>
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
@@ -127,50 +146,38 @@ export default function ModeratorPanelView() {
             <Stat
               icon={LayoutGrid}
               label={t('panel.tablesPerRound')}
-              value={sizes.length || '—'}
-              hint={sizes.length ? t('panel.tableSizes', { sizes: [...new Set(sizes)].join(t('panel.and')) }) : null}
+              value={participants.length >= 2 ? (kMin === kMax ? kMin : `${kMin}–${kMax}`) : '—'}
+              hint={participants.length >= 2 ? t('panel.tableSizes') : null}
             />
             {stats && (
               <div className="col-span-2 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 lg:col-span-1">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('panel.quality', { n: event.round })}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('panel.quality')}</p>
                 <ul className="mt-2 space-y-1 text-sm">
-                  <Quality ok={!stats.overLimitPairs} label={t('panel.overLimit')} value={stats.overLimitPairs} />
-                  <Quality ok={!stats.repeatedPairs} label={t('panel.repeatedPairs')} value={stats.repeatedPairs} />
+                  <Quality ok={stats.chosenPct >= 80} label={t('panel.chosen')} value={`${stats.chosenPct} %`} />
                   <Quality ok={!stats.repeatedTopics} label={t('panel.repeatedTopics')} value={stats.repeatedTopics} />
-                  <Quality ok={!stats.tablesWithoutExpert} label={t('panel.noExpert')} value={stats.tablesWithoutExpert} />
+                  <Quality ok={!stats.overLimitPairs} label={t('panel.overLimit')} value={stats.overLimitPairs} />
+                  <Quality ok label={t('panel.contacts')} value={`${stats.avgContacts.toFixed(1)} / ${Math.max(0, participants.length - 1)}`} />
                 </ul>
               </div>
             )}
           </div>
         </section>
 
-        {/* Mesas de la ronda actual */}
-        {currentRound && (
-          <section>
-            <h2 className="mb-3 flex items-center gap-2 text-lg font-bold"><UsersRound className="h-5 w-5 text-brand-dark" /> {t('panel.tablesTitle', { n: event.round })}</h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {currentRound.tables.map((tb) => (
-                <div key={tb.id} className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-                  <p className="text-xs font-semibold text-slate-400">{t('panel.table', { n: tb.id })}</p>
-                  <p className="text-lg font-bold text-brand-dark">{topic(tb.topic)}</p>
-                  <ul className="mt-3 space-y-2">
-                    {tb.members.map((id) => {
-                      const p = byId.get(id)
-                      return p ? (
-                        <li key={id} className="flex items-center gap-2 text-sm">
-                          <Avatar name={p.name} photo={p.photo} size="sm" />
-                          <span className="min-w-0 flex-1 truncate">
-                            {p.name}{p.id === currentUser?.id && <span className="ml-1 text-xs text-slate-400">({t('panel.you')})</span>}
-                          </span>
-                          <RoleBadge role={roleOf(p, tb.topic)} />
-                        </li>
-                      ) : null
-                    })}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </section>
+        {/* Plan de los 8 tours */}
+        {hasPlan && (
+          <PlanGrid
+            rounds={event.rounds}
+            current={event.round}
+            finished={event.finished}
+            byId={byId}
+            planning={planning}
+            onRegenerate={regeneratePlanRound}
+            onSwap={swapSeats}
+            onMove={moveSeat}
+            onClear={confirmThen(t('panel.confirmClear'), clearPlan)}
+            t={t}
+            topic={topic}
+          />
         )}
 
         {/* Participantes */}
@@ -227,6 +234,122 @@ export default function ModeratorPanelView() {
       </main>
     </div>
   )
+}
+
+/**
+ * Plan de los 8 tours: una fila por tour y una tarjeta por mesa.
+ * Retoques a mano: clic en una persona y luego en otra del mismo tour para intercambiarlas,
+ * o en la cabecera de otra mesa para moverla allí. Los tours ya anunciados quedan bloqueados.
+ */
+function PlanGrid({ rounds, current, finished, byId, planning, onRegenerate, onSwap, onMove, onClear, t, topic }) {
+  const [selected, setSelected] = useState(null) // { round, id }
+  const started = current > 0
+
+  const pick = (round, id) => {
+    if (selected?.round === round && selected.id !== id) {
+      onSwap(round, selected.id, id)
+      setSelected(null)
+    } else {
+      setSelected(selected?.id === id ? null : { round, id })
+    }
+  }
+  const moveHere = (round, tableId) => {
+    if (selected?.round !== round) return
+    onMove(round, selected.id, tableId)
+    setSelected(null)
+  }
+
+  return (
+    <section className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4">
+        <div>
+          <h2 className="flex items-center gap-2 text-lg font-bold"><LayoutGrid className="h-5 w-5 text-brand-dark" /> {t('panel.planTitle', { n: rounds.length })}</h2>
+          <p className="mt-0.5 text-xs text-slate-500">{t('panel.planHelp')}</p>
+        </div>
+        {!started && (
+          <Button variant="ghost" icon={Eraser} className="py-2" onClick={onClear} disabled={planning}>{t('panel.clearPlan')}</Button>
+        )}
+      </div>
+
+      <ol className="divide-y divide-slate-100">
+        {rounds.map((round, i) => {
+          const locked = finished || i < current
+          return (
+            <li key={i}>
+              <div className={`flex flex-col gap-3 p-4 lg:flex-row ${locked ? 'opacity-60' : ''}`}>
+                <div className="flex shrink-0 items-center justify-between gap-2 lg:w-28 lg:flex-col lg:items-start">
+                  <p className="font-display text-lg font-medium">{t('panel.round', { n: i + 1 })}</p>
+                  {locked ? (
+                    <span className="flex items-center gap-1 text-xs text-slate-400"><Lock className="h-3 w-3" /> {t('panel.locked')}</span>
+                  ) : (
+                    <button onClick={() => onRegenerate(i)} disabled={planning} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-brand-dark hover:bg-brand-soft disabled:opacity-50">
+                      <Shuffle className="h-3.5 w-3.5" /> {t('panel.regenerateRound')}
+                    </button>
+                  )}
+                </div>
+                <div className="grid flex-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                  {round.plan.map((tb) => {
+                    const target = !locked && selected?.round === i && !tb.members.includes(selected.id)
+                    return (
+                      <div key={tb.id} className={`rounded-lg p-2.5 ring-1 ${target ? 'bg-brand-soft ring-brand' : 'bg-slate-50 ring-slate-200'}`}>
+                        <button
+                          type="button"
+                          disabled={!target}
+                          onClick={() => moveHere(i, tb.id)}
+                          className="block w-full text-left disabled:cursor-default"
+                          title={target ? t('panel.moveHere') : undefined}
+                        >
+                          <span className="block text-[11px] font-semibold text-slate-400">{t('panel.table', { n: tb.id })} · {tb.members.length}</span>
+                          <span className="block text-sm font-semibold leading-snug">{topic(tb.topic)}</span>
+                        </button>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {tb.members.map((id) => {
+                            const p = byId.get(id)
+                            if (!p) return null
+                            const chosen = [...(p.offers ?? []), ...(p.needs ?? [])].some((x) => topicKey(x) === topicKey(tb.topic))
+                            const isSel = selected?.round === i && selected.id === id
+                            return (
+                              <button
+                                key={id}
+                                type="button"
+                                disabled={locked}
+                                onClick={() => pick(i, id)}
+                                title={p.name}
+                                className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold ring-1 transition ${
+                                  isSel ? 'bg-brand text-ink ring-brand' : chosen ? 'bg-white text-slate-700 ring-slate-200 hover:ring-brand' : 'bg-accent-soft text-accent-dark ring-accent/40 hover:ring-brand'
+                                } disabled:cursor-default`}
+                              >
+                                {shortName(p.name)}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              {i + 1 === PAUSE_AFTER_ROUND && i + 1 < rounds.length && (
+                <p className="flex items-center gap-2 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-500">
+                  <Coffee className="h-3.5 w-3.5 text-accent-dark" /> {t('panel.pauseRow', { min: PAUSE_MINUTES })}
+                </p>
+              )}
+            </li>
+          )
+        })}
+      </ol>
+      <p className="flex flex-wrap items-center gap-4 border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-white ring-1 ring-slate-300" /> {t('panel.legendChosen')}</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-accent-soft ring-1 ring-accent/40" /> {t('panel.legendNotChosen')}</span>
+      </p>
+    </section>
+  )
+}
+
+// «Laura Martín» → «Laura M.»
+const shortName = (name = '') => {
+  const [first, ...rest] = name.trim().split(/\s+/)
+  return rest.length ? `${first} ${rest[rest.length - 1][0]}.` : first
 }
 
 function Stat({ icon: Icon, label, value, hint }) {

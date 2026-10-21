@@ -18,6 +18,8 @@ export default function RoundCardView() {
   const timer = useCountdown(event.finished ? null : currentRound?.startedAt)
   const byId = new Map(participants.map((p) => [p.id, p]))
   const table = currentRound?.tables.find((x) => x.members.includes(currentUser?.id))
+  // Con el formulario actual (una sola lista de intereses) nadie «domina»: entonces no se muestran roles
+  const expertMode = participants.some((p) => p.offers?.length)
 
   return (
     <div className="flex min-h-dvh flex-col bg-slate-50 px-5">
@@ -49,9 +51,11 @@ export default function RoundCardView() {
               </div>
               <p className="mt-4 text-sm text-white/80">{t('round.youAreAt')}</p>
               <h1 className="text-3xl font-extrabold leading-tight tracking-tight">{topic(table.topic)}</h1>
-              <span className="mt-3 inline-block rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
-                {t('round.you', { role: t(`roles.${roleOf(currentUser, table.topic)}`) })}
-              </span>
+              {expertMode && (
+                <span className="mt-3 inline-block rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
+                  {t('round.you', { role: t(`roles.${roleOf(currentUser, table.topic)}`) })}
+                </span>
+              )}
             </div>
 
             <div className="relative h-0 border-t-2 border-dashed border-slate-200">
@@ -71,7 +75,7 @@ export default function RoundCardView() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-semibold">{p.name}</p>
                         <p className="truncate text-xs text-slate-500">{p.role} · {country(p.country)}</p>
-                        <RoleBadge role={roleOf(p, table.topic)} className="mt-1.5 inline-block" />
+                        {expertMode && <RoleBadge role={roleOf(p, table.topic)} className="mt-1.5 inline-block" />}
                         <SuperpowerChips ids={p.superpowers} size="sm" className="mt-1.5" />
                       </div>
                     </li>

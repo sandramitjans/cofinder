@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { VIEWS, MODERATOR_VIEWS, MOD_HASH, MOD_PIN, TOTAL_ROUNDS } from '../constants'
-import { generateRound } from '../lib/matching'
+import { VIEWS, MODERATOR_VIEWS, MOD_HASH, MOD_PIN, PAUSE_AFTER_ROUND } from '../constants'
 import { demoParticipants } from '../lib/demo'
 import * as api from '../lib/backend'
 
@@ -273,7 +272,15 @@ export function AppProvider({ children }) {
     setLocalParticipants((prev) => prev.filter((p) => !p.demo))
   }, [modAction])
 
-  /* ---------- Rondas ---------- */
+  /* ---------- Plan de la soirée y desarrollo de los tours ---------- */
+  // `event.rounds` guarda el plan completo (los 8 tours). Cada tour:
+  //   plan            → todas sus mesas, decididas la semana anterior
+  //   tables          → solo las mesas ya anunciadas en el proyector (lo único que leen los móviles:
+  //                     una mesa aparece en el teléfono en el momento en que sale en pantalla)
+  //   revealed        → cuántas mesas se han anunciado
+  //   startedAt       → inicio de los 15 minutos de conversación
+  //   pauseStartedAt  → inicio de la pausa (solo en el tour PAUSE_AFTER_ROUND)
+  // `event.round` es el tour en pantalla (0 = la soirée no ha empezado).
   // `update(event, participants)` → nuevo evento (o el mismo si no hay cambios)
   const changeEvent = useCallback((update) => {
     if (!REMOTE) {
@@ -284,29 +291,116 @@ export function AppProvider({ children }) {
     if (!s) return
     const next = update(s.event, s.participants)
     if (next === s.event) return
-    setModState({ ...s, event: next }) // optimista: el proyector cambia al instante
+    const optimistic = { ...s, event: next }
+    modStateRef.current = optimistic // dos pulsaciones seguidas parten del último estado
+    setModState(optimistic) // optimista: el proyector cambia al instante
     return modAction((pin) => api.modSetEvent(pin, next))
   }, [localParticipants, modAction])
 
-  const startNextRound = useCallback(() => changeEvent((e, people) => {
-    if (e.round >= TOTAL_ROUNDS || people.length < 2) return e
-    const { tables } = generateRound(people, e.rounds)
-    return { ...e, round: e.round + 1, rounds: [...e.rounds, { tables, startedAt: Date.now() }] }
+  const [planning, setPlanning] = useState(false)
+  const peopleRef = useRef(participants)
+  peopleRef.current = participants
+
+  // Al cálculo solo le hacen falta los temas (las fotos pesan y no se envían al worker)
+  const runPlanner = useCallback((payload) => new Promise((resolve, reject) => {
+    const worker = new Worker(new URL('../lib/planner.worker.js', import.meta.url), { type: 'module' })
+    worker.onmessage = (e) => { resolve(e.data); worker.terminate() }
+    worker.onerror = (e) => { reject(e); worker.terminate() }
+    worker.postMessage({
+      ...payload,
+      people: peopleRef.current.map(({ id, country, offers, needs }) => ({ id, country, offers, needs })),
+    })
+  }), [])
+
+  const newRound = (tables) => ({ plan: tables, tables: [], revealed: 0, startedAt: null, pauseStartedAt: null })
+  const patchRound = (e, i, patch) => ({ ...e, rounds: e.rounds.map((r, k) => (k === i ? { ...r, ...patch } : r)) })
+  // Un tour se puede retocar mientras no haya empezado a anunciarse
+  const editable = (e, i) => !e.finished && i >= e.round
+
+  const generatePlan = useCallback(async () => {
+    if (peopleRef.current.length < 2) return
+    setPlanning(true)
+    try {
+      const plan = await runPlanner({ type: 'plan' })
+      await changeEvent((e) => (e.round ? e : { round: 0, finished: false, rounds: plan.map((r) => newRound(r.tables)) }))
+    } finally { setPlanning(false) }
+  }, [runPlanner, changeEvent])
+
+  const regeneratePlanRound = useCallback(async (i) => {
+    const s = REMOTE ? modStateRef.current?.event : localEvent
+    if (!s || !editable(s, i)) return
+    setPlanning(true)
+    try {
+      const otherRounds = s.rounds.filter((_, k) => k !== i).map((r) => ({ tables: r.plan }))
+      const { tables } = await runPlanner({ type: 'round', otherRounds })
+      await changeEvent((e) => (editable(e, i) ? patchRound(e, i, { plan: tables }) : e))
+    } finally { setPlanning(false) }
+  }, [runPlanner, changeEvent, localEvent])
+
+  // Retoques a mano en un tour del plan: intercambiar a dos personas o mover a alguien de mesa
+  const editPlanRound = useCallback((i, edit) => changeEvent((e) => {
+    if (!editable(e, i)) return e
+    const tables = edit(e.rounds[i].plan.map((t) => ({ ...t, members: [...t.members] })))
+    if (!tables) return e
+    const kept = tables.filter((t) => t.members.length).map((t, k) => ({ ...t, id: k + 1 }))
+    return patchRound(e, i, { plan: kept })
   }), [changeEvent])
 
-  const regenerateRound = useCallback(() => changeEvent((e, people) => {
+  const swapSeats = useCallback((i, a, b) => editPlanRound(i, (tables) => {
+    const ta = tables.find((t) => t.members.includes(a))
+    const tb = tables.find((t) => t.members.includes(b))
+    if (!ta || !tb || ta === tb) return null
+    ta.members[ta.members.indexOf(a)] = b
+    tb.members[tb.members.indexOf(b)] = a
+    return tables
+  }), [editPlanRound])
+
+  const moveSeat = useCallback((i, id, tableId) => editPlanRound(i, (tables) => {
+    const from = tables.find((t) => t.members.includes(id))
+    const to = tables.find((t) => t.id === tableId)
+    if (!to || from === to) return null
+    if (from) from.members = from.members.filter((x) => x !== id)
+    to.members.push(id)
+    return tables
+  }), [editPlanRound])
+
+  // Siguiente paso de la soirée (clic, espacio, flecha o mando de presentación):
+  // portada del tour → anuncio de cada match → chrono → (pausa tras el tour 4) → tour siguiente → fin
+  const advance = useCallback(() => changeEvent((e) => {
+    if (e.finished || !e.rounds.length) return e
+    if (!e.round) return { ...e, round: 1 }
+    const i = e.round - 1
+    const r = e.rounds[i]
+    if (r.revealed < r.plan.length) return patchRound(e, i, { revealed: r.revealed + 1, tables: r.plan.slice(0, r.revealed + 1) })
+    if (!r.startedAt) return patchRound(e, i, { startedAt: Date.now() })
+    if (e.round === PAUSE_AFTER_ROUND && e.round < e.rounds.length && !r.pauseStartedAt) return patchRound(e, i, { pauseStartedAt: Date.now() })
+    if (e.round < e.rounds.length) return { ...e, round: e.round + 1 }
+    return { ...e, finished: true }
+  }), [changeEvent])
+
+  // Deshace el último paso (por si se pulsa una vez de más)
+  const stepBack = useCallback(() => changeEvent((e) => {
+    if (e.finished) return { ...e, finished: false }
     if (!e.round) return e
-    const previous = e.rounds.slice(0, -1)
-    const { tables } = generateRound(people, previous)
-    return { ...e, rounds: [...previous, { tables, startedAt: Date.now() }] }
+    const i = e.round - 1
+    const r = e.rounds[i]
+    if (r.pauseStartedAt) return patchRound(e, i, { pauseStartedAt: null })
+    if (r.startedAt) return patchRound(e, i, { startedAt: null })
+    if (r.revealed > 0) return patchRound(e, i, { revealed: r.revealed - 1, tables: r.plan.slice(0, r.revealed - 1) })
+    return { ...e, round: e.round - 1 }
   }), [changeEvent])
 
-  const restartTimer = useCallback(() => changeEvent((e) => (
-    e.round ? { ...e, rounds: e.rounds.map((r, i) => (i === e.round - 1 ? { ...r, startedAt: Date.now() } : r)) } : e
-  )), [changeEvent])
+  const restartTimer = useCallback(() => changeEvent((e) => {
+    const r = e.round ? e.rounds[e.round - 1] : null
+    if (!r || e.finished) return e
+    if (r.pauseStartedAt) return patchRound(e, e.round - 1, { pauseStartedAt: Date.now() })
+    return r.startedAt ? patchRound(e, e.round - 1, { startedAt: Date.now() }) : e
+  }), [changeEvent])
 
   const finishEvent = useCallback(() => changeEvent((e) => ({ ...e, finished: true })), [changeEvent])
-  const resetEvent = useCallback(() => changeEvent(() => EMPTY_EVENT), [changeEvent])
+  // Vuelve al principio conservando el plan (para ensayar), o borra el plan entero
+  const resetEvent = useCallback(() => changeEvent((e) => ({ round: 0, finished: false, rounds: e.rounds.map((r) => newRound(r.plan)) })), [changeEvent])
+  const clearPlan = useCallback(() => changeEvent(() => EMPTY_EVENT), [changeEvent])
 
   const value = useMemo(() => ({
     remote: REMOTE,
@@ -316,12 +410,14 @@ export function AppProvider({ children }) {
     register, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     modUnlocked, gateOpen, openGate, closeGate, unlockModerator, lockModerator,
-    startNextRound, regenerateRound, restartTimer, finishEvent, resetEvent,
+    planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
+    advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
   }), [view, navigate, participants, currentUser, event, currentRound, seatedEver, modUnlocked, modState,
     register, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     gateOpen, openGate, closeGate, unlockModerator, lockModerator,
-    startNextRound, regenerateRound, restartTimer, finishEvent, resetEvent])
+    planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
+    advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }

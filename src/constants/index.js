@@ -19,9 +19,15 @@ export const MOD_PIN = import.meta.env?.VITE_MOD_PIN ?? '2026'
 // Para contar hasta la hora de inicio, cambia la hora, p. ej. '2026-11-25T09:30:00+01:00'.
 export const EVENT_DATE = new Date(import.meta.env?.VITE_EVENT_DATE ?? '2026-11-25T00:00:00+01:00').getTime()
 
-export const TOTAL_ROUNDS = 3
-export const ROUND_MINUTES = 20
-export const TABLE_SIZE = 4
+// Soirée: 8 tours de 15 minutes, mesas de 2 a 5 personas y como mucho 5 mesas por tour.
+// Tras el tour 4 hay una pausa de 10 minutos con su propia pantalla en el proyector.
+export const TOTAL_ROUNDS = 8
+export const ROUND_MINUTES = 15
+export const MIN_TABLE_SIZE = 2
+export const MAX_TABLE_SIZE = 5
+export const MAX_TABLES = 5
+export const PAUSE_AFTER_ROUND = 4
+export const PAUSE_MINUTES = 10
 export const MAX_TAGS = 5
 // Paso 2 del formulario: una sola selección de temas de interés (se guarda en `needs`)
 export const MAX_INTERESTS = 8

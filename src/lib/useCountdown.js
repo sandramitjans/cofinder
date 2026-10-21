@@ -6,13 +6,14 @@ export function useCountdown(startedAt, minutes = ROUND_MINUTES) {
   const [now, setNow] = useState(Date.now())
   useEffect(() => {
     if (!startedAt) return
+    setNow(Date.now()) // sin esto, al arrancar se vería un instante el reloj con la hora del montaje
     const t = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(t)
   }, [startedAt])
 
   if (!startedAt) return { label: `${minutes}:00`, remaining: minutes * 60_000, done: false, progress: 0 }
   const total = minutes * 60_000
-  const remaining = Math.max(0, startedAt + total - now)
+  const remaining = Math.min(total, Math.max(0, startedAt + total - now))
   const s = Math.ceil(remaining / 1000)
   return {
     label: `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`,

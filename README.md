@@ -78,16 +78,27 @@ src/
     └── ProjectorView.jsx        # Pantalla grande
 ```
 
-## Algoritmo de mesas (`lib/matching.js`)
+## Plan de los 8 tours (`lib/matching.js`)
 
-Mesas de ~4 personas (13 personas → 5+4+4). Para cada ronda elige temas con oferta y demanda
-que no se hayan tratado antes y reparte minimizando: parejas que ya coincidieron, temas que la
-persona ya trató, mesas sin experto o sin demandante, gente sin relación con el tema y personas de
-la misma sucursal. Usa reparto voraz + enfriamiento simulado con varios reinicios.
+La soirée tiene 8 tours de 15 minutos, mesas de 2 a 5 personas (5 mesas como máximo por tour) y una
+pausa de 10 minutos tras el tour 4 (`constants/index.js`).
 
-Con 3 mesas de 4–5 es matemáticamente imposible no repetir ninguna pareja a partir de la Ronda 2
-(una mesa solo puede tomar 1 persona de cada mesa anterior sin repetir). El algoritmo alcanza el
-mínimo (4 parejas con 13 personas) y nunca repite temas.
+**Semana interna.** En el panel, «Générer le plan des 8 tours» calcula de una vez el plan completo
+(en un worker, `lib/planner.worker.js`, tarda unos segundos). Cada tour elige temas que la gente ha
+elegido y no ha tratado, y reparte a todos minimizando: personas en un tema que no eligieron, temas
+repetidos para una persona, parejas que ya coincidieron (máximo 3 veces) y personas de la misma
+sucursal. Reparto voraz + enfriamiento simulado que intercambia personas, las mueve de mesa (así el
+tamaño sale de la demanda) y cambia temas. El panel muestra la calidad del plan y una rejilla de los
+8 tours donde se puede intercambiar o mover a alguien con dos clics, o regenerar un tour concreto.
+
+**El día del evento.** La moderadora avanza con «Suivant» en el panel, o en el proyector con Espacio,
+→ o el mando de presentación (← deshace): portada del tour → anuncio de cada match (tema, mesa y
+tarjetas con foto) → cuenta atrás de 15 min con todas las mesas → «Temps écoulé» → siguiente tour.
+Tras el tour 4 el proyector muestra la pausa con su cuenta atrás. El móvil de cada director muestra
+su mesa en cuanto se anuncia en pantalla, nunca antes.
+
+Datos: `event.rounds[i]` = `{ plan, tables, revealed, startedAt, pauseStartedAt }`. `plan` son todas
+las mesas del tour; `tables`, solo las ya anunciadas, que es lo que leen los móviles (`get_my_table`).
 
 ## Base de datos (Supabase)
 
