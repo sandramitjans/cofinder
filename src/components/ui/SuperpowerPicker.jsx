@@ -11,7 +11,7 @@ export default function SuperpowerPicker({ value, onChange, labelledBy }) {
 
   return (
     <div>
-      <div className="grid gap-2 sm:grid-cols-2" role="group" aria-labelledby={labelledBy}>
+      <div className="grid gap-2 sm:grid-cols-2 lg:gap-3 xl:grid-cols-3" role="group" aria-labelledby={labelledBy}>
         {SUPERPOWERS.map(({ id, emoji }) => {
           const selected = value.includes(id)
           const disabled = !selected && full
@@ -23,7 +23,7 @@ export default function SuperpowerPicker({ value, onChange, labelledBy }) {
               onClick={() => toggle(id)}
               disabled={disabled}
               aria-pressed={selected}
-              className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-[15px] font-medium transition-all duration-150 active:scale-[0.98] ${
+              className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-[15px] font-medium lg:px-4 lg:py-3.5 lg:text-base transition-all duration-150 active:scale-[0.98] ${
                 selected
                   ? 'border-ink bg-ink text-white shadow-md shadow-ink/20'
                   : disabled
@@ -33,7 +33,7 @@ export default function SuperpowerPicker({ value, onChange, labelledBy }) {
             >
               <span
                 aria-hidden
-                className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-lg transition-transform ${
+                className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-lg transition-transform lg:h-11 lg:w-11 lg:text-xl ${
                   selected ? 'scale-110 bg-accent' : disabled ? 'bg-slate-100 grayscale' : 'bg-accent-soft group-hover:rotate-6'
                 }`}
               >
@@ -45,7 +45,7 @@ export default function SuperpowerPicker({ value, onChange, labelledBy }) {
           )
         })}
       </div>
-      <p className="mt-3 text-right text-sm font-semibold text-slate-700">
+      <p className="mt-3 text-right text-sm font-semibold text-slate-700 lg:mt-4 lg:text-base" aria-live="polite">
         {t('register.superHint', { n: value.length, max: MAX_SUPERPOWERS })}
       </p>
     </div>

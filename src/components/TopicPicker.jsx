@@ -98,26 +98,40 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
 
   const emoji = (id) => (isCustom(id) ? '✨' : TOPIC_EMOJI[id])
 
-  // Tema disponible: los ya elegidos en esta columna están en las casillas, no aquí
+  // Tema de la lista: siempre en su sitio (no desaparece al elegirlo) para que la cuadrícula no
+  // se reordene; elegido = violeta con su número de casilla.
   const chip = (id) => {
-    if (list.includes(id)) return null
+    const pos = list.indexOf(id)
+    const selected = pos >= 0
     const blocked = other.includes(id)
-    const full = list.length >= max
+    const full = !selected && list.length >= max
     return (
-      <li key={id} className="flex items-center">
+      <li key={id} className="flex min-w-0 items-stretch">
         <button
           type="button"
           data-tag={id}
           onClick={() => toggle(id)}
+          aria-pressed={selected}
           aria-disabled={blocked || full || undefined}
-          className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-left text-[15px] font-semibold leading-snug transition-all duration-150 active:scale-[0.97] ${
-            blocked ? 'border-dashed border-slate-300 bg-slate-50 text-slate-400'
+          className={`flex min-h-14 w-full min-w-0 items-center gap-2 rounded-xl border px-2.5 py-2 sm:gap-2.5 sm:px-3 text-left text-sm font-semibold leading-snug transition-all duration-150 active:scale-[0.98] lg:min-h-15 lg:text-[15px] ${
+            selected ? 'border-brand bg-brand-soft text-ink shadow-sm'
+              : blocked ? 'border-dashed border-slate-300 bg-slate-50 text-slate-400'
               : full ? 'border-slate-200 bg-white text-slate-400'
-              : 'border-slate-300 bg-white text-ink hover:border-brand hover:bg-brand-soft'
+              : 'border-slate-200 bg-white text-ink hover:border-brand hover:bg-brand-soft/60'
           } ${flash === id ? 'ring-4 ring-accent/40' : ''}`}
         >
-          {blocked ? <Ban className="h-4 w-4 shrink-0" /> : <span aria-hidden className="text-lg leading-none">{emoji(id)}</span>}
-          <span className="min-w-0">
+          {blocked
+            ? <Ban className="h-5 w-5 shrink-0" />
+            : (
+              <span aria-hidden className="relative shrink-0">
+                <span className={`text-xl leading-none ${full ? 'grayscale' : ''}`}>{emoji(id)}</span>
+                {/* Número de casilla, sobre el emoji para no robar ancho al texto */}
+                {selected && (
+                  <span className="absolute -right-2.5 -top-2.5 grid h-5 w-5 place-items-center rounded-full bg-brand text-[11px] font-bold text-ink ring-2 ring-white">{pos + 1}</span>
+                )}
+              </span>
+            )}
+          <span className="min-w-0 flex-1 hyphens-auto">
             {topic(id)}
             {blocked && <span className="block text-xs font-medium">{t(c.blocked)}</span>}
           </span>
@@ -126,7 +140,7 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
           <button
             type="button"
             onClick={() => removeOther(id)}
-            className="grid h-11 w-9 shrink-0 place-items-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            className="grid w-9 shrink-0 place-items-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900"
             aria-label={t('register.otherRemove', { label: topic(id) })}
           >
             <X className="h-4 w-4" />
@@ -145,19 +159,19 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
         <div className="flex items-center gap-3" aria-live="polite">
           <div className="flex gap-1" aria-hidden>
             {Array.from({ length: max }, (_, i) => (
-              <span key={i} className={`h-2 w-6 rounded-full transition-colors ${i < list.length ? c.dot : 'bg-slate-200'}`} />
+              <span key={i} className={`h-2 w-4 rounded-full sm:w-6 lg:h-2.5 lg:w-8 transition-colors ${i < list.length ? c.dot : 'bg-slate-200'}`} />
             ))}
           </div>
-          <span className="text-sm font-bold tabular-nums text-ink">{list.length}/{max}</span>
+          <span className="text-sm font-bold tabular-nums text-ink lg:text-base">{list.length}/{max}</span>
         </div>
         {list.length > 0 && (
-          <button type="button" onClick={() => onChange({ [col]: [] })} className="text-sm font-medium text-slate-500 underline-offset-4 hover:text-ink hover:underline">
+          <button type="button" onClick={() => onChange({ [col]: [] })} className="whitespace-nowrap text-sm font-medium text-slate-500 underline-offset-4 hover:text-ink hover:underline lg:text-[15px]">
             {t('register.clearAll')}
           </button>
         )}
       </div>
 
-      <ol className={`mt-3 grid gap-2 rounded-2xl ${max > 5 ? 'grid-cols-4 sm:grid-cols-8' : 'grid-cols-5'} bg-gradient-to-r from-brand-soft to-accent-soft p-3 sm:gap-3`}>
+      <ol className={`mt-3 grid gap-2 rounded-2xl ${max > 5 ? 'grid-cols-4 sm:grid-cols-8' : 'grid-cols-5'} bg-gradient-to-r from-brand-soft to-accent-soft p-3 sm:gap-3 lg:gap-4 lg:p-4`}>
         {Array.from({ length: max }, (_, i) => {
           const id = list[i]
           return (
@@ -168,16 +182,16 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
                   onClick={() => toggle(id)}
                   title={t('register.otherRemove', { label: topic(id) })}
                   aria-label={t('register.otherRemove', { label: topic(id) })}
-                  className="animate-pop-in group relative flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-xl bg-white p-1.5 text-center shadow-sm transition hover:shadow-md"
+                  className="animate-pop-in group relative flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-xl bg-white p-1.5 text-center shadow-sm transition hover:shadow-md lg:gap-2 lg:p-2"
                 >
-                  <span aria-hidden className="text-2xl leading-none sm:text-3xl">{emoji(id)}</span>
-                  <span className="line-clamp-2 text-[11px] font-semibold leading-tight text-ink sm:text-xs">{topic(id)}</span>
+                  <span aria-hidden className="text-2xl leading-none sm:text-3xl lg:text-4xl">{emoji(id)}</span>
+                  <span className="line-clamp-2 text-[11px] font-semibold leading-tight text-ink sm:text-xs lg:text-sm">{topic(id)}</span>
                   <X aria-hidden className="absolute right-1 top-1 h-3.5 w-3.5 text-slate-400 opacity-0 transition group-hover:opacity-100" />
                 </button>
               ) : (
                 <span
                   aria-label={t('register.slotEmpty', { n: i + 1 })}
-                  className="grid aspect-square w-full place-items-center rounded-xl border-2 border-dashed border-slate-300 text-lg font-bold text-slate-400"
+                  className="grid aspect-square w-full place-items-center rounded-xl border-2 border-dashed border-slate-300 text-lg font-bold text-slate-400 lg:text-2xl"
                 >
                   {i + 1}
                 </span>
@@ -199,14 +213,14 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
         <p role="alert" className="mt-4 rounded-lg bg-accent-soft px-3 py-2 text-sm font-semibold text-accent-dark">{noticeText}</p>
       )}
 
-      {/* Familias, todas abiertas */}
-      <div className="mt-6 space-y-5">
+      {/* Familias en columnas del mismo ancho (5 en PC): cada tema queda siempre en su sitio */}
+      <div className="mt-6 grid gap-x-3 gap-y-5 sm:grid-cols-2 lg:mt-8 lg:grid-cols-3 xl:grid-cols-5">
         {TOPIC_FAMILIES.map((g) => (
-          <section key={g.id} aria-labelledby={`family-${g.id}`}>
-            <h3 id={`family-${g.id}`} className="text-xs font-bold uppercase tracking-wider text-slate-500">
+          <section key={g.id} aria-labelledby={`family-${g.id}`} className="min-w-0">
+            <h3 id={`family-${g.id}`} className="flex items-end text-xs font-bold uppercase leading-snug tracking-wider text-slate-500 lg:text-[13px]">
               {t(`register.families.${g.id}`)}
             </h3>
-            <ul className="mt-3 flex flex-wrap gap-2">{g.topics.map(chip)}</ul>
+            <ul className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-1">{g.topics.map(chip)}</ul>
           </section>
         ))}
       </div>
@@ -218,7 +232,7 @@ export default function TopicPicker({ col, offers, needs, customTopics, onChange
         {customTopics.length > 0 && (
           <section aria-labelledby="family-custom" className="mb-4">
             <h3 id="family-custom" className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('register.families.custom')}</h3>
-            <ul className="mt-3 flex flex-wrap gap-2">{customTopics.map(chip)}</ul>
+            <ul className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">{customTopics.map(chip)}</ul>
           </section>
         )}
 

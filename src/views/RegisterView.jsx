@@ -167,19 +167,20 @@ export default function RegisterView({ mode = 'create' }) {
   const score = attractivenessScore(form)
 
   return (
-    <section className="vip-glow flex min-h-dvh flex-col px-5 pt-6 sm:px-10 lg:pt-8">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
+    <section className="vip-glow flex min-h-dvh flex-col overflow-x-clip px-5 pt-6 sm:px-10 lg:px-12 lg:pt-8">
+      <div className={`mx-auto flex w-full items-center justify-between gap-4 ${WIDTH}`}>
         <Logo />
         <LangSwitch />
       </div>
 
-      <div className={`mx-auto w-full max-w-4xl flex-1 ${phase === 'fading' ? 'animate-form-out' : ''}`}>
+      {/* En PC el formulario ocupa casi todo el ancho (alineado con el logo) */}
+      <div className={`mx-auto flex w-full flex-1 flex-col ${WIDTH} ${phase === 'fading' ? 'animate-form-out' : ''}`}>
         {editing && (
           <header className="mt-8">
             <p className="inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold uppercase tracking-wide text-ink">
               <Gem className="h-3.5 w-3.5" /> {t('register.editKicker')}
             </p>
-            <p className="mt-4 max-w-lg text-lg leading-relaxed text-slate-700">{t('register.editSubtitle')}</p>
+            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-700 lg:text-xl">{t('register.editSubtitle')}</p>
           </header>
         )}
 
@@ -188,19 +189,22 @@ export default function RegisterView({ mode = 'create' }) {
           <AttractivenessMeter value={score} />
         </div>
 
-        {/* Retour, fuera del formulario */}
-        {(screen > 1 || !editing) && (
-          <button
-            type="button"
-            onClick={() => goTo(screen - 1)}
-            disabled={phase !== 'form'}
-            className="mt-6 inline-flex items-center gap-1.5 rounded-lg py-1 text-[15px] font-semibold text-slate-600 transition hover:text-ink disabled:opacity-50"
-          >
-            <ArrowLeft className="h-4 w-4" /> {t('register.back')}
-          </button>
-        )}
+        {/* Retour, fuera del formulario, y a la derecha «Étape 2 sur 3» (discreto, solo para saber cuánto falta) */}
+        <div className="mt-6 flex min-h-8 items-center justify-between gap-4">
+          {(screen > 1 || !editing) && (
+            <button
+              type="button"
+              onClick={() => goTo(screen - 1)}
+              disabled={phase !== 'form'}
+              className="inline-flex items-center gap-1.5 rounded-lg py-1 text-[15px] font-semibold text-slate-600 transition hover:text-ink disabled:opacity-50 lg:text-base"
+            >
+              <ArrowLeft className="h-4 w-4 lg:h-5 lg:w-5" /> {t('register.back')}
+            </button>
+          )}
+          <p className="ml-auto text-xs font-bold uppercase tracking-wider text-slate-500 lg:text-sm">{t('register.stepOf', { n: screen, total: LAST })}</p>
+        </div>
 
-        <form onSubmit={submit} noValidate className="mt-4 space-y-6">
+        <form onSubmit={submit} noValidate className="mt-4 flex flex-1 flex-col gap-6 lg:gap-8">
           {restored && screen === 1 && (
             <div className="flex flex-col gap-2 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-[15px] font-medium text-ink">{t('register.draftRestored')}</p>
@@ -213,9 +217,9 @@ export default function RegisterView({ mode = 'create' }) {
           {/* 1 · Profil */}
           {screen === 1 && (
             <Card key="profile" icon={UserRound} title={t('register.step1')} subtitle={t('register.step1Sub')}>
-              <div className="mt-6 grid gap-6 md:grid-cols-[18rem_minmax(0,1fr)] md:items-start md:gap-8">
+              <div className="mt-6 grid gap-6 md:grid-cols-[18rem_minmax(0,1fr)] md:items-start md:gap-8 lg:mt-7 lg:grid-cols-[19rem_minmax(0,1fr)] lg:gap-12 2xl:grid-cols-[22rem_minmax(0,1fr)]">
               <PhotoPicker value={form.photo} name={form.name} onChange={(v) => set('photo', v)} />
-              <div className="space-y-4">
+              <div className="space-y-4 lg:space-y-5">
                 <div data-field="name">
                   <Field label={t('register.name')} name="name" icon={User} placeholder={t('register.namePh')} autoComplete="name" value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} />
                 </div>
@@ -258,7 +262,7 @@ export default function RegisterView({ mode = 'create' }) {
           {/* 3 · Arme secrète */}
           {screen === 3 && (
             <Card key="power" icon={Sparkles} tone="ink" title={t('register.step3')} tag={t('register.step3Tag')} subtitle={t('register.step3Sub', { max: MAX_SUPERPOWERS })} field="superpowers" labelId="pick-power">
-              <div className="mt-4">
+              <div className="mt-4 lg:mt-6">
                 <SuperpowerPicker labelledBy="pick-power" value={form.superpowers} onChange={(v) => set('superpowers', v)} />
               </div>
             </Card>
@@ -271,22 +275,37 @@ export default function RegisterView({ mode = 'create' }) {
             </p>
           )}
 
-          <div className="flex flex-col">
-            {screen < LAST ? (
-              <Button type="submit" iconRight={ArrowRight} className="py-4 text-base">{t('register.next')}</Button>
-            ) : (
-              <Button type="submit" icon={Heart} className="py-4 text-base" disabled={phase !== 'form'}>
-                {phase === 'saving' ? t('register.saving') : t(editing ? 'register.editSave' : 'register.submit')}
-              </Button>
-            )}
+          {/* Barra de acciones fija abajo: el botón siempre a la vista, también con la lista larga de temas.
+              En PC: nota del borrador a la izquierda y botón a la derecha; en móvil, botón a todo el ancho. */}
+          <div className="sticky bottom-0 z-10 mt-auto">
+            {/* Fondo a todo el ancho de la ventana; el contenido sigue alineado con el formulario */}
+            <div aria-hidden className="absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 border-t border-slate-200 bg-paper/95 shadow-[0_-8px_24px_-12px_rgb(32_32_46/0.15)] backdrop-blur" />
+            <div className="relative flex flex-col gap-3 py-4 sm:flex-row-reverse sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row-reverse">
+                {screen < LAST ? (
+                  <Button type="submit" iconRight={ArrowRight} className="py-4 text-base sm:min-w-64 lg:min-w-72 lg:py-4.5 lg:text-lg">{t('register.next')}</Button>
+                ) : (
+                  <Button type="submit" icon={Heart} className="py-4 text-base sm:min-w-64 lg:min-w-80 lg:py-4.5 lg:text-lg" disabled={phase !== 'form'}>
+                    {phase === 'saving' ? t('register.saving') : t(editing ? 'register.editSave' : 'register.submit')}
+                  </Button>
+                )}
+                {editing && (
+                  <button type="button" onClick={() => navigate(VIEWS.HOME)} disabled={phase !== 'form'}
+                    className="rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-base font-semibold text-slate-700 hover:bg-slate-50 lg:text-lg">
+                    {t('register.editCancel')}
+                  </button>
+                )}
+              </div>
+              {!editing && (
+                <p className="hidden items-center gap-1.5 text-sm text-slate-600 sm:flex lg:text-[15px]">
+                  <Save className="h-4 w-4" /> {t('register.draftSaved')}
+                </p>
+              )}
+            </div>
           </div>
-          {editing ? (
-            <button type="button" onClick={() => navigate(VIEWS.HOME)} disabled={phase !== 'form'}
-              className="w-full rounded-xl border border-slate-300 bg-white py-3.5 text-base font-semibold text-slate-700 hover:bg-slate-50">
-              {t('register.editCancel')}
-            </button>
-          ) : (
-            <p className="flex items-center justify-center gap-1.5 text-sm text-slate-600">
+          {/* En móvil la nota del borrador va fuera de la barra para no robar pantalla */}
+          {!editing && (
+            <p className="-mt-2 flex items-center justify-center gap-1.5 text-sm text-slate-600 sm:hidden">
               <Save className="h-4 w-4" /> {t('register.draftSaved')}
             </p>
           )}
@@ -299,31 +318,34 @@ export default function RegisterView({ mode = 'create' }) {
 
 const STEPS = ['register.navProfile', 'register.navSkills', 'register.navPower']
 
+// Ancho del formulario: casi toda la pantalla en PC, con tope en monitores muy grandes
+const WIDTH = 'max-w-6xl 2xl:max-w-7xl'
+
 /** Landing de entrada (a la que llega el email): invitación, cómo funciona y un único CTA */
 function Landing({ resume, onStart }) {
   const { t } = useI18n()
   return (
-    <div className="vip-glow flex min-h-dvh flex-col px-5 pt-6 sm:px-10">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
+    <div className="vip-glow flex min-h-dvh flex-col px-5 pt-6 sm:px-10 lg:px-12 lg:pt-8">
+      <div className={`mx-auto flex w-full ${WIDTH} items-center justify-between gap-4`}>
         <Logo />
         <LangSwitch />
       </div>
 
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center py-10 text-center">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 lg:max-w-4xl flex-col items-center justify-center py-10 text-center">
         <MatchIllustration />
-        <p className="mt-8 inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold uppercase tracking-wide text-ink">
+        <p className="mt-8 inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold lg:px-4 lg:py-2 lg:text-base uppercase tracking-wide text-ink">
           <Gem className="h-3.5 w-3.5" /> {t('register.kicker')}
         </p>
         <h1 className="mt-6 tracking-tight">
-          <span className="block text-lg font-bold text-brand-dark sm:text-xl">{t('register.titleBrand')}</span>
-          <span className="mt-1 block font-display text-5xl font-medium leading-[1.02] sm:text-7xl">{t('register.titleMain')}</span>
+          <span className="block text-lg font-bold text-brand-dark sm:text-xl lg:text-2xl">{t('register.titleBrand')}</span>
+          <span className="mt-1 block font-display text-5xl font-medium leading-[1.02] sm:text-7xl lg:[@media(min-height:960px)]:text-8xl">{t('register.titleMain')}</span>
         </h1>
-        <p className="mt-6 max-w-lg text-lg leading-relaxed text-slate-700 sm:text-xl">{t('register.subtitle')}</p>
+        <p className="mt-6 max-w-lg text-lg leading-relaxed text-slate-700 sm:text-xl lg:max-w-2xl lg:text-2xl">{t('register.subtitle')}</p>
 
-        <ol className="mt-8 flex flex-wrap justify-center gap-2">
+        <ol className="mt-8 flex flex-wrap justify-center gap-2 lg:gap-3">
           {STEPS.map((key, i) => (
-            <li key={key} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[15px] font-semibold text-ink shadow-sm">
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-ink text-xs font-bold text-white">{i + 1}</span>
+            <li key={key} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[15px] font-semibold text-ink shadow-sm lg:px-5 lg:py-2.5 lg:text-lg">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-ink text-xs font-bold text-white lg:h-7 lg:w-7 lg:text-sm">{i + 1}</span>
               {t(key)}
             </li>
           ))}
@@ -332,11 +354,11 @@ function Landing({ resume, onStart }) {
         <button
           type="button"
           onClick={onStart}
-          className="mt-10 inline-flex min-h-16 w-full max-w-sm items-center justify-center gap-3 rounded-2xl bg-brand px-10 text-lg font-bold text-ink shadow-lg shadow-brand/30 transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/40 active:scale-[0.98] sm:w-auto sm:text-xl"
+          className="mt-10 inline-flex min-h-16 w-full max-w-sm items-center justify-center gap-3 rounded-2xl bg-brand px-10 text-lg font-bold text-ink shadow-lg shadow-brand/30 transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/40 active:scale-[0.98] sm:w-auto sm:text-xl lg:min-h-18 lg:px-14 lg:text-2xl"
         >
-          {t(resume ? 'register.landingResume' : 'register.landingCta')} <ArrowRight className="h-5 w-5" />
+          {t(resume ? 'register.landingResume' : 'register.landingCta')} <ArrowRight className="h-5 w-5 lg:h-6 lg:w-6" />
         </button>
-        <p className="mt-4 text-sm text-slate-600">{t(resume ? 'register.landingNote' : 'register.landingHow')}</p>
+        <p className="mt-4 text-sm text-slate-600 lg:text-base">{t(resume ? 'register.landingNote' : 'register.landingHow')}</p>
       </main>
 
       <PublicFooter />
@@ -348,7 +370,7 @@ function Landing({ resume, onStart }) {
 function Recap({ form, onEdit }) {
   const { t, topic, country } = useI18n()
   const rows = [
-    { label: t('register.navProfile'), screen: 1, body: <p className="text-base text-ink">{[form.name, form.role, form.country && country(form.country)].filter(Boolean).join(' · ')}</p> },
+    { label: t('register.navProfile'), screen: 1, body: <p className="text-base text-ink lg:text-lg">{[form.name, form.role, form.country && country(form.country)].filter(Boolean).join(' · ')}</p> },
     { label: t('register.navSkills'), screen: 2, body: <Tags ids={form.needs} className="bg-brand-soft text-brand-dark" /> },
     {
       label: t('waiting.superpowers'),
@@ -359,20 +381,20 @@ function Recap({ form, onEdit }) {
   function Tags({ ids, className }) {
     return (
       <ul className="flex flex-wrap gap-1.5">
-        {ids.map((id) => <li key={id} className={`rounded-full px-3 py-1 text-sm font-medium ${className}`}>{topic(id)}</li>)}
+        {ids.map((id) => <li key={id} className={`rounded-full px-3 py-1 text-sm font-medium lg:px-3.5 lg:py-1.5 lg:text-[15px] ${className}`}>{topic(id)}</li>)}
       </ul>
     )
   }
   return (
-    <section aria-labelledby="recap-title" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-      <h2 id="recap-title" className="font-display text-xl font-medium text-ink">{t('register.recapTitle')}</h2>
+    <section aria-labelledby="recap-title" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 lg:rounded-3xl lg:p-10">
+      <h2 id="recap-title" className="font-display text-xl font-medium text-ink lg:text-2xl">{t('register.recapTitle')}</h2>
       <dl className="mt-4 divide-y divide-slate-100">
         {rows.map((r) => (
-          <div key={r.label} className="grid gap-2 py-3 sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-center sm:gap-4">
-            <dt className="text-sm font-bold uppercase tracking-wider text-slate-500">{r.label}</dt>
+          <div key={r.label} className="grid gap-2 py-3 sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-center sm:gap-4 lg:grid-cols-[12rem_minmax(0,1fr)_auto] lg:py-4">
+            <dt className="text-sm font-bold uppercase tracking-wider text-slate-500 lg:text-[15px]">{r.label}</dt>
             <dd className="min-w-0">{r.body}</dd>
             {r.screen !== 3 && (
-              <button type="button" onClick={() => onEdit(r.screen)} className="justify-self-start text-[15px] font-semibold text-brand-dark underline-offset-4 hover:underline">
+              <button type="button" onClick={() => onEdit(r.screen)} className="justify-self-start text-[15px] font-semibold text-brand-dark underline-offset-4 hover:underline lg:text-base">
                 {t('register.recapEdit')}
               </button>
             )}
@@ -386,7 +408,7 @@ function Recap({ form, onEdit }) {
 /** Ilustración: dos perfiles que hacen «match» */
 function MatchIllustration() {
   return (
-    <div aria-hidden className="relative mx-auto h-40 w-72 sm:h-44">
+    <div aria-hidden className="relative mx-auto h-40 w-72 sm:h-44 lg:[@media(min-height:960px)]:my-6 lg:[@media(min-height:960px)]:scale-125">
       <div className="absolute left-0 top-4 w-40 -rotate-6 rounded-2xl bg-white p-4 text-left text-ink shadow-xl ring-1 ring-slate-200">
         <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent font-bold text-ink">A</div>
         <div className="mt-3 h-2 w-24 rounded bg-slate-200" />
@@ -409,14 +431,14 @@ const TAGS = { brand: 'bg-brand-soft text-brand-dark', accent: 'bg-accent-soft t
 
 function Card({ icon: Icon, tone = 'ink', title, tag, subtitle, field, labelId, children }) {
   return (
-    <fieldset data-field={field} className="relative min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+    <fieldset data-field={field} className="relative min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 lg:rounded-3xl lg:p-8 2xl:p-10">
       <legend className="sr-only">{title}</legend>
-      <div className="flex items-center gap-3">
-        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${BADGES[tone]}`}><Icon className="h-5 w-5" /></span>
-        <h2 id={labelId} className="text-xl font-bold leading-tight text-ink sm:text-2xl">{title}</h2>
+      <div className="flex items-center gap-3 lg:gap-4">
+        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl lg:h-12 lg:w-12 ${BADGES[tone]}`}><Icon className="h-5 w-5 lg:h-6 lg:w-6" /></span>
+        <h2 id={labelId} className="font-display text-2xl font-medium leading-tight text-ink lg:text-[2rem]">{title}</h2>
       </div>
-      {tag && <span className={`mt-3 inline-block rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${TAGS[tone]}`}>{tag}</span>}
-      {subtitle && <p className="mt-2 text-base leading-relaxed text-slate-700">{subtitle}</p>}
+      {tag && <span className={`mt-3 inline-block rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide lg:text-sm ${TAGS[tone]}`}>{tag}</span>}
+      {subtitle && <p className="mt-2 text-base leading-relaxed text-slate-700 lg:mt-3 lg:text-lg">{subtitle}</p>}
       {children}
     </fieldset>
   )

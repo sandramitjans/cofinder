@@ -37,17 +37,17 @@ export default function PhotoPicker({ value, name, onChange }) {
       <button
         type="button"
         onClick={pick}
-        className="group relative mx-auto block aspect-square w-full max-w-72 overflow-hidden rounded-3xl bg-gradient-to-br from-brand via-brand-dark to-ink shadow-lg shadow-brand/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/40"
+        className="group relative mx-auto block aspect-square w-full max-w-72 overflow-hidden lg:max-w-none rounded-3xl bg-gradient-to-br from-brand via-brand-dark to-ink shadow-lg shadow-brand/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/40"
         aria-label={value ? t('register.photoChange') : t('register.photoAdd')}
       >
         {value ? (
           <img src={value} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
-          <span aria-hidden className="absolute inset-0 grid place-items-center font-display text-7xl font-medium text-white/95">
+          <span aria-hidden className="absolute inset-0 grid place-items-center font-display text-7xl font-medium text-white/95 lg:text-8xl">
             {initialsOf(name)}
           </span>
         )}
-        <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/70 to-transparent pb-4 pt-10 text-[15px] font-semibold text-white">
+        <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/70 to-transparent pb-4 pt-10 text-[15px] font-semibold text-white lg:pb-5 lg:text-base">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
           {value ? t('register.photoChange') : t('register.photoAdd')}
         </span>
@@ -58,7 +58,7 @@ export default function PhotoPicker({ value, name, onChange }) {
           <Trash2 className="h-4 w-4" /> {t('register.photoRemove')}
         </button>
       )}
-      <p className={`mt-3 text-sm ${error ? 'font-semibold text-accent-dark' : 'text-slate-600'}`}>
+      <p className={`mt-3 text-sm lg:text-[15px] ${error ? 'font-semibold text-accent-dark' : 'text-slate-600'}`}>
         {error ? t('register.photoError') : t('register.photoHint')}
       </p>
 
