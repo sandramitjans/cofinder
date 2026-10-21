@@ -262,10 +262,14 @@ export function planStats(rounds, byId) {
   let chosen = 0
   let repeatedTopics = 0
   let maxTables = 0
+  let tables = 0
+  let noExpert = 0
   for (const round of rounds) {
     maxTables = Math.max(maxTables, round.tables.length)
     for (const t of round.tables) {
       const key = topicKey(t.topic)
+      tables++
+      if (!t.members.some((id) => (byId.get(id)?.offers ?? []).some((x) => topicKey(x) === key))) noExpert++
       t.members.forEach((id, i) => {
         const p = byId.get(id)
         if (!p) return
@@ -293,6 +297,8 @@ export function planStats(rounds, byId) {
     overLimitPairs: [...pairs.values()].filter((n) => n > MAX_MEETINGS_PER_PAIR).length,
     avgContacts: people.length ? people.reduce((s, c) => s + c.size, 0) / people.length : 0,
     maxTables,
+    tables,
+    noExpert, // mesas sin nadie «Expérimenté·e» en su tema
   }
 }
 

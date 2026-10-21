@@ -1,5 +1,6 @@
 // 12 directores ficticios para ensayar la dinámica desde el panel de moderadora.
-// Como en el formulario actual, cada uno elige 8 temas de interés (se guardan en `needs`).
+// Como en el formulario, cada uno elige 8 temas; los 3 primeros los marca «Expérimenté·e» (`offers`)
+// y el resto «Curieux·se» (`needs`).
 const DEMO = [
   ['Laura Martín', 'Marketing Director', 'es', ['analytics', 'customer_journey', 'ai_guru', 'geo', 'social_strategy', 'b2b', 'pnl', 'branding'], ['shortcuts', 'outlook']],
   ['João Ferreira', 'Head of Marketing', 'pt', ['paid_performance', 'affiliates', 'branding', 'b2b', 'geo', 'emailing_loyalty', 'guerrilla', 'cofidis_ninja'], ['punchlines']],
@@ -16,6 +17,7 @@ const DEMO = [
 ]
 
 export const demoParticipants = () =>
-  DEMO.map(([name, role, country, needs, superpowers]) => ({
-    id: crypto.randomUUID(), createdAt: Date.now(), demo: true, name, role, country, offers: [], needs, superpowers,
+  DEMO.map(([name, role, country, topics, superpowers]) => ({
+    id: crypto.randomUUID(), createdAt: Date.now(), demo: true, name, role, country,
+    offers: topics.slice(0, 3), needs: topics.slice(3), superpowers,
   }))

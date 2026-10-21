@@ -7,10 +7,12 @@ const STYLES = {
   curious: 'bg-slate-100 text-slate-500',
 }
 
-export default function RoleBadge({ role, className = '' }) {
+const SIZES = { sm: 'px-2.5 py-1 text-[11px]', lg: 'px-3.5 py-1.5 text-base' }
+
+export default function RoleBadge({ role, size = 'sm', className = '' }) {
   const { t } = useI18n()
   return (
-    <span className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${STYLES[role]} ${className}`}>
+    <span className={`shrink-0 whitespace-nowrap rounded-full font-semibold ${SIZES[size]} ${STYLES[role]} ${className}`}>
       {t(`roles.${role}`)}
     </span>
   )

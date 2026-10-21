@@ -155,6 +155,9 @@ export default function ModeratorPanelView() {
                 <ul className="mt-2 space-y-1 text-sm">
                   <Quality ok={stats.chosenPct >= 80} label={t('panel.chosen')} value={`${stats.chosenPct} %`} />
                   <Quality ok={!stats.repeatedTopics} label={t('panel.repeatedTopics')} value={stats.repeatedTopics} />
+                  {participants.some((p) => p.offers?.length) && (
+                    <Quality ok={stats.noExpert <= stats.tables * 0.1} label={t('panel.noExpert')} value={`${stats.noExpert} / ${stats.tables}`} />
+                  )}
                   <Quality ok={!stats.overLimitPairs} label={t('panel.overLimit')} value={stats.overLimitPairs} />
                   <Quality ok label={t('panel.contacts')} value={`${stats.avgContacts.toFixed(1)} / ${Math.max(0, participants.length - 1)}`} />
                 </ul>

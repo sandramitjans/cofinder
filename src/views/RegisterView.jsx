@@ -8,6 +8,7 @@ import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
 import Field from '../components/ui/Field'
 import TopicPicker from '../components/TopicPicker'
+import LevelPicker from '../components/LevelPicker'
 import SuperpowerPicker, { SuperpowerChips } from '../components/ui/SuperpowerPicker'
 import PhotoPicker from '../components/ui/PhotoPicker'
 import LangSwitch from '../components/ui/LangSwitch'
@@ -17,7 +18,8 @@ import MatchScene from './MatchScene'
 import { isCustom } from '../lib/topics'
 
 // `country` guarda «Filiale / Département» (texto libre, con sugerencias de filiales)
-const EMPTY = { name: '', role: '', country: '', photo: '', offers: [], needs: [], customTopics: [], superpowers: [] }
+// `needs` guarda en el formulario los 8 temas elegidos; `levels` dice para cada uno si es «Expérimenté·e» o «Curieux·se»
+const EMPTY = { name: '', role: '', country: '', photo: '', offers: [], needs: [], levels: {}, customTopics: [], superpowers: [] }
 
 // Borrador automático: se guarda en este dispositivo y se borra al validar el perfil
 const DRAFT_KEY = 'cofinder:draft'
@@ -60,6 +62,8 @@ const formFromProfile = (p, countryLabel) => {
     photo: p.photo || '',
     offers: [],
     needs: [...new Set([...(p.needs ?? []), ...(p.offers ?? [])])].slice(0, MAX_INTERESTS), // una sola lista de intereses
+    // Perfiles enviados antes de existir el nivel: sus temas llegan sin marcar y se piden al editar
+    levels: Object.fromEntries([...(p.needs ?? []).map((x) => [x, 'curious']), ...(p.offers ?? []).map((x) => [x, 'expert'])]),
     customTopics: [...new Set([...(p.customTopics ?? []), ...used])],
     superpowers: [...(p.superpowers ?? [])],
   }
@@ -126,6 +130,8 @@ export default function RegisterView({ mode = 'create' }) {
       if (!form.country.trim()) er.country = t('register.errCountry')
     }
     if (screen === 2 && form.needs.length !== MAX_INTERESTS) er.needs = t('register.errInterests', { max: MAX_INTERESTS, n: form.needs.length })
+    const missing = form.needs.filter((id) => !form.levels?.[id]).length
+    if (screen === 2 && !er.needs && missing) er.levels = t('register.errLevels', { n: missing })
     setErrors(er)
     const first = Object.keys(er)[0]
     if (first) document.querySelector(`[data-field="${first}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -136,10 +142,17 @@ export default function RegisterView({ mode = 'create' }) {
     e.preventDefault()
     if (phase !== 'form' || !validate()) return
     if (screen < LAST) return goTo(screen + 1)
-    // Los temas propios sin marcar en ninguna columna no aportan nada: se descartan
-    // Los temas elegidos se guardan como `needs`; el reparto en mesas agrupa por interés
+    // Los temas propios que no se han elegido no aportan nada: se descartan.
+    // Cada tema elegido se guarda según su nivel: «Expérimenté·e» en `offers`, «Curieux·se» en `needs`
     const customTopics = form.customTopics.filter((c) => form.needs.includes(c))
-    const data = { ...form, offers: [], customTopics, name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country) }
+    const levelOf = (id) => form.levels?.[id] ?? 'curious'
+    const { levels: _levels, ...rest } = form
+    const data = {
+      ...rest,
+      offers: form.needs.filter((id) => levelOf(id) === 'expert'),
+      needs: form.needs.filter((id) => levelOf(id) === 'curious'),
+      customTopics, name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country),
+    }
     saved.current = data
     setSaveError(false)
     setPhase('saving')
@@ -256,6 +269,7 @@ export default function RegisterView({ mode = 'create' }) {
                 onChange={patch}
                 error={errors.needs}
               />
+              <LevelPicker topics={form.needs} levels={form.levels ?? {}} onChange={patch} error={errors.levels} />
             </Card>
           )}
 

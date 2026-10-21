@@ -156,7 +156,7 @@ export default function ProjectorView() {
           {people.map((p, i) => (
             <div key={p.id} className={`animate-pop-in ${width}`} style={{ animationDelay: `${450 + i * 160}ms` }}>
               <VipCard name={p.name} role={p.role} branch={country(p.country)} photo={p.photo} photoClassName="aspect-[3/4]" />
-              {expertMode && <div className="mt-3 text-center"><RoleBadge role={roleOf(p, tb.topic)} className="text-sm" /></div>}
+              {expertMode && <div className="mt-3 text-center"><RoleBadge role={roleOf(p, tb.topic)} size="lg" /></div>}
             </div>
           ))}
         </div>
