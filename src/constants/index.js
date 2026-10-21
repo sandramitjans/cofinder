@@ -74,7 +74,7 @@ export const SUPERPOWERS = [
   { id: 'friday', emoji: '🚒' },
   { id: 'pokerface', emoji: '🃏' },
 ]
-export const MAX_SUPERPOWERS = 3
+export const MAX_SUPERPOWERS = 1
 
 export const COUNTRIES = ['fr', 'es', 'pt', 'it', 'de', 'uk', 'mx', 'co', 'ar', 'cl', 'br', 'us']
 

@@ -1,40 +1,34 @@
 import { Check } from 'lucide-react'
-import { MAX_SUPERPOWERS, SUPERPOWERS } from '../../constants'
+import { SUPERPOWERS } from '../../constants'
 import { useI18n } from '../../context/I18nContext'
 
-/** Selección de superpoderes de oficina (facultativa, máx. MAX_SUPERPOWERS) */
+/** Selección del arma secreta (facultativa, una sola: elegir otra sustituye a la anterior) */
 export default function SuperpowerPicker({ value, onChange, labelledBy }) {
-  const { t, superpower } = useI18n()
-  const full = value.length >= MAX_SUPERPOWERS
-  const toggle = (id) =>
-    onChange(value.includes(id) ? value.filter((x) => x !== id) : full ? value : [...value, id])
+  const { superpower } = useI18n()
+  const toggle = (id) => onChange(value.includes(id) ? [] : [id])
 
   return (
     <div>
       <div className="grid gap-2 sm:grid-cols-2 lg:gap-3 xl:grid-cols-3" role="group" aria-labelledby={labelledBy}>
         {SUPERPOWERS.map(({ id, emoji }) => {
           const selected = value.includes(id)
-          const disabled = !selected && full
           return (
             <button
               key={id}
               type="button"
               data-power={id}
               onClick={() => toggle(id)}
-              disabled={disabled}
               aria-pressed={selected}
               className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-[15px] font-medium lg:px-4 lg:py-3.5 lg:text-base transition-all duration-150 active:scale-[0.98] ${
                 selected
                   ? 'border-brand bg-brand-soft text-ink shadow-md shadow-brand/20'
-                  : disabled
-                    ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
-                    : 'border-slate-300 bg-white text-slate-800 hover:border-slate-500'
+                  : 'border-slate-300 bg-white text-slate-800 hover:border-slate-500'
               }`}
             >
               <span
                 aria-hidden
                 className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-lg transition-transform lg:h-11 lg:w-11 lg:text-xl ${
-                  selected ? 'scale-110 bg-accent' : disabled ? 'bg-slate-100 grayscale' : 'bg-accent-soft group-hover:rotate-6'
+                  selected ? 'scale-110 bg-accent' : 'bg-accent-soft group-hover:rotate-6'
                 }`}
               >
                 {emoji}
@@ -45,9 +39,6 @@ export default function SuperpowerPicker({ value, onChange, labelledBy }) {
           )
         })}
       </div>
-      <p className="mt-3 text-right text-sm font-semibold text-slate-700 lg:mt-4 lg:text-base" aria-live="polite">
-        {t('register.superHint', { n: value.length, max: MAX_SUPERPOWERS })}
-      </p>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Briefcase, Building2, ChevronsRight, Save, Gem, Heart, Lightbulb, RotateCcw, Sparkles, User, UserRound } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Briefcase, Building2, ChevronsRight, Save, Gauge, Gem, Heart, Lightbulb, RotateCcw, Sparkles, User, UserRound } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { COUNTRIES, MAX_INTERESTS, MAX_SUPERPOWERS, VIEWS } from '../constants'
@@ -9,7 +9,7 @@ import Button from '../components/ui/Button'
 import Field from '../components/ui/Field'
 import TopicPicker from '../components/TopicPicker'
 import LevelPicker from '../components/LevelPicker'
-import SuperpowerPicker, { SuperpowerChips } from '../components/ui/SuperpowerPicker'
+import SuperpowerPicker from '../components/ui/SuperpowerPicker'
 import PhotoPicker from '../components/ui/PhotoPicker'
 import LangSwitch from '../components/ui/LangSwitch'
 import AttractivenessMeter, { attractivenessScore } from '../components/AttractivenessMeter'
@@ -42,8 +42,8 @@ const normalizeBranch = (text) => {
 
 /**
  * Pre-registro «Cofinder : Le Speed-Dating des Directeurs».
- * Landing con un único CTA (a ella llega el email) y formulario en 3 pasos: perfil,
- * competencias (primero «Je maîtrise», luego «J’explore») y arme secrète.
+ * Landing con un único CTA (a ella llega el email) y formulario en 4 pasos: perfil,
+ * temas de interés, nivel en cada tema (Expérimenté·e / Curieux·se) y arme secrète (una sola).
  * El mismo formulario para todo el mundo (moderadora incluida), sin pistas de mesas ni rondas.
  * Al validar: el formulario se desvanece, entra la tarjeta VIP y cae el sello «PROFIL VALIDÉ & MATCH READY !».
  */
@@ -65,12 +65,12 @@ const formFromProfile = (p, countryLabel) => {
     // Perfiles enviados antes de existir el nivel: sus temas llegan sin marcar y se piden al editar
     levels: Object.fromEntries([...(p.needs ?? []).map((x) => [x, 'curious']), ...(p.offers ?? []).map((x) => [x, 'expert'])]),
     customTopics: [...new Set([...(p.customTopics ?? []), ...used])],
-    superpowers: [...(p.superpowers ?? [])],
+    superpowers: (p.superpowers ?? []).slice(0, MAX_SUPERPOWERS),
   }
 }
 
-// Pantallas del formulario: 0 = landing, 1 = perfil, 2 = temas de interés, 3 = arme secrète.
-const LAST = 3
+// Pantallas del formulario: 0 = landing, 1 = perfil, 2 = temas de interés, 3 = nivel por tema, 4 = arme secrète.
+const LAST = 4
 
 export default function RegisterView({ mode = 'create' }) {
   const editing = mode === 'edit'
@@ -131,7 +131,7 @@ export default function RegisterView({ mode = 'create' }) {
     }
     if (screen === 2 && form.needs.length !== MAX_INTERESTS) er.needs = t('register.errInterests', { max: MAX_INTERESTS, n: form.needs.length })
     const missing = form.needs.filter((id) => !form.levels?.[id]).length
-    if (screen === 2 && !er.needs && missing) er.levels = t('register.errLevels', { n: missing })
+    if (screen === 3 && missing) er.levels = t('register.errLevels', { n: missing })
     setErrors(er)
     const first = Object.keys(er)[0]
     if (first) document.querySelector(`[data-field="${first}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -269,19 +269,24 @@ export default function RegisterView({ mode = 'create' }) {
                 onChange={patch}
                 error={errors.needs}
               />
+            </Card>
+          )}
+
+          {/* 3 · Nivel en cada tema elegido */}
+          {screen === 3 && (
+            <Card key="levels" icon={Gauge} tone="accent" title={t('register.levelTitle')} subtitle={t('register.levelSub')} field="levels">
               <LevelPicker topics={form.needs} levels={form.levels ?? {}} onChange={patch} error={errors.levels} />
             </Card>
           )}
 
-          {/* 3 · Arme secrète */}
-          {screen === 3 && (
+          {/* 4 · Arme secrète (una sola) */}
+          {screen === 4 && (
             <Card key="power" icon={Sparkles} tone="ink" title={t('register.step3')} tag={t('register.step3Tag')} subtitle={t('register.step3Sub', { max: MAX_SUPERPOWERS })} field="superpowers" labelId="pick-power">
               <div className="mt-4 lg:mt-6">
                 <SuperpowerPicker labelledBy="pick-power" value={form.superpowers} onChange={(v) => set('superpowers', v)} />
               </div>
             </Card>
           )}
-          {screen === 3 && <Recap form={form} onEdit={goTo} />}
 
           {saveError && (
             <p role="alert" className="rounded-xl border border-accent/30 bg-accent-soft p-4 text-base font-semibold text-accent-dark">
@@ -330,7 +335,7 @@ export default function RegisterView({ mode = 'create' }) {
   )
 }
 
-const STEPS = ['register.navProfile', 'register.navSkills', 'register.navPower']
+const STEPS = ['register.navProfile', 'register.navSkills', 'register.navLevel', 'register.navPower']
 
 // Ancho del formulario: casi toda la pantalla en PC, con tope en monitores muy grandes
 const WIDTH = 'max-w-6xl 2xl:max-w-7xl'
@@ -382,45 +387,6 @@ function Landing({ resume, onStart }) {
 
       <PublicFooter />
     </div>
-  )
-}
-
-/** Resumen del perfil antes de validar, con atajos para corregir cada parte */
-function Recap({ form, onEdit }) {
-  const { t, topic, country } = useI18n()
-  const rows = [
-    { label: t('register.navProfile'), screen: 1, body: <p className="text-base text-ink lg:text-lg">{[form.name, form.role, form.country && country(form.country)].filter(Boolean).join(' · ')}</p> },
-    { label: t('register.navSkills'), screen: 2, body: <Tags ids={form.needs} className="bg-brand-soft text-brand-dark" /> },
-    {
-      label: t('waiting.superpowers'),
-      screen: 3,
-      body: form.superpowers.length ? <SuperpowerChips ids={form.superpowers} /> : <p className="text-base text-slate-500">{t('register.recapNone')}</p>,
-    },
-  ]
-  function Tags({ ids, className }) {
-    return (
-      <ul className="flex flex-wrap gap-1.5">
-        {ids.map((id) => <li key={id} className={`rounded-full px-3 py-1 text-sm font-medium lg:px-3.5 lg:py-1.5 lg:text-[15px] ${className}`}>{topic(id)}</li>)}
-      </ul>
-    )
-  }
-  return (
-    <section aria-labelledby="recap-title" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 lg:rounded-3xl lg:p-10">
-      <h2 id="recap-title" className="font-display text-xl font-medium text-ink lg:text-2xl">{t('register.recapTitle')}</h2>
-      <dl className="mt-4 divide-y divide-slate-100">
-        {rows.map((r) => (
-          <div key={r.label} className="grid gap-2 py-3 sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-center sm:gap-4 lg:grid-cols-[12rem_minmax(0,1fr)_auto] lg:py-4">
-            <dt className="text-sm font-bold uppercase tracking-wider text-slate-500 lg:text-[15px]">{r.label}</dt>
-            <dd className="min-w-0">{r.body}</dd>
-            {r.screen !== 3 && (
-              <button type="button" onClick={() => onEdit(r.screen)} className="justify-self-start text-[15px] font-semibold text-brand-dark underline-offset-4 hover:underline lg:text-base">
-                {t('register.recapEdit')}
-              </button>
-            )}
-          </div>
-        ))}
-      </dl>
-    </section>
   )
 }
 

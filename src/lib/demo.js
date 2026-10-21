@@ -19,5 +19,5 @@ const DEMO = [
 export const demoParticipants = () =>
   DEMO.map(([name, role, country, topics, superpowers]) => ({
     id: crypto.randomUUID(), createdAt: Date.now(), demo: true, name, role, country,
-    offers: topics.slice(0, 3), needs: topics.slice(3), superpowers,
+    offers: topics.slice(0, 3), needs: topics.slice(3), superpowers: superpowers.slice(0, 1),
   }))

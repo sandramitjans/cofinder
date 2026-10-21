@@ -3,7 +3,7 @@ import { TOPIC_EMOJI } from '../constants'
 import { useI18n } from '../context/I18nContext'
 
 /**
- * Paso 2, debajo de la selección de temas: para cada tema elegido, la persona indica si es
+ * Paso 3, tras elegir los temas: para cada tema elegido, la persona indica si es
  * «Expérimenté·e» (se guarda en `offers`) o «Curieux·se» (en `needs`). Así el reparto en mesas
  * puede mezclar en cada mesa a alguien con experiencia y a alguien que viene a aprender.
  * `levels` = { [tema]: 'expert' | 'curious' }
@@ -15,11 +15,8 @@ export default function LevelPicker({ topics, levels, onChange, error }) {
   const choose = (id, level) => onChange({ levels: { ...levels, [id]: level } })
 
   return (
-    <div data-field="levels" className="mt-8 border-t border-slate-200 pt-6 lg:mt-10 lg:pt-8">
-      <h3 className="font-display text-xl font-medium tracking-tight lg:text-2xl">{t('register.levelTitle')}</h3>
-      <p className="mt-1.5 text-[15px] text-slate-600 lg:text-base">{t('register.levelSub')}</p>
-
-      <ul className="mt-5 grid gap-2.5 lg:grid-cols-2">
+    <div className="mt-6 lg:mt-7">
+      <ul className="grid gap-2.5 lg:grid-cols-2">
         {topics.map((id) => {
           const level = levels[id]
           return (
