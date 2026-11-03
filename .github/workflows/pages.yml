@@ -2,7 +2,7 @@ name: Publicar en GitHub Pages
 
 on:
   push:
-    branches: [rondas]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
