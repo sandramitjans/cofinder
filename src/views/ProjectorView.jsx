@@ -8,7 +8,6 @@ import { useCountdown } from '../lib/useCountdown'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
 import RoleBadge from '../components/ui/RoleBadge'
-import VipCard from '../components/ui/VipCard'
 import LangSwitch from '../components/ui/LangSwitch'
 
 const GRID = { 1: 'lg:grid-cols-1 max-w-2xl', 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4', 5: 'lg:grid-cols-5' }
@@ -19,7 +18,7 @@ const BACK_KEYS = ['ArrowLeft', 'PageUp']
 /**
  * Pantalla grande de la sala. Solo accesible desde el panel de moderadora.
  * Cada tour: portada «Tour n» → anuncio de cada match (tema, mesa y tarjetas con foto) →
- * todas las mesas con la cuenta atrás de 15 min → «Changement de table». Tras el tour 4, pausa.
+ * todas las mesas con la cuenta atrás de 15 min → «Tiempo terminado» (nota de audio). Tras la ronda 3, pausa.
  * La moderadora avanza con un clic, la barra espaciadora, las flechas o un mando de presentación.
  */
 export default function ProjectorView() {
@@ -80,7 +79,7 @@ export default function ProjectorView() {
         <p className="mt-4 text-2xl text-slate-500">
           {pauseTimer.done ? t('projector.pauseOver') : t('projector.pauseText', { n: event.round + 1 })}
         </p>
-        <p className={`mt-10 rounded-2xl px-8 py-4 font-mono text-7xl font-bold tabular-nums ${pauseTimer.done ? 'animate-pulse bg-accent text-ink' : 'bg-ink text-white'}`}>
+        <p className={`mt-10 rounded-2xl px-8 py-4 font-mono text-7xl font-bold tabular-nums ${pauseTimer.done ? 'animate-pulse bg-brand' : 'bg-white text-ink ring-1 ring-slate-200'}`}>
           {pauseTimer.label}
         </p>
       </Center>
@@ -91,7 +90,7 @@ export default function ProjectorView() {
       <div key={`talk-${event.round}`} className="flex flex-1 flex-col gap-8">
         <div className="flex items-center justify-center gap-8">
           <span className={`rounded-2xl px-8 py-3 font-mono text-8xl font-bold tabular-nums transition-colors ${
-            timer.done ? 'bg-accent text-ink' : timer.remaining <= 60_000 ? 'animate-pulse bg-accent text-ink' : 'bg-ink text-white'
+            timer.done ? 'bg-brand' : timer.remaining <= 60_000 ? 'animate-pulse bg-brand' : 'bg-white text-ink ring-1 ring-slate-200'
           }`}>
             {timer.label}
           </span>
@@ -103,7 +102,7 @@ export default function ProjectorView() {
         <div className={`mx-auto grid w-full content-start gap-5 md:grid-cols-2 ${GRID[Math.min(n, 5)]}`}>
           {currentRound.tables.map((tb, i) => (
             <article key={tb.id} className="animate-pop-in overflow-hidden rounded-xl bg-white shadow-lg shadow-slate-900/5 ring-1 ring-slate-200" style={{ animationDelay: `${i * 100}ms` }}>
-              <div className="bg-ink px-5 py-4 text-white">
+              <div className="bg-brand px-5 py-4 text-white">
                 <p className="text-sm font-semibold uppercase tracking-widest text-white/70">{t('round.table', { n: tb.id })}</p>
                 <h2 className="mt-1 font-display text-2xl font-medium leading-tight tracking-tight xl:text-3xl">{topic(tb.topic)}</h2>
               </div>
@@ -127,11 +126,11 @@ export default function ProjectorView() {
 
         {/* Al llegar a cero: aviso de cambio de mesa hasta que la moderadora pase al siguiente tour */}
         {timer.done && (
-          <div className="fixed inset-0 z-20 grid place-items-center bg-ink/90 text-center text-white animate-view-in">
+          <div className="fixed inset-0 z-20 grid place-items-center bg-paper/95 text-center text-ink animate-view-in">
             <div className="flex flex-col items-center">
-              <TimerOff className="h-16 w-16 text-accent" />
+              <TimerOff className="h-16 w-16 text-brand" />
               <p className="mt-4 font-display text-8xl font-medium tracking-tight">{t('projector.timeUp')}</p>
-              <p className="mt-4 text-3xl text-white/80">
+              <p className="mt-4 text-3xl text-slate-600">
                 {event.round === total ? t('projector.lastDone') : event.round === currentPauseRound(total) ? t('projector.toPause') : t('projector.changeTables', { n: event.round + 1 })}
               </p>
             </div>
@@ -149,13 +148,13 @@ export default function ProjectorView() {
       <div key={`reveal-${event.round}-${k}`} className="flex flex-1 flex-col items-center">
         <p className="animate-rise-in text-lg font-semibold uppercase tracking-[0.25em] text-slate-500">{t('projector.match', { r: event.round, k })}</p>
         <h1 className="mt-2 animate-rise-in text-balance text-center font-display text-7xl font-medium leading-none tracking-tight [animation-delay:100ms] xl:text-8xl">{topic(tb.topic)}</h1>
-        <span className="mt-6 inline-flex animate-rise-in items-center gap-2 rounded-full bg-ink px-6 py-2.5 text-2xl font-semibold text-white [animation-delay:250ms]">
+        <span className="mt-6 inline-flex animate-rise-in items-center gap-2 rounded-full bg-brand px-6 py-2.5 text-2xl font-semibold text-white [animation-delay:250ms]">
           <MapPin className="h-6 w-6" /> {t('round.table', { n: tb.id })}
         </span>
         <div className="mt-10 flex flex-wrap items-start justify-center gap-6">
           {people.map((p, i) => (
             <div key={p.id} className={`animate-pop-in ${width}`} style={{ animationDelay: `${450 + i * 160}ms` }}>
-              <VipCard name={p.name} role={p.role} branch={country(p.country)} photo={p.photo} photoClassName="aspect-[3/4]" />
+              <PersonCard person={p} branch={country(p.country)} />
               {expertMode && <div className="mt-3 text-center"><RoleBadge role={roleOf(p, tb.topic)} size="lg" /></div>}
             </div>
           ))}
@@ -176,7 +175,7 @@ export default function ProjectorView() {
         <p className="mt-6 animate-rise-in text-3xl text-slate-500 [animation-delay:260ms]">{t('projector.tablesInfo', { n: currentRound.plan.length, min: ROUND_MINUTES })}</p>
         <div className="mt-8 flex gap-2" aria-hidden>
           {Array.from({ length: total }, (_, i) => (
-            <span key={i} className={`h-2 w-14 rounded-full ${i + 1 < event.round ? 'bg-ink' : i + 1 === event.round ? 'bg-brand' : 'bg-slate-200'}`} />
+            <span key={i} className={`h-2 w-14 rounded-full ${i + 1 < event.round ? 'bg-brand/40' : i + 1 === event.round ? 'bg-brand' : 'bg-slate-200'}`} />
           ))}
         </div>
       </Center>
@@ -184,7 +183,7 @@ export default function ProjectorView() {
   }
 
   return (
-    <div className="theme-warm vip-glow group flex min-h-dvh flex-col bg-paper">
+    <div className="vip-glow group flex min-h-dvh flex-col bg-paper">
       <header className="flex items-center justify-between gap-4 px-8 py-6">
         <Logo size="lg" />
         {event.round > 0 && !event.finished && (
@@ -225,6 +224,18 @@ export default function ProjectorView() {
 // Tour tras el que se hace la pausa (si el plan es lo bastante largo)
 function currentPauseRound(total) {
   return total > PAUSE_AFTER_ROUND ? PAUSE_AFTER_ROUND : -1
+}
+
+/** Tarjeta blanca de una persona en el anuncio de su mesa */
+function PersonCard({ person, branch }) {
+  return (
+    <article className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+      <Avatar name={person.name} photo={person.photo} size="xl" className="!rounded-full" />
+      <p className="mt-4 font-display text-2xl font-medium leading-tight">{person.name}</p>
+      {person.role && <p className="mt-1 text-base text-slate-600">{person.role}</p>}
+      {branch && <p className="mt-0.5 flex items-center gap-1 text-sm text-slate-500"><MapPin className="h-3.5 w-3.5" /> {branch}</p>}
+    </article>
+  )
 }
 
 function Center({ children }) {

@@ -60,7 +60,7 @@ src/
 ├── lib/
 │   ├── matching.js              # Algoritmo de mesas multi-ronda
 │   ├── demo.js                  # 12 participantes de prueba
-│   ├── i18n.js                  # Textos FR / EN
+│   ├── i18n.js                  # Textos ES / EN
 │   ├── useTimeLeft.js           # Cuenta atrás al evento
 │   └── useCountdown.js          # Cronómetro de ronda
 ├── components/
@@ -78,24 +78,25 @@ src/
     └── ProjectorView.jsx        # Pantalla grande
 ```
 
-## Plan de los 8 tours (`lib/matching.js`)
+## Plan de las 5 rondas (`lib/matching.js`)
 
-La soirée tiene 8 tours de 15 minutos, mesas de 2 a 5 personas (5 mesas como máximo por tour) y una
-pausa de 10 minutos tras el tour 4 (`constants/index.js`).
+La sesión tiene 5 rondas de 15 minutos, mesas de 2 a 5 personas (5 mesas como máximo por ronda) y una
+pausa de 10 minutos tras la ronda 3 (`constants/index.js`).
 
-**Semana interna.** En el panel, «Générer le plan des 8 tours» calcula de una vez el plan completo
+**Semana interna.** En el panel, «Generar el plan de las 5 rondas» calcula de una vez el plan completo
 (en un worker, `lib/planner.worker.js`, tarda unos segundos). Cada tour elige temas que la gente ha
 elegido y no ha tratado, y reparte a todos minimizando: personas en un tema que no eligieron, temas
 repetidos para una persona, parejas que ya coincidieron (máximo 3 veces) y personas de la misma
 sucursal. Reparto voraz + enfriamiento simulado que intercambia personas, las mueve de mesa (así el
 tamaño sale de la demanda) y cambia temas. El panel muestra la calidad del plan y una rejilla de los
-8 tours donde se puede intercambiar o mover a alguien con dos clics, o regenerar un tour concreto.
+5 rondas donde se puede intercambiar o mover a alguien con dos clics, o regenerar un tour concreto.
 
-**El día del evento.** La moderadora avanza con «Suivant» en el panel, o en el proyector con Espacio,
+**El día del evento.** La moderadora avanza con «Siguiente» en el panel, o en el proyector con Espacio,
 → o el mando de presentación (← deshace): portada del tour → anuncio de cada match (tema, mesa y
-tarjetas con foto) → cuenta atrás de 15 min con todas las mesas → «Temps écoulé» → siguiente tour.
-Tras el tour 4 el proyector muestra la pausa con su cuenta atrás. El móvil de cada director muestra
-su mesa en cuanto se anuncia en pantalla, nunca antes.
+tarjetas con foto) → cuenta atrás de 15 min con todas las mesas → «Tiempo terminado» (cada móvil pide grabar una nota de audio de 1 min) → siguiente ronda.
+Tras la ronda 3 el proyector muestra la pausa con su cuenta atrás. El móvil de cada director muestra
+su mesa en cuanto se anuncia en pantalla, nunca antes. Al terminar el evento, el móvil muestra
+«Gracias por compartir» con cada ronda (tema, compañeros y su nota de audio para escuchar o descargar).
 
 Datos: `event.rounds[i]` = `{ plan, tables, revealed, startedAt, pauseStartedAt }`. `plan` son todas
 las mesas del tour; `tables`, solo las ya anunciadas, que es lo que leen los móviles (`get_my_table`).
@@ -122,4 +123,16 @@ Cambiar el PIN (desde el SQL editor de Supabase o la consola del navegador con e
 select public.mod_set_pin('PIN_ACTUAL', 'PIN_NUEVO');
 ```
 
-El panel y el proyector refrescan el estado cada 4 s; los móviles reciben el cambio de ronda en tiempo real.
+Tiempo real (websockets de Supabase Realtime): los móviles reciben el cambio de ronda al instante
+(`event_status`), y el panel y el proyector se refrescan en cuanto llega un aviso (cambio de ronda, nuevo
+registro o nueva nota de audio, por el canal de difusión `cofinder-live`). Si el websocket se corta,
+el panel vuelve a pedir el estado cada 15 s.
+
+### Cambios del prototipo (noviembre 2026)
+
+Ejecutar una vez `supabase/2026-11-prototipo.sql` en el SQL editor. Añade:
+- `list_topic_proposals()`: mesas propuestas por participantes (texto de la mesa + nombre de pila), para el paso «Apúntate a las mesas».
+- Bucket privado `audio-notes`: cada móvil sube su nota de audio al acabar la ronda (solo subir; se escuchan desde Storage).
+  Ruta: `ronda-N/mesa-M/<id participante>-<fecha>.webm`. Cada persona también la tiene en su móvil, en el resumen final.
+
+Sin ese script la app funciona igual, pero sin propuestas de otras personas y con las notas solo en cada móvil.

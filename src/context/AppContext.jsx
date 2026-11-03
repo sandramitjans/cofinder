@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { VIEWS, MODERATOR_VIEWS, MOD_HASH, MOD_PIN, PAUSE_AFTER_ROUND } from '../constants'
 import { demoParticipants } from '../lib/demo'
 import * as api from '../lib/backend'
+import { clearNotes } from '../lib/audioNotes'
 
 /**
  * Estado global de Cofinder. Dos modos con la misma interfaz para las vistas:
@@ -9,8 +10,9 @@ import * as api from '../lib/backend'
  * ● Remoto (Supabase, producción): VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY definidos.
  *   - Participante: guarda su perfil en la base de datos; luego solo puede leer SU perfil y,
  *     el día del evento, su mesa con sus compañeros. Escucha en tiempo real los cambios de ronda.
- *   - Moderadora: el PIN se comprueba en el servidor; el panel y el proyector refrescan
- *     el estado completo cada pocos segundos.
+ *   - Moderadora: el PIN se comprueba en el servidor; el panel y el proyector refrescan el estado
+ *     completo al instante cuando llega un aviso por websocket (cambio de ronda, registro, nota de
+ *     audio) y, por si el websocket se corta, cada 15 segundos.
  *
  * ● Local (sin variables, pruebas): todo en localStorage, sincronizado entre pestañas.
  *
@@ -25,7 +27,8 @@ const PROFILE_KEY = 'cofinder:me:profile' // copia local del propio perfil (pant
 const SECRET_KEY = 'cofinder:me:secret'   // clave para poder modificar el propio perfil
 const MOD_KEY = REMOTE ? 'cofinder:mod:pin' : 'cofinder:mod'
 const EMPTY_EVENT = { round: 0, rounds: [], finished: false }
-const MOD_POLL_MS = 4000
+const MOD_POLL_MS = 15000
+const historyKey = (id) => `cofinder:history:${id}`
 const TABLE_POLL_MS = 30000
 
 const read = (storage, key, fallback) => {
@@ -34,7 +37,7 @@ const read = (storage, key, fallback) => {
 const write = (storage, key, value) => {
   try { value == null ? storage.removeItem(key) : storage.setItem(key, JSON.stringify(value)) } catch { /* sin almacenamiento */ }
 }
-const currentLang = () => { try { return localStorage.getItem('cofinder:lang') === 'en' ? 'en' : 'fr' } catch { return 'fr' } }
+const currentLang = () => { try { return localStorage.getItem('cofinder:lang') === 'en' ? 'en' : 'es' } catch { return 'es' } }
 const isSeated = (rounds, id) => rounds.some((r) => r.tables.some((t) => t.members.includes(id)))
 
 export function AppProvider({ children }) {
@@ -134,8 +137,10 @@ export function AppProvider({ children }) {
   useEffect(() => {
     if (!REMOTE || !modPin) return
     refreshMod()
-    const timer = setInterval(refreshMod, MOD_POLL_MS)
-    return () => clearInterval(timer)
+    const offEvent = api.onEventChange(() => refreshMod())
+    const offPing = api.onPing(() => refreshMod())
+    const timer = setInterval(refreshMod, MOD_POLL_MS) // por si el websocket se corta
+    return () => { offEvent(); offPing(); clearInterval(timer) }
   }, [modPin, refreshMod])
 
   /* ---------- Vista unificada para los componentes ---------- */
@@ -165,6 +170,51 @@ export function AppProvider({ children }) {
       setView(VIEWS.REGISTER)
     }
   }, [currentUserId, currentUser, view])
+
+  /* ---------- Historial de mis mesas (para el resumen final) ----------
+     En remoto el móvil solo recibe la mesa de la ronda en curso, así que se va apuntando aquí
+     cada mesa con sus compañeros (sin fotos). Si la sesión vuelve al principio, se borra. */
+  const myId = currentUser?.id
+  const myTableNow = currentRound?.tables.find((x) => x.members.includes(myId)) ?? null
+  const [history, setHistory] = useState({})
+  // Solo cambia el estado si el contenido cambia (el almacenamiento puede haberlo escrito otra pestaña)
+  const syncHistory = useCallback((next) => setHistory((h) => (JSON.stringify(h) === JSON.stringify(next) ? h : next)), [])
+  useEffect(() => { syncHistory(myId ? read(localStorage, historyKey(myId), {}) : {}) }, [myId, syncHistory])
+  useEffect(() => {
+    if (!myId) return
+    if (!event.round && !event.finished) {
+      if (Object.keys(read(localStorage, historyKey(myId), {})).length) {
+        write(localStorage, historyKey(myId), null)
+        clearNotes(myId)
+      }
+      return syncHistory({})
+    }
+    if (!myTableNow || event.finished) return syncHistory(read(localStorage, historyKey(myId), {}))
+    const people = myTableNow.members.filter((id) => id !== myId).map((id) => participants.find((p) => p.id === id))
+      .filter(Boolean).map(({ id, name, role, country }) => ({ id, name, role, country }))
+    const entry = { table: { id: myTableNow.id, topic: myTableNow.topic }, people }
+    const prev = read(localStorage, historyKey(myId), {})
+    const next = { ...prev, [event.round]: entry }
+    if (JSON.stringify(prev[event.round]) !== JSON.stringify(entry)) write(localStorage, historyKey(myId), next)
+    syncHistory(next)
+  }, [myId, event.round, event.finished, myTableNow, participants, syncHistory])
+
+  /* ---------- Mesas propuestas por participantes ---------- */
+  const [remoteProposals, setRemoteProposals] = useState([])
+  const loadProposals = useCallback(async () => {
+    if (!REMOTE) return
+    try { setRemoteProposals(await api.fetchProposals()) } catch { /* función aún no instalada: sin propuestas */ }
+  }, [])
+  const proposals = useMemo(() => {
+    if (REMOTE) return remoteProposals
+    // Local: el primero que la escribió es quien la propone
+    const seen = new Map()
+    ;[...localParticipants].sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0)).forEach((p) => {
+      if (p.id === currentUserId) return
+      ;(p.customTopics ?? []).forEach((id) => { if (!seen.has(id)) seen.set(id, { id, by: p.name.split(' ')[0] }) })
+    })
+    return [...seen.values()]
+  }, [remoteProposals, localParticipants, currentUserId])
 
   /* ---------- Navegación ---------- */
   const navigate = useCallback((next) => {
@@ -206,6 +256,7 @@ export function AppProvider({ children }) {
     if (REMOTE) {
       try { await api.insertProfile(user, currentLang(), secret) } catch { return false }
       setMe(user)
+      api.ping('participants')
     } else {
       setLocalParticipants((prev) => [...prev, user])
     }
@@ -226,6 +277,7 @@ export function AppProvider({ children }) {
     if (REMOTE) {
       try { await api.updateProfile(next, currentLang(), editSecret) } catch { return false }
       setMe((m) => ({ ...m, ...next }))
+      api.ping('participants')
     } else {
       setLocalParticipants((prev) => prev.map((p) => (p.id === currentUserId ? { ...p, ...next } : p)))
     }
@@ -273,7 +325,7 @@ export function AppProvider({ children }) {
   }, [modAction])
 
   /* ---------- Plan de la soirée y desarrollo de los tours ---------- */
-  // `event.rounds` guarda el plan completo (los 8 tours). Cada tour:
+  // `event.rounds` guarda el plan completo (las 5 rondas). Cada tour:
   //   plan            → todas sus mesas, decididas la semana anterior
   //   tables          → solo las mesas ya anunciadas en el proyector (lo único que leen los móviles:
   //                     una mesa aparece en el teléfono en el momento en que sale en pantalla)
@@ -365,7 +417,7 @@ export function AppProvider({ children }) {
   }), [editPlanRound])
 
   // Siguiente paso de la soirée (clic, espacio, flecha o mando de presentación):
-  // portada del tour → anuncio de cada match → chrono → (pausa tras el tour 4) → tour siguiente → fin
+  // portada del tour → anuncio de cada match → chrono → (pausa tras la ronda 3) → ronda siguiente → fin
   const advance = useCallback(() => changeEvent((e) => {
     if (e.finished || !e.rounds.length) return e
     if (!e.round) return { ...e, round: 1 }
@@ -409,12 +461,14 @@ export function AppProvider({ children }) {
     modLoading: REMOTE && modUnlocked && !modState,
     register, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
+    proposals, loadProposals, history,
     modUnlocked, gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
   }), [view, navigate, participants, currentUser, event, currentRound, seatedEver, modUnlocked, modState,
     register, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
+    proposals, loadProposals, history,
     gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan])

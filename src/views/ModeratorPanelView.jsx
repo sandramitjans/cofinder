@@ -59,17 +59,17 @@ export default function ModeratorPanelView() {
       : hasPlan ? t('panel.statusPlanned') : t('panel.statusReady')
 
   return (
-    <div className="min-h-dvh bg-slate-100">
-      <header className="sticky top-0 z-20 bg-ink text-white">
+    <div className="min-h-dvh bg-paper">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3">
-            <Logo inverted />
-            <span className="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-ink">{t('panel.badge')}</span>
+            <Logo />
+            <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brand-dark">{t('panel.badge')}</span>
           </div>
           <div className="flex items-center gap-2">
-            <LangSwitch dark />
-            <Button variant="accent" icon={Monitor} onClick={() => navigate(VIEWS.PROJECTOR)} className="py-2">{t('panel.projector')}</Button>
-            <button onClick={lockModerator} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white">
+            <LangSwitch />
+            <Button icon={Monitor} onClick={() => navigate(VIEWS.PROJECTOR)} className="py-2">{t('panel.projector')}</Button>
+            <button onClick={lockModerator} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-ink">
               <Lock className="h-4 w-4" /> <span className="hidden sm:inline">{t('panel.lock')}</span>
             </button>
           </div>
@@ -86,7 +86,7 @@ export default function ModeratorPanelView() {
                 <h1 className="mt-1 text-2xl font-bold tracking-tight">{status}</h1>
               </div>
               {(phase === 'talk' || phase === 'pause') && (
-                <div className={`rounded-xl px-4 py-2 text-right ${shownTimer.done ? 'bg-accent' : 'bg-ink text-white'}`}>
+                <div className={`rounded-xl px-4 py-2 text-right ${shownTimer.done ? 'bg-brand' : 'bg-brand-soft text-brand-dark'}`}>
                   <p className="font-mono text-3xl font-bold tabular-nums">{shownTimer.label}</p>
                   <p className="text-[11px] font-medium opacity-70">{shownTimer.done ? t('panel.timeUp') : phase === 'pause' ? t('panel.pauseLeft') : t('panel.remaining')}</p>
                 </div>
@@ -203,7 +203,7 @@ export default function ModeratorPanelView() {
                     <div className="min-w-0">
                       <p className="truncate font-semibold">
                         {p.name}
-                        {p.id === currentUser?.id && <span className="ml-2 rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold">{t('panel.youBadge')}</span>}
+                        {p.id === currentUser?.id && <span className="ml-2 rounded bg-brand px-1.5 py-0.5 text-[10px] font-bold">{t('panel.youBadge')}</span>}
                         {p.demo && <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">{t('panel.demoBadge')}</span>}
                       </p>
                       <p className="truncate text-xs text-slate-500">{p.role} · {country(p.country)}</p>
@@ -211,9 +211,9 @@ export default function ModeratorPanelView() {
                   </div>
                   <div className="flex flex-1 flex-wrap gap-1">
                     {p.offers.map((x) => <span key={x} className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-medium text-brand-dark">{topic(x)}</span>)}
-                    {p.needs.map((x) => <span key={x} className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-slate-700">{topic(x)}</span>)}
+                    {p.needs.map((x) => <span key={x} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">{topic(x)}</span>)}
                     {(p.superpowers ?? []).map((x) => (
-                      <span key={x} title={superpower(x)} className="rounded-full bg-ink px-2 py-0.5 text-[11px] font-medium text-white">
+                      <span key={x} title={superpower(x)} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200">
                         {SUPERPOWERS.find((sp) => sp.id === x)?.emoji} {superpower(x)}
                       </span>
                     ))}
@@ -231,7 +231,7 @@ export default function ModeratorPanelView() {
           )}
           <p className="flex items-center gap-4 border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-brand" /> {t('panel.legendOffer')}</span>
-            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-accent" /> {t('panel.legendNeed')}</span>
+            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-slate-300" /> {t('panel.legendNeed')}</span>
           </p>
         </section>
       </main>
@@ -319,7 +319,7 @@ function PlanGrid({ rounds, current, finished, byId, planning, onRegenerate, onS
                                 onClick={() => pick(i, id)}
                                 title={p.name}
                                 className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold ring-1 transition ${
-                                  isSel ? 'bg-brand text-ink ring-brand' : chosen ? 'bg-white text-slate-700 ring-slate-200 hover:ring-brand' : 'bg-accent-soft text-accent-dark ring-accent/40 hover:ring-brand'
+                                  isSel ? 'bg-brand text-white ring-brand' : chosen ? 'bg-white text-slate-700 ring-slate-200 hover:ring-brand' : 'bg-accent-soft text-accent-dark ring-accent/40 hover:ring-brand'
                                 } disabled:cursor-default`}
                               >
                                 {shortName(p.name)}

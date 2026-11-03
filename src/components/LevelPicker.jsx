@@ -22,12 +22,12 @@ export default function LevelPicker({ topics, levels, onChange, error }) {
           return (
             <li key={id} className={`flex flex-col gap-2.5 rounded-xl border px-3 py-2.5 sm:flex-row sm:items-center ${level ? 'border-brand/30 bg-brand-soft/40' : 'border-slate-200 bg-white'}`}>
               <span className="flex min-w-0 flex-1 items-center gap-2.5 text-[15px] font-semibold leading-snug">
-                <span aria-hidden className="text-xl leading-none">{isCustom(id) ? '✨' : TOPIC_EMOJI[id]}</span>
+                <span aria-hidden className="text-xl leading-none">{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
                 <span className="min-w-0 hyphens-auto">{topic(id)}</span>
               </span>
               <span role="group" aria-label={topic(id)} className="flex shrink-0 rounded-full bg-slate-100 p-1">
                 <LevelButton on={level === 'expert'} onClick={() => choose(id, 'expert')} className="bg-brand text-white" label={t('register.levelExpert')} hint={t('register.levelExpertHint')} />
-                <LevelButton on={level === 'curious'} onClick={() => choose(id, 'curious')} className="bg-[#F5B83D] text-ink" label={t('register.levelCurious')} hint={t('register.levelCuriousHint')} />
+                <LevelButton on={level === 'curious'} onClick={() => choose(id, 'curious')} className="bg-ink text-white" label={t('register.levelCurious')} hint={t('register.levelCuriousHint')} />
               </span>
             </li>
           )

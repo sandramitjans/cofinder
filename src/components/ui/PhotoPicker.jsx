@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
-import { Camera, Loader2, Trash2 } from 'lucide-react'
+import { Camera, Loader2, Pencil, Trash2 } from 'lucide-react'
 import { useI18n } from '../../context/I18nContext'
 import { photoToDataUrl } from '../../lib/image'
 import { initialsOf } from './Avatar'
 
 /**
- * Foto de perfil opcional, en un cuadrado grande. En el móvil, el selector ofrece cámara o galería.
+ * Foto de perfil opcional, en un círculo. En el móvil, el selector ofrece cámara o galería.
  * La imagen se recorta en cuadrado y se comprime antes de guardarla.
  */
 export default function PhotoPicker({ value, name, onChange }) {
@@ -33,34 +33,36 @@ export default function PhotoPicker({ value, name, onChange }) {
 
   return (
     <div className="text-center">
-      {/* Foto cuadrada grande (o iniciales); toda la superficie abre el selector */}
+      {/* Círculo con borde discontinuo (o la foto); el lápiz rojo indica que se puede cambiar */}
       <button
         type="button"
         onClick={pick}
-        className="group relative mx-auto block aspect-square w-full max-w-72 overflow-hidden lg:max-w-none rounded-3xl bg-gradient-to-br from-[#FF6A3D] via-[#C8290F] to-[#2A0905] shadow-lg shadow-brand/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/40"
+        className="group relative mx-auto block h-28 w-28 rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/40 lg:h-36 lg:w-36"
         aria-label={value ? t('register.photoChange') : t('register.photoAdd')}
       >
-        {value ? (
-          <img src={value} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        ) : (
-          <span aria-hidden className="absolute inset-0 grid place-items-center text-on-color font-display text-7xl font-medium opacity-95 lg:text-8xl">
-            {initialsOf(name)}
-          </span>
-        )}
-        <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/70 to-transparent text-on-color pb-4 pt-10 text-[15px] font-semibold lg:pb-5 lg:text-base">
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-          {value ? t('register.photoChange') : t('register.photoAdd')}
+        <span className="absolute inset-0 grid place-items-center overflow-hidden rounded-full border-2 border-dashed border-slate-300 bg-white transition group-hover:border-brand">
+          {value ? (
+            <img src={value} alt="" className="h-full w-full object-cover" />
+          ) : busy ? (
+            <Loader2 className="h-7 w-7 animate-spin text-slate-400" />
+          ) : name?.trim() ? (
+            <span aria-hidden className="font-display text-4xl font-medium text-slate-400">{initialsOf(name)}</span>
+          ) : (
+            <Camera className="h-7 w-7 text-slate-400" />
+          )}
+        </span>
+        <span aria-hidden className="absolute bottom-1 right-1 grid h-8 w-8 place-items-center rounded-full bg-brand text-white shadow-md ring-2 ring-white">
+          <Pencil className="h-4 w-4" />
         </span>
       </button>
+      <p className="mt-2 text-sm text-slate-500">{value ? t('register.photoChange') : t('register.photoAdd')}</p>
 
       {value && (
-        <button type="button" onClick={() => onChange('')} className="mt-3 inline-flex items-center gap-1 text-[15px] font-medium text-slate-600 hover:text-slate-900">
+        <button type="button" onClick={() => onChange('')} className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900">
           <Trash2 className="h-4 w-4" /> {t('register.photoRemove')}
         </button>
       )}
-      <p className={`mt-3 text-sm lg:text-[15px] ${error ? 'font-semibold text-accent-dark' : 'text-slate-600'}`}>
-        {error ? t('register.photoError') : t('register.photoHint')}
-      </p>
+      {error && <p role="alert" className="mt-2 text-sm font-semibold text-brand-dark">{t('register.photoError')}</p>}
 
       <input ref={input} type="file" accept="image/*" className="sr-only" tabIndex={-1} aria-hidden onChange={onFile} />
     </div>

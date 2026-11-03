@@ -83,13 +83,59 @@ export async function fetchMyTable(id) {
   }
 }
 
-/** Avisa cada vez que la moderadora cambia de ronda (señal sin datos personales) */
+/** Avisa cada vez que la moderadora cambia de ronda (señal sin datos personales, por websocket) */
 export function onEventChange(cb) {
   const channel = supabase
     .channel('event_status')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'event_status' }, cb)
     .subscribe()
   return () => { supabase.removeChannel(channel) }
+}
+
+/* ---------- Tiempo real (Supabase Realtime, websocket) ----------
+   Canal de difusión sin datos personales: los móviles avisan «alguien se ha registrado o ha
+   cambiado su perfil» y «nueva nota de audio», y el panel y el proyector refrescan al instante
+   en lugar de esperar al siguiente sondeo. */
+const LIVE = 'cofinder-live'
+const listeners = new Set()
+let liveChannel = null
+const live = () => {
+  if (!liveChannel) {
+    liveChannel = supabase
+      .channel(LIVE, { config: { broadcast: { self: false } } })
+      .on('broadcast', { event: 'ping' }, ({ payload }) => listeners.forEach((cb) => cb(payload?.kind)))
+      .subscribe()
+  }
+  return liveChannel
+}
+
+export function ping(kind) {
+  try { live().send({ type: 'broadcast', event: 'ping', payload: { kind } }) } catch { /* sin conexión: queda el sondeo */ }
+}
+
+export function onPing(cb) {
+  listeners.add(cb)
+  live()
+  return () => { listeners.delete(cb) }
+}
+
+/* ---------- Mesas propuestas por participantes ----------
+   Función pública list_topic_proposals (supabase/2026-11-prototipo.sql): solo devuelve el texto de
+   cada mesa propuesta y el nombre de pila de quien la propuso, nunca perfiles completos. */
+export async function fetchProposals() {
+  const { data, error } = await supabase.rpc('list_topic_proposals')
+  if (error) throw error
+  return (data ?? []).map((r) => ({ id: r.topic, by: r.proposer }))
+}
+
+/* ---------- Notas de audio ----------
+   Bucket privado `audio-notes`: el público solo puede subir (no listar ni descargar). */
+export async function uploadAudioNote({ userId, round, tableId, blob }) {
+  const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm'
+  const path = `ronda-${round}/mesa-${tableId ?? 'x'}/${userId}-${Date.now()}.${ext}`
+  const { error } = await supabase.storage.from('audio-notes').upload(path, blob, { contentType: blob.type || 'audio/webm', upsert: false })
+  if (error) throw error
+  return path
 }
 
 /* ---------- Moderadora (todas comprueban el PIN en el servidor) ---------- */
