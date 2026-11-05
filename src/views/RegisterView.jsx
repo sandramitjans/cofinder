@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Briefcase, Building2, ChevronsRight, Save, Gauge, Gem, Heart, Lightbulb, RotateCcw, Sparkles, User, UserRound } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ArrowLeft, ArrowRight, Briefcase, Building2, CalendarDays, Clock, MapPin, RotateCcw, User } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { COUNTRIES, MAX_INTERESTS, MAX_SUPERPOWERS, VIEWS } from '../constants'
+import { COUNTRIES, TOPICS, EVENT_DATE, EVENT_PLACE, MAX_INTERESTS, MAX_SUPERPOWERS, ROUND_MINUTES, TOTAL_ROUNDS, VIEWS } from '../constants'
 import { DICT } from '../lib/i18n'
 import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
@@ -12,13 +12,11 @@ import LevelPicker from '../components/LevelPicker'
 import SuperpowerPicker from '../components/ui/SuperpowerPicker'
 import PhotoPicker from '../components/ui/PhotoPicker'
 import LangSwitch from '../components/ui/LangSwitch'
-import AttractivenessMeter, { attractivenessScore } from '../components/AttractivenessMeter'
 import PublicFooter from '../components/layout/PublicFooter'
-import MatchScene from './MatchScene'
-import { isCustom } from '../lib/topics'
+import { isCustom, topicsWithLevel } from '../lib/topics'
 
-// `country` guarda «Filiale / Département» (texto libre, con sugerencias de filiales)
-// `needs` guarda en el formulario los 8 temas elegidos; `levels` dice para cada uno si es «Expérimenté·e» o «Curieux·se»
+// `country` guarda «Filial / Departamento» (texto libre, con sugerencias de filiales)
+// `needs` guarda en el formulario las mesas elegidas; `levels` dice el nivel en cada una: 'high' | 'medium' | 'low'
 const EMPTY = { name: '', role: '', country: '', photo: '', offers: [], needs: [], levels: {}, customTopics: [], superpowers: [] }
 
 // Borrador automático: se guarda en este dispositivo y se borra al validar el perfil
@@ -41,11 +39,10 @@ const normalizeBranch = (text) => {
 }
 
 /**
- * Pre-registro «Cofinder : Le Speed-Dating des Directeurs».
- * Landing con un único CTA (a ella llega el email) y formulario en 4 pasos: perfil,
- * temas de interés, nivel en cada tema (Expérimenté·e / Curieux·se) y arme secrète (una sola).
- * El mismo formulario para todo el mundo (moderadora incluida), sin pistas de mesas ni rondas.
- * Al validar: el formulario se desvanece, entra la tarjeta VIP y cae el sello «PROFIL VALIDÉ & MATCH READY !».
+ * Registro «Speed dating de conocimiento», con el estilo del prototipo (cfndr.lovable.app):
+ * bienvenida con un único botón y formulario en 4 pasos, cada uno con su barra de progreso:
+ * perfil, mesas (hasta 5, las que la moderadora añade desde el panel, en orden aleatorio para cada persona), nivel en cada mesa
+ * (Alto / Medio / Bajo) y arma secreta (facultativa). Al validar se pasa a la confirmación.
  */
 export function EditProfileView() {
   return <RegisterView mode="edit" />
@@ -61,28 +58,38 @@ const formFromProfile = (p, countryLabel) => {
     country: countryLabel(p.country) ?? '',
     photo: p.photo || '',
     offers: [],
-    needs: [...new Set([...(p.needs ?? []), ...(p.offers ?? [])])].slice(0, MAX_INTERESTS), // una sola lista de intereses
-    // Perfiles enviados antes de existir el nivel: sus temas llegan sin marcar y se piden al editar
-    levels: Object.fromEntries([...(p.needs ?? []).map((x) => [x, 'curious']), ...(p.offers ?? []).map((x) => [x, 'expert'])]),
+    needs: [...new Set([...(p.offers ?? []), ...(p.needs ?? [])])].slice(0, MAX_INTERESTS), // una sola lista de mesas
+    levels: Object.fromEntries(topicsWithLevel(p).map(({ id, level }) => [id, level])),
     customTopics: [...new Set([...(p.customTopics ?? []), ...used])],
     superpowers: (p.superpowers ?? []).slice(0, MAX_SUPERPOWERS),
   }
 }
 
-// Pantallas del formulario: 0 = landing, 1 = perfil, 2 = temas de interés, 3 = nivel por tema, 4 = arme secrète.
+// Pantallas: 0 = bienvenida, 1 = perfil, 2 = mesas, 3 = nivel por mesa, 4 = arma secreta
 const LAST = 4
 
 export default function RegisterView({ mode = 'create' }) {
   const editing = mode === 'edit'
-  const { register, navigate, currentUser, updateProfile } = useApp()
+  const { register, navigate, currentUser, updateProfile, eventTopics, eventTopicsLoaded, loadEventTopics } = useApp()
   const { t, country } = useI18n()
   const [form, setForm] = useState(() => (editing && currentUser ? formFromProfile(currentUser, country) : loadDraft() ?? EMPTY))
   const [restored, setRestored] = useState(() => !editing && !!loadDraft() && !isEmpty(loadDraft()))
   const [screen, setScreen] = useState(editing ? 1 : 0)
   const [errors, setErrors] = useState({})
-  const [phase, setPhase] = useState('form') // form → saving → fading → matched
+  const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(false)
-  const saved = useRef(null)
+
+  // Las mesas que han propuesto otras personas se cargan al llegar al paso de las mesas
+  useEffect(() => { if (screen <= 2) loadEventTopics() }, [screen, loadEventTopics])
+  // Si la moderadora ha quitado una mesa que estaba elegida, deja de contar como elegida
+  useEffect(() => {
+    if (!eventTopicsLoaded) return
+    const valid = new Set(eventTopics.length ? eventTopics.map((x) => x.id) : TOPICS)
+    setForm((f) => {
+      const needs = f.needs.filter((id) => valid.has(id))
+      return needs.length === f.needs.length ? f : { ...f, needs }
+    })
+  }, [eventTopics, eventTopicsLoaded])
 
   const set = (key, value) => patch({ [key]: value })
 
@@ -98,7 +105,7 @@ export default function RegisterView({ mode = 'create' }) {
 
   // Guardado automático del borrador (con un pequeño retardo para no escribir en cada tecla)
   useEffect(() => {
-    if (phase !== 'form' || editing) return // al modificar un perfil ya validado no hay borrador
+    if (saving || editing) return // al modificar un perfil ya validado no hay borrador
     const timer = setTimeout(() => {
       try {
         if (isEmpty(form)) localStorage.removeItem(DRAFT_KEY)
@@ -106,7 +113,7 @@ export default function RegisterView({ mode = 'create' }) {
       } catch { /* sin almacenamiento: el formulario sigue funcionando */ }
     }, 400)
     return () => clearTimeout(timer)
-  }, [form, phase, editing])
+  }, [form, saving, editing])
 
   const goTo = (n) => {
     setScreen(n)
@@ -129,7 +136,7 @@ export default function RegisterView({ mode = 'create' }) {
       if (!form.role.trim()) er.role = t('register.errRole')
       if (!form.country.trim()) er.country = t('register.errCountry')
     }
-    if (screen === 2 && form.needs.length !== MAX_INTERESTS) er.needs = t('register.errInterests', { max: MAX_INTERESTS, n: form.needs.length })
+    if (screen === 2 && !form.needs.length) er.needs = t('register.errInterests', { max: MAX_INTERESTS })
     const missing = form.needs.filter((id) => !form.levels?.[id]).length
     if (screen === 3 && missing) er.levels = t('register.errLevels', { n: missing })
     setErrors(er)
@@ -140,86 +147,74 @@ export default function RegisterView({ mode = 'create' }) {
 
   const submit = async (e) => {
     e.preventDefault()
-    if (phase !== 'form' || !validate()) return
+    if (saving || !validate()) return
     if (screen < LAST) return goTo(screen + 1)
-    // Los temas propios que no se han elegido no aportan nada: se descartan.
-    // Cada tema elegido se guarda según su nivel: «Expérimenté·e» en `offers`, «Curieux·se» en `needs`
-    const customTopics = form.customTopics.filter((c) => form.needs.includes(c))
-    const levelOf = (id) => form.levels?.[id] ?? 'curious'
+    // Cada mesa elegida se guarda según su nivel: Alto en `offers`, Bajo en `needs`, Medio en las dos.
+    // Las mesas añadidas desde el panel (`custom:…`) se guardan también en `customTopics`
+    const customTopics = form.needs.filter(isCustom)
+    // Borradores antiguos: «expert» = Alto, «curious» = Bajo
+    const levelOf = (id) => ({ expert: 'high', curious: 'low' })[form.levels?.[id]] ?? form.levels?.[id] ?? 'low'
     const { levels: _levels, ...rest } = form
     const data = {
       ...rest,
-      offers: form.needs.filter((id) => levelOf(id) === 'expert'),
-      needs: form.needs.filter((id) => levelOf(id) === 'curious'),
+      offers: form.needs.filter((id) => levelOf(id) !== 'low'),
+      needs: form.needs.filter((id) => levelOf(id) !== 'high'),
       customTopics, name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country),
     }
-    saved.current = data
     setSaveError(false)
-    setPhase('saving')
-    if (editing) {
-      if (!(await updateProfile(data))) { setPhase('form'); setSaveError(true) }
-      return
-    }
-    // Se guarda primero en la base de datos; la animación es solo escenografía.
-    // Si falla la red, el borrador sigue intacto y se puede volver a intentar.
-    const ok = await register(data, { stay: true })
-    if (!ok) { setPhase('form'); setSaveError(true); return }
-    try { localStorage.removeItem(DRAFT_KEY) } catch { /* noop */ }
-    setPhase('fading')
+    setSaving(true)
+    // Se guarda primero en la base de datos. Si falla la red, el borrador sigue intacto y se puede reintentar.
+    const ok = editing ? await updateProfile(data) : await register(data)
+    setSaving(false)
+    if (!ok) { setSaveError(true); return }
+    if (!editing) try { localStorage.removeItem(DRAFT_KEY) } catch { /* noop */ }
   }
 
-  useEffect(() => {
-    if (phase !== 'fading') return
-    const timer = setTimeout(() => { setPhase('matched'); window.scrollTo({ top: 0 }) }, 550)
-    return () => clearTimeout(timer)
-  }, [phase])
-
-  if (phase === 'matched') return <MatchScene profile={saved.current} onDone={() => navigate(VIEWS.HOME)} />
   if (screen === 0) return <Landing resume={restored} onStart={() => goTo(1)} />
 
-  const score = attractivenessScore(form)
+  const steps = {
+    1: { title: t('register.step1'), sub: t('register.step1Sub') },
+    2: { title: t('register.interestsTitle'), sub: t('register.interestsSub', { max: MAX_INTERESTS }) },
+    3: { title: t('register.levelTitle'), sub: t('register.levelSub') },
+    4: { title: t('register.step3'), sub: t('register.step3Sub') },
+  }[screen]
 
   return (
-    <section className="theme-warm vip-glow flex min-h-dvh flex-col overflow-x-clip px-5 pt-6 sm:px-10 lg:px-12 lg:pt-8">
-      <div className={`mx-auto flex w-full items-center justify-between gap-4 ${WIDTH}`}>
-        <Logo />
-        <LangSwitch />
-      </div>
-
-      {/* En PC el formulario ocupa casi todo el ancho (alineado con el logo) */}
-      <div className={`mx-auto flex w-full flex-1 flex-col ${WIDTH} ${phase === 'fading' ? 'animate-form-out' : ''}`}>
-        {editing && (
-          <header className="mt-8">
-            <p className="inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold uppercase tracking-wide text-ink">
-              <Gem className="h-3.5 w-3.5" /> {t('register.editKicker')}
-            </p>
-            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-700 lg:text-xl">{t('register.editSubtitle')}</p>
-          </header>
-        )}
-
-        {/* Solo el índice de atractividad, centrado */}
-        <div className="mt-8">
-          <AttractivenessMeter value={score} />
-        </div>
-
-        {/* Retour, fuera del formulario, y a la derecha «Étape 2 sur 3» (discreto, solo para saber cuánto falta) */}
-        <div className="mt-6 flex min-h-8 items-center justify-between gap-4">
-          {(screen > 1 || !editing) && (
+    <section className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
+      <div className={`mx-auto flex w-full flex-1 flex-col ${WIDTH}`}>
+        {/* Volver + progreso «▬▬▬ 2/4», como en el prototipo */}
+        <div className="flex min-h-10 items-center justify-between gap-4">
+          {(screen > 1 || !editing) ? (
             <button
               type="button"
-              onClick={() => goTo(screen - 1)}
-              disabled={phase !== 'form'}
-              className="inline-flex items-center gap-1.5 rounded-lg py-1 text-[15px] font-semibold text-slate-600 transition hover:text-ink disabled:opacity-50 lg:text-base"
+              onClick={() => (screen === 1 && editing ? navigate(VIEWS.HOME) : goTo(screen - 1))}
+              disabled={saving}
+              aria-label={t('register.back')}
+              className="-ml-2 grid h-10 w-10 place-items-center rounded-full text-slate-600 transition hover:bg-white hover:text-ink disabled:opacity-50"
             >
-              <ArrowLeft className="h-4 w-4 lg:h-5 lg:w-5" /> {t('register.back')}
+              <ArrowLeft className="h-5 w-5" />
             </button>
-          )}
-          <p className="ml-auto text-xs font-bold uppercase tracking-wider text-slate-500 lg:text-sm">{t('register.stepOf', { n: screen, total: LAST })}</p>
+          ) : <span />}
+          <div className="flex items-center gap-3">
+            <div className="flex gap-1" aria-hidden>
+              {Array.from({ length: LAST }, (_, i) => (
+                <span key={i} className={`h-1.5 w-6 rounded-full transition-colors ${i < screen ? 'bg-brand' : 'bg-slate-200'}`} />
+              ))}
+            </div>
+            <span className="text-xs font-semibold tabular-nums text-slate-500">{t('register.stepOf', { n: screen, total: LAST })}</span>
+            <LangSwitch />
+          </div>
         </div>
 
-        <form onSubmit={submit} noValidate className="mt-4 flex flex-1 flex-col gap-6 lg:gap-8">
+        <form onSubmit={submit} noValidate className="mt-5 flex flex-1 flex-col">
+          <header>
+            {editing && screen === 1 && <p className="mb-1 text-sm font-bold uppercase tracking-wider text-brand">{t('register.editKicker')}</p>}
+            <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink lg:text-4xl">{steps.title}</h1>
+            <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600 lg:text-base">{steps.sub}</p>
+          </header>
+
           {restored && screen === 1 && (
-            <div className="flex flex-col gap-2 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-5 flex flex-col gap-2 rounded-xl border border-brand/30 bg-brand-soft px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-[15px] font-medium text-ink">{t('register.draftRestored')}</p>
               <button type="button" onClick={resetDraft} className="inline-flex shrink-0 items-center gap-1.5 self-start text-[15px] font-semibold text-brand-dark underline-offset-4 hover:underline sm:self-auto">
                 <RotateCcw className="h-4 w-4" /> {t('register.draftReset')}
@@ -227,162 +222,118 @@ export default function RegisterView({ mode = 'create' }) {
             </div>
           )}
 
-          {/* 1 · Profil */}
+          {/* 1 · Perfil */}
           {screen === 1 && (
-            <Card key="profile" icon={UserRound} title={t('register.step1')} subtitle={t('register.step1Sub')}>
-              <div className="mt-6 grid gap-6 md:grid-cols-[18rem_minmax(0,1fr)] md:items-start md:gap-8 lg:mt-7 lg:grid-cols-[19rem_minmax(0,1fr)] lg:gap-12 2xl:grid-cols-[22rem_minmax(0,1fr)]">
+            <div key="profile" className="animate-view-in mt-6 space-y-5">
               <PhotoPicker value={form.photo} name={form.name} onChange={(v) => set('photo', v)} />
-              <div className="space-y-4 lg:space-y-5">
-                <div data-field="name">
-                  <Field label={t('register.name')} name="name" icon={User} placeholder={t('register.namePh')} autoComplete="name" value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} />
-                </div>
-                <div data-field="role">
-                  <Field label={t('register.role')} name="role" icon={Briefcase} placeholder={t('register.rolePh')} autoComplete="organization-title" value={form.role} onChange={(e) => set('role', e.target.value)} error={errors.role} />
-                </div>
-                <div data-field="country">
-                  <Field label={t('register.country')} name="country" icon={Building2} placeholder={t('register.countryPh')} list="branch-suggestions" autoComplete="off" value={form.country} onChange={(e) => set('country', e.target.value)} error={errors.country} />
-                  <datalist id="branch-suggestions">
-                    {COUNTRIES.map((c) => <option key={c} value={country(c)} />)}
-                  </datalist>
-                </div>
+              <div data-field="name">
+                <Field label={t('register.name')} name="name" icon={User} placeholder={t('register.namePh')} autoComplete="name" value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} />
               </div>
+              <div data-field="role">
+                <Field label={t('register.role')} name="role" icon={Briefcase} placeholder={t('register.rolePh')} autoComplete="organization-title" value={form.role} onChange={(e) => set('role', e.target.value)} error={errors.role} />
               </div>
-            </Card>
+              <div data-field="country">
+                <Field label={t('register.country')} name="country" icon={Building2} placeholder={t('register.countryPh')} list="branch-suggestions" autoComplete="off" value={form.country} onChange={(e) => set('country', e.target.value)} error={errors.country} />
+                <datalist id="branch-suggestions">
+                  {COUNTRIES.map((c) => <option key={c} value={country(c)} />)}
+                </datalist>
+              </div>
+            </div>
           )}
 
-          {/* 2 · Temas de interés: una sola selección */}
+          {/* 2 · Mesas */}
           {screen === 2 && (
-            <Card
-              key="interests"
-              icon={Lightbulb}
-              tone="brand"
-              title={t('register.interestsTitle')}
-              subtitle={t('register.interestsSub', { max: MAX_INTERESTS })}
-              field="needs"
-            >
+            <div key="interests" data-field="needs" className="animate-view-in">
               <TopicPicker
-                col="needs"
                 max={MAX_INTERESTS}
-                offers={[]}
-                needs={form.needs}
-                customTopics={form.customTopics}
+                value={form.needs}
+                topics={eventTopics}
                 onChange={patch}
                 error={errors.needs}
               />
-            </Card>
+            </div>
           )}
 
-          {/* 3 · Nivel en cada tema elegido */}
+          {/* 3 · Nivel en cada mesa elegida */}
           {screen === 3 && (
-            <Card key="levels" icon={Gauge} tone="accent" title={t('register.levelTitle')} subtitle={t('register.levelSub')} field="levels">
-              <LevelPicker topics={form.needs} levels={form.levels ?? {}} onChange={patch} error={errors.levels} />
-            </Card>
+            <div key="levels" data-field="levels" className="animate-view-in">
+              {form.needs.length ? (
+                <LevelPicker topics={form.needs} levels={form.levels ?? {}} onChange={patch} error={errors.levels} />
+              ) : (
+                <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 text-center">
+                  <p className="font-semibold">{t('register.levelNone')}</p>
+                  <p className="mt-1 text-sm text-slate-500">{t('register.levelNoneSub', { max: MAX_INTERESTS })}</p>
+                  <button type="button" onClick={() => goTo(2)} className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold ring-1 ring-slate-200 hover:bg-slate-50">
+                    <ArrowLeft className="h-4 w-4" /> {t('register.levelPick')}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
-          {/* 4 · Arme secrète (una sola) */}
+          {/* 4 · Arma secreta (facultativa, una sola) */}
           {screen === 4 && (
-            <Card key="power" icon={Sparkles} tone="ink" title={t('register.step3')} tag={t('register.step3Tag')} subtitle={t('register.step3Sub', { max: MAX_SUPERPOWERS })} field="superpowers" labelId="pick-power">
-              <div className="mt-4 lg:mt-6">
-                <SuperpowerPicker labelledBy="pick-power" value={form.superpowers} onChange={(v) => set('superpowers', v)} />
-              </div>
-            </Card>
+            <div key="power" data-field="superpowers" className="animate-view-in mt-6">
+              <SuperpowerPicker value={form.superpowers} onChange={(v) => set('superpowers', v)} />
+            </div>
           )}
 
           {saveError && (
-            <p role="alert" className="rounded-xl border border-accent/30 bg-accent-soft p-4 text-base font-semibold text-accent-dark">
+            <p role="alert" className="mt-6 rounded-xl border border-brand/30 bg-brand-soft p-4 text-base font-semibold text-brand-dark">
               {t('register.saveError')}
             </p>
           )}
 
-          {/* Barra de acciones fija abajo: el botón siempre a la vista, también con la lista larga de temas.
-              En PC: nota del borrador a la izquierda y botón a la derecha; en móvil, botón a todo el ancho. */}
-          <div className="sticky bottom-0 z-10 mt-auto">
-            {/* Fondo a todo el ancho de la ventana; el contenido sigue alineado con el formulario */}
-            <div aria-hidden className="absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 border-t border-slate-200 bg-paper/95 shadow-[0_-8px_24px_-12px_rgb(32_32_46/0.15)] backdrop-blur" />
-            <div className="relative flex flex-col gap-3 py-4 sm:flex-row-reverse sm:items-center sm:justify-between">
-              <div className="flex flex-col gap-3 sm:flex-row-reverse">
-                {screen < LAST ? (
-                  <Button type="submit" iconRight={ArrowRight} className="py-4 text-base sm:min-w-64 lg:min-w-72 lg:py-4.5 lg:text-lg">{t('register.next')}</Button>
-                ) : (
-                  <Button type="submit" icon={Heart} className="py-4 text-base sm:min-w-64 lg:min-w-80 lg:py-4.5 lg:text-lg" disabled={phase !== 'form'}>
-                    {phase === 'saving' ? t('register.saving') : t(editing ? 'register.editSave' : 'register.submit')}
-                  </Button>
-                )}
-                {editing && (
-                  <button type="button" onClick={() => navigate(VIEWS.HOME)} disabled={phase !== 'form'}
-                    className="rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-base font-semibold text-slate-700 hover:bg-slate-50 lg:text-lg">
-                    {t('register.editCancel')}
-                  </button>
-                )}
-              </div>
-              {!editing && (
-                <p className="hidden items-center gap-1.5 text-sm text-slate-600 sm:flex lg:text-[15px]">
-                  <Save className="h-4 w-4" /> {t('register.draftSaved')}
-                </p>
+          {/* Botón siempre a la vista, también con la lista larga de mesas */}
+          <div className="sticky bottom-0 z-10 mt-auto pt-6">
+            <div className="-mx-5 bg-gradient-to-t from-paper via-paper to-paper/0 px-5 pb-4 pt-4 sm:-mx-8 sm:px-8">
+              <Button type="submit" iconRight={ArrowRight} disabled={saving} className="w-full py-4 text-base">
+                {saving ? t('register.saving') : screen < LAST ? t('register.next') : t(editing ? 'register.editSave' : 'register.submit')}
+              </Button>
+              {editing && (
+                <button type="button" onClick={() => navigate(VIEWS.HOME)} disabled={saving}
+                  className="mt-2 w-full rounded-xl py-3 text-[15px] font-semibold text-slate-600 hover:bg-white">
+                  {t('register.editCancel')}
+                </button>
               )}
+              {!editing && <p className="mt-2 text-center text-xs text-slate-500">{t('register.draftSaved')}</p>}
             </div>
           </div>
-          {/* En móvil la nota del borrador va fuera de la barra para no robar pantalla */}
-          {!editing && (
-            <p className="-mt-2 flex items-center justify-center gap-1.5 text-sm text-slate-600 sm:hidden">
-              <Save className="h-4 w-4" /> {t('register.draftSaved')}
-            </p>
-          )}
         </form>
       </div>
-      <PublicFooter />
+      <PublicFooter className="!pt-2" />
     </section>
   )
 }
 
-const STEPS = ['register.navProfile', 'register.navSkills', 'register.navLevel', 'register.navPower']
+// Ancho del formulario: columna de móvil, algo más ancha en PC para la lista de mesas
+const WIDTH = 'max-w-xl lg:max-w-3xl'
 
-// Ancho del formulario: casi toda la pantalla en PC, con tope en monitores muy grandes
-const WIDTH = 'max-w-6xl 2xl:max-w-7xl'
-
-/** Landing de entrada (a la que llega el email): invitación, cómo funciona y un único CTA */
+/** Bienvenida (a la que llega el email): título, datos del evento y un único botón */
 function Landing({ resume, onStart }) {
-  const { t } = useI18n()
+  const { t, formatDate } = useI18n()
   return (
-    <div className="theme-warm vip-glow flex min-h-dvh flex-col px-5 pt-6 sm:px-10 lg:px-12 lg:pt-8">
+    <div className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
       <div className={`mx-auto flex w-full ${WIDTH} items-center justify-between gap-4`}>
         <Logo />
         <LangSwitch />
       </div>
 
-      <main className="mx-auto flex w-full max-w-2xl flex-1 lg:max-w-4xl flex-col items-center justify-center py-10 text-center">
-        <MatchIllustration />
-        <p className="mt-8 inline-flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-bold lg:px-4 lg:py-2 lg:text-base uppercase tracking-wide text-ink">
-          <Gem className="h-3.5 w-3.5" /> {t('register.kicker')}
-        </p>
-        <h1 className="mt-6 tracking-tight">
-          <span className="block text-lg font-bold text-brand-dark sm:text-xl lg:text-2xl">{t('register.titleBrand')}</span>
-          <span className="mt-1 block font-display text-5xl font-medium leading-[1.02] sm:text-7xl lg:[@media(min-height:960px)]:text-8xl">{t('register.titleMain')}</span>
-        </h1>
-        <p className="mt-6 max-w-lg text-lg leading-relaxed text-slate-700 sm:text-xl lg:max-w-2xl lg:text-2xl">{t('register.subtitle')}</p>
+      <main className={`mx-auto flex w-full ${WIDTH} flex-1 flex-col justify-center py-10`}>
+        <h1 className="font-display text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">{t('register.titleMain')}</h1>
+        <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-600">{t('register.subtitle', { rounds: TOTAL_ROUNDS, min: ROUND_MINUTES })}</p>
 
-        <ol className="mt-8 flex flex-wrap justify-center gap-2 lg:gap-3">
-          {STEPS.map((key, i) => (
-            <li key={key} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[15px] font-semibold text-ink shadow-sm lg:px-5 lg:py-2.5 lg:text-lg">
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-ink text-xs font-bold text-white lg:h-7 lg:w-7 lg:text-sm">{i + 1}</span>
-              {t(key)}
-            </li>
-          ))}
-        </ol>
+        <ul className="mt-8 space-y-2.5 rounded-xl border border-slate-200 bg-white p-4 text-[15px] text-slate-700">
+          <li className="flex items-center gap-2.5"><CalendarDays className="h-4 w-4 text-brand" /> {formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</li>
+          <li className="flex items-center gap-2.5"><MapPin className="h-4 w-4 text-brand" /> {EVENT_PLACE || t('register.placeTbc')}</li>
+          <li className="flex items-center gap-2.5"><Clock className="h-4 w-4 text-brand" /> {t('register.roundsInfo', { n: TOTAL_ROUNDS, min: ROUND_MINUTES })}</li>
+        </ul>
 
-        <button
-          type="button"
-          onClick={onStart}
-          className="group mt-10 flex w-full max-w-md items-center gap-4 rounded-full bg-slate-100 p-2 pr-6 text-lg font-bold text-ink shadow-xl shadow-black/40 ring-1 ring-slate-200 transition hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/50 active:scale-[0.98] sm:text-xl lg:max-w-lg lg:p-2.5 lg:pr-8 lg:text-2xl"
-        >
-          {/* Pastilla deslizante: corazón rojo a la izquierda, texto al centro y chevrons a la derecha */}
-          <span aria-hidden className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-brand shadow-lg shadow-brand/40 transition-transform duration-300 group-hover:translate-x-1 lg:h-16 lg:w-16">
-            <Heart className="text-on-color h-6 w-6 fill-current lg:h-7 lg:w-7" />
-          </span>
-          <span className="flex-1 text-center">{t(resume ? 'register.landingResume' : 'register.landingCta')}</span>
-          <ChevronsRight aria-hidden className="h-6 w-6 shrink-0 text-slate-500 transition group-hover:translate-x-1 group-hover:text-brand-dark lg:h-7 lg:w-7" />
-        </button>
-        <p className="mt-4 text-sm text-slate-600 lg:text-base">{t(resume ? 'register.landingNote' : 'register.landingHow')}</p>
+        <Button type="button" onClick={onStart} iconRight={ArrowRight} className="mt-10 w-full py-4 text-base">
+          {t(resume ? 'register.landingResume' : 'register.landingCta')}
+        </Button>
+        <p className="mt-3 text-center text-sm text-slate-500">{t(resume ? 'register.landingNote' : 'register.landingHow')}</p>
+        <LoginLink />
       </main>
 
       <PublicFooter />
@@ -390,41 +341,13 @@ function Landing({ resume, onStart }) {
   )
 }
 
-/** Ilustración: dos perfiles que hacen «match» */
-function MatchIllustration() {
+/** Quien ya se registró en otro dispositivo entra con su nombre y su código */
+function LoginLink() {
+  const { navigate } = useApp()
+  const { t } = useI18n()
   return (
-    <div aria-hidden className="relative mx-auto h-40 w-72 sm:h-44 lg:[@media(min-height:960px)]:my-6 lg:[@media(min-height:960px)]:scale-125">
-      <div className="absolute left-0 top-4 w-40 -rotate-6 rounded-2xl bg-white p-4 text-left text-ink shadow-xl ring-1 ring-slate-200">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent font-bold text-ink">A</div>
-        <div className="mt-3 h-2 w-24 rounded bg-slate-200" />
-        <div className="mt-2 flex gap-1"><span className="h-4 w-12 rounded-full bg-brand-soft" /><span className="h-4 w-9 rounded-full bg-brand-soft" /></div>
-      </div>
-      <div className="absolute right-0 top-0 w-40 rotate-6 rounded-2xl bg-brand p-4 text-left text-ink shadow-xl">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-ink font-bold text-brand">B</div>
-        <div className="mt-3 h-2 w-20 rounded bg-ink/20" />
-        <div className="mt-2 flex gap-1"><span className="h-4 w-10 rounded-full bg-ink/25" /><span className="h-4 w-12 rounded-full bg-ink/25" /></div>
-      </div>
-      <span className="absolute left-1/2 top-[62%] grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white shadow-xl ring-4 ring-accent">
-        <Heart className="animate-heartbeat h-7 w-7 fill-accent text-accent" />
-      </span>
-    </div>
-  )
-}
-
-const BADGES = { brand: 'bg-brand text-ink', accent: 'bg-accent text-ink', ink: 'bg-slate-100 text-brand-dark ring-1 ring-slate-200' }
-const TAGS = { brand: 'bg-brand-soft text-brand-dark', accent: 'bg-accent-soft text-ink', ink: 'bg-accent-soft text-accent-dark' }
-
-function Card({ icon: Icon, tone = 'ink', title, tag, subtitle, field, labelId, children }) {
-  return (
-    <fieldset data-field={field} className="relative min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 lg:rounded-3xl lg:p-8 2xl:p-10">
-      <legend className="sr-only">{title}</legend>
-      <div className="flex items-center gap-3 lg:gap-4">
-        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl lg:h-12 lg:w-12 ${BADGES[tone]}`}><Icon className="h-5 w-5 lg:h-6 lg:w-6" /></span>
-        <h2 id={labelId} className="font-display text-2xl font-medium leading-tight text-ink lg:text-[2rem]">{title}</h2>
-      </div>
-      {tag && <span className={`mt-3 inline-block rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide lg:text-sm ${TAGS[tone]}`}>{tag}</span>}
-      {subtitle && <p className="mt-2 text-base leading-relaxed text-slate-700 lg:mt-3 lg:text-lg">{subtitle}</p>}
-      {children}
-    </fieldset>
+    <button type="button" onClick={() => navigate(VIEWS.LOGIN)} className="mt-6 text-center text-sm font-semibold text-brand-dark underline-offset-4 hover:underline">
+      {t('login.landingLink')}
+    </button>
   )
 }

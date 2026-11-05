@@ -1,60 +1,62 @@
 @import "tailwindcss";
 
-/* Sistema visual Cofinder (16/10/2026) → clases bg-brand, text-accent-dark, bg-mint, font-display…
-   Los tres colores vivos solo van en rellenos, bordes y selección, con texto tinta encima.
-   Para texto sobre fondo claro se usan las variantes -dark, que cumplen AA. */
+/* Sistema visual Cofinder (03/11/2026, alineado con el prototipo cfndr.lovable.app)
+   Un solo color de marca: el rojo #D7340F (acción, selección, énfasis y tarjetas destacadas),
+   sobre fondo claro cálido y tarjetas blancas con borde fino. El verde queda solo para
+   mensajes de «todo correcto». Contrastes (WCAG): blanco sobre brand 4,8:1 ·
+   brand-dark sobre blanco 6,4:1 · slate-500 sobre blanco 5,3:1. */
 @theme {
-  /* Violeta eléctrico: acción principal y selección */
-  --color-brand: #A680FC;
-  --color-brand-dark: #6B3BD6;
-  --color-brand-soft: #F0EAFF;
-  /* Coral vivo: énfasis, sello, corazones, errores y avisos */
-  --color-accent: #FF6238;
-  --color-accent-dark: #B8400F;
-  --color-accent-soft: #FFECE6;
-  /* Verde menta: confirmaciones y disponibilidad */
-  --color-mint: #35C98B;
-  --color-mint-dark: #0F7A51;
-  --color-mint-soft: #E2F7EE;
-  /* Neutros */
-  --color-ink: #20202E;
-  --color-paper: #F8F8FB;
-  --color-cloud: #EDEDF3;
+  /* Rojo Cofinder: acción principal, selección, énfasis y avisos */
+  --color-brand: #D7340F;
+  --color-brand-dark: #B42A0B;
+  --color-brand-soft: #FDECE6;
+  /* «accent» es el mismo rojo (antes coral): así no queda ningún segundo color de marca */
+  --color-accent: #D7340F;
+  --color-accent-dark: #B42A0B;
+  --color-accent-soft: #FDECE6;
+  /* Verde: solo confirmaciones */
+  --color-mint: #1F9D63;
+  --color-mint-dark: #157A4B;
+  --color-mint-soft: #E6F6EE;
+  /* Neutros cálidos */
+  --color-ink: #1C1C1F;
+  --color-paper: #FAF7F5;
+  --color-cloud: #F3EEEA;
 
-  /* Escala slate de Tailwind reasignada a los neutros de la guía */
-  --color-slate-50: #F8F8FB;
-  --color-slate-100: #EDEDF3;
-  --color-slate-200: #DCDCE5;
-  --color-slate-300: #C3C3D0;
-  --color-slate-400: #9898A8;
-  --color-slate-500: #686878;
-  --color-slate-600: #575766;
-  --color-slate-700: #454553;
-  --color-slate-800: #32323F;
-  --color-slate-900: #20202E;
-  --color-slate-950: #15151F;
+  /* Escala slate de Tailwind reasignada a los neutros cálidos */
+  --color-slate-50: #FAF7F5;
+  --color-slate-100: #F3EFEC;
+  --color-slate-200: #E7E1DC;
+  --color-slate-300: #D3CBC5;
+  --color-slate-400: #A39B95;
+  --color-slate-500: #6B6B76;
+  --color-slate-600: #595963;
+  --color-slate-700: #45454F;
+  --color-slate-800: #2E2E35;
+  --color-slate-900: #1C1C1F;
+  --color-slate-950: #121214;
 
-  /* emerald → menta, amber → coral */
-  --color-emerald-50: #E2F7EE;
-  --color-emerald-100: #C6EFDD;
-  --color-emerald-200: #9FE3C5;
-  --color-emerald-300: #6DD6A8;
-  --color-emerald-400: #35C98B;
-  --color-emerald-500: #22A872;
-  --color-emerald-600: #158E5F;
-  --color-emerald-700: #0F7A51;
-  --color-emerald-800: #0C5F40;
-  --color-emerald-900: #0A4A32;
-  --color-amber-50: #FFF4F0;
-  --color-amber-100: #FFECE6;
-  --color-amber-200: #FFCDBD;
-  --color-amber-300: #FFA68B;
-  --color-amber-400: #FF835F;
-  --color-amber-500: #FF6238;
-  --color-amber-600: #DB4F23;
-  --color-amber-700: #B8400F;
-  --color-amber-800: #8F320C;
-  --color-amber-900: #6B260A;
+  /* emerald → verde de confirmación, amber → rojo de marca */
+  --color-emerald-50: #E6F6EE;
+  --color-emerald-100: #CDEDDD;
+  --color-emerald-200: #A3DDC0;
+  --color-emerald-300: #6FC99E;
+  --color-emerald-400: #3DB27D;
+  --color-emerald-500: #1F9D63;
+  --color-emerald-600: #198553;
+  --color-emerald-700: #157A4B;
+  --color-emerald-800: #105C39;
+  --color-emerald-900: #0B432A;
+  --color-amber-50: #FEF5F2;
+  --color-amber-100: #FDECE6;
+  --color-amber-200: #F9CDBF;
+  --color-amber-300: #F2A28A;
+  --color-amber-400: #E86A47;
+  --color-amber-500: #D7340F;
+  --color-amber-600: #C42F0D;
+  --color-amber-700: #B42A0B;
+  --color-amber-800: #8C2109;
+  --color-amber-900: #661807;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Bricolage Grotesque", "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -68,50 +70,16 @@
   }
 }
 
-/* Fondo suave de "velada VIP": destellos violeta y coral */
+/* Sobre el rojo, el texto siempre en blanco (4,8:1). Fuera de @layer para ganar a text-ink */
+.bg-brand, .bg-accent { color: #fff; }
+
+/* Fondo suave: rejilla tenue y brillo cálido abajo, como en el prototipo */
 .vip-glow {
   background-image:
-    radial-gradient(60rem 30rem at 110% -10%, rgb(166 128 252 / 0.16), transparent 60%),
-    radial-gradient(40rem 24rem at -10% 110%, rgb(255 98 56 / 0.12), transparent 60%);
-}
-
-/* ---------- Tema claro cálido (landing, formulario y pantalla de match) ----------
-   Estilo de la referencia de app de citas (rojo-naranja, botón píldora, rejilla tenue, brillo
-   cálido abajo) sobre blanco cálido. Se activa con .theme-warm en la raíz de la vista y solo
-   redefine los tokens dentro de ella: el resto de la app sigue con la paleta de la guía.
-   Contrastes (WCAG): texto blanco sobre brand 4,8:1 · brand-dark sobre blanco 6,4:1 ·
-   texto secundario slate-500 sobre blanco 5,3:1 · tinta sobre accent 6,5:1. */
-.theme-warm {
-  --color-brand: #D7340F;
-  --color-brand-dark: #B42A0B;
-  --color-brand-soft: #FDECE6;
-  --color-accent: #FF7A2F;
-  --color-accent-dark: #A4400C;
-  --color-accent-soft: #FFF0E6;
-  --color-ink: #1C1C1F;
-  --color-paper: #FBF8F6;
-  --color-cloud: #F3EEEA;
-  --color-slate-50: #FAF7F5;
-  --color-slate-100: #F3EFEC;
-  --color-slate-200: #E7E1DC;
-  --color-slate-300: #D3CBC5;
-  --color-slate-400: #A39B95;
-  --color-slate-500: #6B6B76;
-  --color-slate-600: #595963;
-  --color-slate-700: #45454F;
-  --color-slate-800: #2E2E35;
-  --color-slate-900: #1C1C1F;
-  background-color: var(--color-paper);
-  color: var(--color-ink);
-}
-/* Sobre el rojo de acción, el texto va en blanco (4,8:1) */
-.theme-warm .bg-brand { color: #fff; }
-.theme-warm.vip-glow {
-  background-image:
-    radial-gradient(70rem 30rem at 50% 118%, rgb(242 68 29 / 0.16), transparent 70%),
-    radial-gradient(40rem 22rem at 100% -10%, rgb(255 122 47 / 0.12), transparent 65%),
-    linear-gradient(rgb(28 28 31 / 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(28 28 31 / 0.045) 1px, transparent 1px);
+    radial-gradient(70rem 30rem at 50% 118%, rgb(215 52 15 / 0.10), transparent 70%),
+    radial-gradient(40rem 22rem at 100% -10%, rgb(232 106 71 / 0.10), transparent 65%),
+    linear-gradient(rgb(28 28 31 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(28 28 31 / 0.04) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 96px 96px, 96px 96px;
   background-attachment: fixed;
 }

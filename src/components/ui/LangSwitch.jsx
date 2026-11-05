@@ -2,7 +2,7 @@ import { Languages } from 'lucide-react'
 import { useI18n } from '../../context/I18nContext'
 import { LANGS } from '../../constants'
 
-/** Selector FR / EN segmentado, accesible por teclado */
+/** Selector ES / EN segmentado, accesible por teclado */
 export default function LangSwitch({ dark = false, className = '' }) {
   const { lang, setLang, t } = useI18n()
   return (
@@ -24,7 +24,7 @@ export default function LangSwitch({ dark = false, className = '' }) {
             title={t(`lang.${l}`)}
             className={`min-h-9 rounded-full px-3.5 py-1.5 uppercase tracking-wide transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
               active
-                ? 'bg-brand text-ink shadow-sm'
+                ? 'bg-brand text-white shadow-sm'
                 : dark ? 'text-white/80 hover:text-white' : 'text-slate-600 hover:text-slate-900'
             }`}
           >

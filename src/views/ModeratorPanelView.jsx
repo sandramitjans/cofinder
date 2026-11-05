@@ -1,14 +1,15 @@
 import { useMemo, useState } from 'react'
 import {
   AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Coffee, Eraser, Flag, LayoutGrid, Loader2, Lock, Monitor,
-  RefreshCcw, RotateCcw, Shuffle, Sparkles, TimerReset, Trash2, UserPlus, Users,
+  MessagesSquare, Plus, RefreshCcw, RotateCcw, Shuffle, Sparkles, TimerReset, Trash2, UserPlus, Users,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { PAUSE_AFTER_ROUND, PAUSE_MINUTES, VIEWS } from '../constants'
+import { FIND_MINUTES, PAUSE_AFTER_ROUND, PAUSE_MINUTES, TOPIC_FAMILIES, VIEWS } from '../constants'
 import { planStats, tableRange } from '../lib/matching'
-import { topicKey } from '../lib/topics'
+import { MAX_CUSTOM_LENGTH, makeEventTopic, topicKey, topicsWithLevel } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
+import { useConnected } from '../lib/useConnected'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
@@ -20,9 +21,11 @@ export default function ModeratorPanelView() {
     navigate, lockModerator, participants, currentUser, event, currentRound,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
-    removeParticipant, seedDemo, clearDemo,
+    removeParticipant, seedDemo, clearDemo, readyCount, readyTotal, notedCount, notedTotal,
+    eventTopics, addEventTopic, removeEventTopic,
   } = useApp()
   const { t, topic, country, superpower } = useI18n()
+  const isOn = useConnected() // quién tiene la app abierta en el móvil (null en modo local)
   const byId = useMemo(() => new Map(participants.map((p) => [p.id, p])), [participants])
   const hasDemo = participants.some((p) => p.demo)
   const hasPlan = event.rounds.length > 0
@@ -33,17 +36,19 @@ export default function ModeratorPanelView() {
 
   // Fase del tour en pantalla
   const r = live ? currentRound : null
-  const phase = !r ? null : r.pauseStartedAt ? 'pause' : r.startedAt ? 'talk' : r.revealed ? 'reveal' : 'intro'
-  const timer = useCountdown(phase === 'talk' ? r.startedAt : null)
+  const timer = useCountdown(r?.startedAt && !r.pauseStartedAt ? r.startedAt : null)
+  const findTimer = useCountdown(r?.startedAt && !r.pauseStartedAt ? r.startedAt - FIND_MINUTES * 60_000 : null, FIND_MINUTES)
+  const phase = !r ? null : r.pauseStartedAt ? 'pause' : r.startedAt ? (findTimer.done ? 'talk' : 'find') : r.revealed ? 'reveal' : 'intro'
   const pauseTimer = useCountdown(phase === 'pause' ? r.pauseStartedAt : null, PAUSE_MINUTES)
-  const shownTimer = phase === 'pause' ? pauseTimer : timer
+  const shownTimer = phase === 'pause' ? pauseTimer : phase === 'find' ? findTimer : timer
 
   // Qué hará el botón «Suivant»
   let nextLabel = t('panel.launch')
   if (event.finished) nextLabel = null
   else if (r) {
-    if (r.revealed < r.plan.length) nextLabel = t('panel.nextReveal', { k: r.revealed + 1, n: r.plan.length })
-    else if (!r.startedAt) nextLabel = t('panel.nextTimer')
+    if (!r.startedAt) nextLabel = t('panel.nextTimer')
+    else if (phase === 'find') nextLabel = t('panel.skipFind')
+    else if (phase === 'talk' && !timer.done) nextLabel = t('panel.endTalk')
     else if (event.round === PAUSE_AFTER_ROUND && event.round < total && !r.pauseStartedAt) nextLabel = t('panel.nextPause')
     else if (event.round < total) nextLabel = t('panel.nextRound', { n: event.round + 1 })
     else nextLabel = t('panel.finish')
@@ -59,17 +64,17 @@ export default function ModeratorPanelView() {
       : hasPlan ? t('panel.statusPlanned') : t('panel.statusReady')
 
   return (
-    <div className="min-h-dvh bg-slate-100">
-      <header className="sticky top-0 z-20 bg-ink text-white">
+    <div className="min-h-dvh bg-paper">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3">
-            <Logo inverted />
-            <span className="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-ink">{t('panel.badge')}</span>
+            <Logo />
+            <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brand-dark">{t('panel.badge')}</span>
           </div>
           <div className="flex items-center gap-2">
-            <LangSwitch dark />
-            <Button variant="accent" icon={Monitor} onClick={() => navigate(VIEWS.PROJECTOR)} className="py-2">{t('panel.projector')}</Button>
-            <button onClick={lockModerator} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white">
+            <LangSwitch />
+            <Button icon={Monitor} onClick={() => navigate(VIEWS.PROJECTOR)} className="py-2">{t('panel.projector')}</Button>
+            <button onClick={lockModerator} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-ink">
               <Lock className="h-4 w-4" /> <span className="hidden sm:inline">{t('panel.lock')}</span>
             </button>
           </div>
@@ -85,10 +90,10 @@ export default function ModeratorPanelView() {
                 <p className="text-xs font-bold uppercase tracking-widest text-brand-dark">{t('panel.control')}</p>
                 <h1 className="mt-1 text-2xl font-bold tracking-tight">{status}</h1>
               </div>
-              {(phase === 'talk' || phase === 'pause') && (
-                <div className={`rounded-xl px-4 py-2 text-right ${shownTimer.done ? 'bg-accent' : 'bg-ink text-white'}`}>
+              {(phase === 'talk' || phase === 'pause' || phase === 'find') && (
+                <div className={`rounded-xl px-4 py-2 text-right ${shownTimer.done ? 'bg-brand' : 'bg-brand-soft text-brand-dark'}`}>
                   <p className="font-mono text-3xl font-bold tabular-nums">{shownTimer.label}</p>
-                  <p className="text-[11px] font-medium opacity-70">{shownTimer.done ? t('panel.timeUp') : phase === 'pause' ? t('panel.pauseLeft') : t('panel.remaining')}</p>
+                  <p className="text-[11px] font-medium opacity-70">{shownTimer.done ? t('panel.timeUp') : phase === 'pause' ? t('panel.pauseLeft') : phase === 'find' ? t('panel.findLeft') : t('panel.remaining')}</p>
                 </div>
               )}
             </div>
@@ -113,6 +118,18 @@ export default function ModeratorPanelView() {
               </ol>
             )}
 
+            {hasPlan && !event.round && !event.finished && readyTotal > 0 && (
+              <p className="mt-5 flex items-center gap-2 rounded-xl bg-mint-soft px-3.5 py-2.5 text-sm font-semibold text-mint-dark">
+                <CheckCircle2 className="h-4 w-4 shrink-0" /> {t('panel.readyCount', { n: readyCount, total: readyTotal })}
+              </p>
+            )}
+
+            {phase === 'talk' && timer.done && notedTotal > 0 && (
+              <p className="mt-5 flex items-center gap-2 rounded-xl bg-mint-soft px-3.5 py-2.5 text-sm font-semibold text-mint-dark">
+                <CheckCircle2 className="h-4 w-4 shrink-0" /> {t('panel.notesCount', { n: notedCount, total: notedTotal })}
+              </p>
+            )}
+
             <div className="mt-6 flex flex-wrap gap-2">
               {!hasPlan && (
                 <Button icon={planning ? Loader2 : Sparkles} onClick={generatePlan} disabled={planning || participants.length < 2} className={planning ? '[&>svg]:animate-spin' : ''}>
@@ -120,7 +137,7 @@ export default function ModeratorPanelView() {
                 </Button>
               )}
               {hasPlan && nextLabel && (
-                <Button icon={ChevronRight} onClick={event.round === total && r?.startedAt ? confirmThen(t('panel.confirmFinish'), advance) : advance}>{nextLabel}</Button>
+                <Button icon={ChevronRight} onClick={event.round === total && phase === 'talk' && timer.done ? confirmThen(t('panel.confirmFinish'), advance) : advance}>{nextLabel}</Button>
               )}
               {event.round > 0 && (
                 <Button variant="outline" icon={ChevronLeft} onClick={stepBack}>{t('panel.back')}</Button>
@@ -183,6 +200,16 @@ export default function ModeratorPanelView() {
           />
         )}
 
+        {/* Mesas del evento: los temas propuestos, que los participantes eligen */}
+        <EventTopics
+          topics={eventTopics}
+          participants={participants}
+          onAdd={addEventTopic}
+          onRemove={(x) => window.confirm(t('panel.confirmRemoveTopic', { label: topic(x.id) })) && removeEventTopic(x.id)}
+          t={t}
+          topic={topic}
+        />
+
         {/* Participantes */}
         <section className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4">
@@ -203,21 +230,28 @@ export default function ModeratorPanelView() {
                     <div className="min-w-0">
                       <p className="truncate font-semibold">
                         {p.name}
-                        {p.id === currentUser?.id && <span className="ml-2 rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold">{t('panel.youBadge')}</span>}
+                        {p.id === currentUser?.id && <span className="ml-2 rounded bg-brand px-1.5 py-0.5 text-[10px] font-bold">{t('panel.youBadge')}</span>}
                         {p.demo && <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">{t('panel.demoBadge')}</span>}
                       </p>
                       <p className="truncate text-xs text-slate-500">{p.role} · {country(p.country)}</p>
                     </div>
                   </div>
                   <div className="flex flex-1 flex-wrap gap-1">
-                    {p.offers.map((x) => <span key={x} className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-medium text-brand-dark">{topic(x)}</span>)}
-                    {p.needs.map((x) => <span key={x} className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-slate-700">{topic(x)}</span>)}
+                    {topicsWithLevel(p).map(({ id: x, level }) => (
+                      <span key={x} className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${level === 'high' ? 'bg-brand-soft text-brand-dark' : level === 'medium' ? 'bg-amber-50 text-brand-dark ring-1 ring-brand/20' : 'bg-slate-100 text-slate-700'}`}>{topic(x)}</span>
+                    ))}
                     {(p.superpowers ?? []).map((x) => (
-                      <span key={x} title={superpower(x)} className="rounded-full bg-ink px-2 py-0.5 text-[11px] font-medium text-white">
+                      <span key={x} title={superpower(x)} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200">
                         {SUPERPOWERS.find((sp) => sp.id === x)?.emoji} {superpower(x)}
                       </span>
                     ))}
                   </div>
+                  {p.accessCode && (
+                    <span title={t('login.panelCode')} className={`inline-flex shrink-0 items-center gap-1.5 self-start rounded-lg px-2 py-1 font-mono text-sm font-bold tracking-widest sm:self-auto ${isOn?.(p.id) ? 'bg-mint-soft text-mint-dark' : 'bg-slate-100 text-slate-700'}`}>
+                      {isOn && <span aria-hidden className={`h-2 w-2 rounded-full ${isOn(p.id) ? 'bg-mint-dark' : 'bg-slate-300'}`} />}
+                      {p.accessCode}
+                    </span>
+                  )}
                   <button
                     onClick={confirmThen(t('panel.confirmRemove', { name: p.name }), () => removeParticipant(p.id))}
                     className="self-end rounded-lg p-2 text-slate-400 hover:bg-accent-soft hover:text-accent-dark sm:self-auto"
@@ -231,11 +265,98 @@ export default function ModeratorPanelView() {
           )}
           <p className="flex items-center gap-4 border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-brand" /> {t('panel.legendOffer')}</span>
-            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-accent" /> {t('panel.legendNeed')}</span>
+            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-200" /> {t('panel.legendMid')}</span>
+            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-slate-300" /> {t('panel.legendNeed')}</span>
+            <span className="ml-auto">🔑 {t('login.panelHint')}{isOn && <> · {t('join.connected', { n: participants.filter((p) => isOn(p.id)).length, total: participants.length })}</>}</span>
           </p>
         </section>
       </main>
     </div>
+  )
+}
+
+/**
+ * Mesas del evento: la moderadora añade cada tema propuesto con el nombre de quien lo propone
+ * (y una descripción opcional) y puede quitarlo. Al lado de cada mesa, cuántas personas la han elegido.
+ */
+function EventTopics({ topics, participants, onAdd, onRemove, t, topic }) {
+  const [label, setLabel] = useState('')
+  const [by, setBy] = useState('')
+  const [desc, setDesc] = useState('')
+  const [family, setFamily] = useState('')
+  const [exists, setExists] = useState(false)
+  const votes = (id) => participants.filter((p) => [...p.offers, ...p.needs].some((x) => topicKey(x) === topicKey(id))).length
+
+  const add = (e) => {
+    e.preventDefault()
+    if (!label.trim()) return
+    const entry = makeEventTopic({ label, by, desc, family })
+    if (topics.some((x) => topicKey(x.id) === topicKey(entry.id))) return setExists(true)
+    onAdd(entry)
+    setLabel(''); setBy(''); setDesc(''); setExists(false) // la familia se mantiene para la siguiente
+  }
+
+  const input = 'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15'
+  return (
+    <section className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+      <div className="border-b border-slate-100 p-4">
+        <h2 className="flex items-center gap-2 text-lg font-bold"><MessagesSquare className="h-5 w-5 text-brand-dark" /> {t('panel.topicsTitle', { n: topics.length })}</h2>
+        <p className="mt-1 text-sm text-slate-500">{t('panel.topicsSub')}</p>
+      </div>
+
+      <form onSubmit={add} className="grid gap-3 border-b border-slate-100 p-4 lg:grid-cols-[1.2fr_1fr_1fr_1.4fr_auto] lg:items-end">
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicLabel')}</span>
+          <input className={input} value={label} maxLength={MAX_CUSTOM_LENGTH * 2} onChange={(e) => { setLabel(e.target.value); setExists(false) }} placeholder={t('panel.topicLabelPh')} required />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicBy')}</span>
+          <input className={input} value={by} maxLength={60} onChange={(e) => setBy(e.target.value)} placeholder={t('panel.topicByPh')} />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicFamily')}</span>
+          <select className={input} value={family} onChange={(e) => setFamily(e.target.value)}>
+            <option value="">{t('panel.topicFamilyNone')}</option>
+            {TOPIC_FAMILIES.map((g) => <option key={g.id} value={g.id}>{t(`register.families.${g.id}`)}</option>)}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicDesc')}</span>
+          <input className={input} value={desc} maxLength={160} onChange={(e) => setDesc(e.target.value)} placeholder={t('panel.topicDescPh')} />
+        </label>
+        <Button type="submit" icon={Plus} disabled={!label.trim()} className="py-2.5">{t('panel.topicAdd')}</Button>
+        {exists && <p role="alert" className="text-sm font-semibold text-brand-dark lg:col-span-5">{t('panel.topicExists')}</p>}
+      </form>
+
+      {topics.length === 0 ? (
+        <p className="p-6 text-center text-sm text-slate-500">{t('panel.topicsDefault')}</p>
+      ) : (
+        <ul className="divide-y divide-slate-100">
+          {topics.map((x) => (
+            <li key={x.id} className="flex items-start gap-3 p-4">
+              <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-lg">💬</span>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">
+                  {topic(x.id)}
+                  {x.family && <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 align-middle text-[11px] font-bold text-brand-dark">{t(`register.families.${x.family}`)}</span>}
+                </p>
+                {x.desc && <p className="text-sm text-slate-500">{x.desc}</p>}
+                {x.by && <p className="mt-0.5 text-xs text-slate-500">{t('register.proposedBy')} <strong className="font-semibold text-ink">{x.by}</strong></p>}
+              </div>
+              <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{t('panel.topicVotes', { n: votes(x.id) })}</span>
+              <button
+                type="button"
+                onClick={() => onRemove(x)}
+                className="shrink-0 rounded-lg p-2 text-slate-400 hover:bg-accent-soft hover:text-accent-dark"
+                aria-label={t('panel.topicRemove', { label: topic(x.id) })}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
 
@@ -319,7 +440,7 @@ function PlanGrid({ rounds, current, finished, byId, planning, onRegenerate, onS
                                 onClick={() => pick(i, id)}
                                 title={p.name}
                                 className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold ring-1 transition ${
-                                  isSel ? 'bg-brand text-ink ring-brand' : chosen ? 'bg-white text-slate-700 ring-slate-200 hover:ring-brand' : 'bg-accent-soft text-accent-dark ring-accent/40 hover:ring-brand'
+                                  isSel ? 'bg-brand text-white ring-brand' : chosen ? 'bg-white text-slate-700 ring-slate-200 hover:ring-brand' : 'bg-accent-soft text-accent-dark ring-accent/40 hover:ring-brand'
                                 } disabled:cursor-default`}
                               >
                                 {shortName(p.name)}

@@ -1,22 +1,23 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, Heart, PencilLine } from 'lucide-react'
+import { CalendarDays, CheckCircle2, KeyRound, MapPin, PencilLine } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { EVENT_DATE, VIEWS } from '../constants'
+import { EVENT_DATE, EVENT_PLACE, TOPIC_EMOJI, VIEWS } from '../constants'
 import { useTimeLeft } from '../lib/useTimeLeft'
+import { isCustom, topicsWithLevel } from '../lib/topics'
+import Logo from '../components/ui/Logo'
+import Avatar from '../components/ui/Avatar'
 import LangSwitch from '../components/ui/LangSwitch'
-import Stamp from '../components/ui/Stamp'
-import VipCard from '../components/ui/VipCard'
 import PublicFooter from '../components/layout/PublicFooter'
+import { SuperpowerChips } from '../components/ui/SuperpowerPicker'
 
 /**
- * Pantalla de espera «Soirée de gala» tras validar el perfil.
- * Desktop: tarjeta-póster a toda la altura a la izquierda; a la derecha, hoja de calendario,
- * cuenta atrás discreta, lacre «sous scellés» y editar. Móvil: lo mismo en vertical, en ~una pantalla.
+ * Confirmación tras validar el perfil (pantalla 5 del prototipo): tarjeta roja con la persona,
+ * sus mesas con su nivel, cuánto falta para la sesión y «Todo listo». Desde aquí se edita el perfil.
  */
-export default function WaitingView() {
+export default function WaitingView({ onLobby }) {
   const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt } = useApp()
-  const { t, topic, country, formatDate } = useI18n()
+  const { t, topic, country } = useI18n()
   const [justUpdated, setJustUpdated] = useState(() => Date.now() - profileUpdatedAt < 3000)
   useEffect(() => {
     if (!justUpdated) return
@@ -25,71 +26,79 @@ export default function WaitingView() {
   }, [justUpdated])
   if (!currentUser) return null
 
-  const edit = () => navigate(VIEWS.EDIT)
+  const tables = topicsWithLevel(currentUser)
 
   return (
-    <div className="relative isolate flex min-h-dvh flex-col bg-ink text-white lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-      {/* Resplandor de gala */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-brand/25 blur-3xl" />
-        <div className="absolute -bottom-48 right-0 h-[28rem] w-[28rem] rounded-full bg-brand/15 blur-3xl" />
-        <div className="absolute right-1/4 top-1/3 h-64 w-64 rounded-full bg-accent/10 blur-3xl" />
-      </div>
-
-      {/* Tarjeta-póster: en desktop ocupa toda la altura de la columna izquierda */}
-      <aside className="order-3 px-4 lg:sticky lg:top-0 lg:order-none lg:col-start-1 lg:row-start-1 lg:h-dvh lg:p-6" aria-label={t('waiting.yourFile')}>
-        <div className="relative mx-auto h-full max-w-sm lg:max-w-none">
-          <VipCard
-            variant="poster"
-            photo={currentUser.photo}
-            name={currentUser.name}
-            role={currentUser.role}
-            branch={country(currentUser.country)}
-            offers={currentUser.offers.map(topic)}
-            needs={currentUser.needs.map(topic)}
-            superpowers={currentUser.superpowers ?? []}
-            onAddPhoto={canEditProfile ? edit : undefined}
-            className="aspect-[6/7] lg:aspect-auto lg:h-full"
-          />
-          <div className="pointer-events-none absolute right-3 top-[4.25rem] z-10 lg:right-6 lg:top-6">
-            <Stamp size="sm" top={t('match.stampTop')} bottom={t('match.stampBottom')} label={t('match.stampLabel')} />
-          </div>
-        </div>
-      </aside>
-
-      {/* Columna derecha (en móvil sus bloques se intercalan con la tarjeta gracias a `contents`) */}
-      <div className="contents lg:col-start-2 lg:row-start-1 lg:flex lg:min-h-dvh lg:flex-col lg:px-12 lg:py-6">
-        <header className="order-1 flex items-center justify-end px-4 pt-4 lg:p-0">
-          <LangSwitch dark />
+    <div className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
+      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
+        <header className="flex items-center justify-between gap-4">
+          <Logo />
+          <LangSwitch />
         </header>
 
-        <section className="order-2 px-4 pb-4 pt-3 lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:p-0">
-          <div className="mx-auto w-full max-w-sm lg:mx-0 lg:max-w-xl">
-            {justUpdated && (
-              <p role="status" className="animate-pop-in mb-4 flex items-center gap-2 rounded-xl bg-mint/15 px-3 py-2.5 text-[15px] font-semibold text-mint ring-1 ring-mint/30">
-                <CheckCircle2 className="h-5 w-5 shrink-0" /> {t('waiting.updated')}
-              </p>
-            )}
-            <h1 className="font-display text-xl font-medium leading-tight tracking-tight lg:text-5xl">
-              {t('waiting.saved')}
-            </h1>
-            <DateBlock />
-            <div className="hidden lg:block">
-              <Sealed />
-              {canEditProfile && <EditButton onClick={edit} />}
+        <main className="flex flex-1 flex-col py-6">
+          {onLobby && (
+            <button type="button" onClick={onLobby} className="mb-4 self-start text-sm font-semibold text-brand-dark underline-offset-4 hover:underline">
+              ← {t('lobby.back')}
+            </button>
+          )}
+          {justUpdated && (
+            <p role="status" className="animate-pop-in mb-4 flex items-center gap-2 rounded-xl bg-mint-soft px-3 py-2.5 text-[15px] font-semibold text-mint-dark">
+              <CheckCircle2 className="h-5 w-5 shrink-0" /> {t('waiting.updated')}
+            </p>
+          )}
+
+          {/* Tarjeta destacada en el rojo de marca */}
+          <section aria-label={t('waiting.yourFile')} className="animate-pop-in rounded-2xl bg-brand p-5 text-white shadow-lg shadow-brand/20">
+            <div className="flex items-center gap-4">
+              <Avatar name={currentUser.name} photo={currentUser.photo} size="lg" tone="bg-white text-brand" className="!ring-white/40" />
+              <div className="min-w-0">
+                <p className="truncate font-display text-2xl font-medium leading-tight">{currentUser.name}</p>
+                <p className="truncate text-sm text-white/85">{currentUser.role}</p>
+                <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-white/85"><MapPin className="h-3.5 w-3.5" /> {country(currentUser.country)}</p>
+              </div>
             </div>
-          </div>
-        </section>
+            <SuperpowerChips ids={currentUser.superpowers ?? []} size="sm" className="mt-4 [&>span]:bg-white/15 [&>span]:text-white [&>span]:ring-white/20" />
+          </section>
 
-        <div className="order-4 px-4 pt-4 lg:hidden">
-          <div className="mx-auto max-w-sm">
-            <Sealed />
-            {canEditProfile && <EditButton onClick={edit} />}
-          </div>
-        </div>
+          <h2 className="mt-7 text-xs font-bold uppercase tracking-wider text-slate-500">{t('waiting.yourTables')}</h2>
+          {tables.length ? (
+            <ul className="mt-2.5 space-y-2">
+              {tables.map(({ id, level }) => (
+                <li key={id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5">
+                  <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-lg">{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
+                  <span className="min-w-0 flex-1 text-[15px] font-semibold leading-snug">{topic(id)}</span>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${level === 'high' ? 'bg-brand-soft text-brand-dark' : level === 'medium' ? 'bg-amber-50 text-brand-dark ring-1 ring-brand/20' : 'bg-slate-100 text-slate-600'}`}>
+                    {t(`register.level.${level}Badge`)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2.5 rounded-xl bg-brand-soft px-3.5 py-3 text-sm text-brand-dark">{t('waiting.noTables')}</p>
+          )}
 
-        <PublicFooter className="order-5 !py-3 lg:!py-0">
-          <button onClick={forgetMe} className="underline-offset-4 hover:text-slate-200 hover:underline">
+          <DateBlock />
+
+          {currentUser.accessCode && <AccessCode name={currentUser.name} code={currentUser.accessCode} />}
+
+          <p className="mt-4 flex items-center gap-2 rounded-xl bg-mint-soft px-3.5 py-3 text-sm font-medium text-mint-dark">
+            <CheckCircle2 className="h-4 w-4 shrink-0" /> {t('waiting.allSet')}
+          </p>
+
+          {canEditProfile && (
+            <button
+              type="button"
+              onClick={() => navigate(VIEWS.EDIT)}
+              className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-base font-semibold text-ink transition hover:border-slate-300"
+            >
+              <PencilLine className="h-5 w-5" /> {t('waiting.edit')}
+            </button>
+          )}
+        </main>
+
+        <PublicFooter className="!py-3">
+          <button onClick={forgetMe} className="underline-offset-4 hover:text-slate-600 hover:underline">
             {t('waiting.notYou')}
           </button>
         </PublicFooter>
@@ -98,75 +107,44 @@ export default function WaitingView() {
   )
 }
 
-/** Días naturales hasta el evento (J-n), contando el día de hoy como J-n y el 25/11 como Jour J */
+/** Días naturales hasta el evento, contando el día de hoy */
 const daysUntil = (left) => left.days + (left.hours || left.minutes || left.seconds ? 1 : 0)
 
-/** Hoja de calendario de sobremesa + «Dans 48 jours» + cuenta atrás discreta (sin segundos) */
+/** Fecha, lugar y cuánto falta */
 function DateBlock() {
   const { t, formatDate } = useI18n()
   const left = useTimeLeft(EVENT_DATE)
   const n = daysUntil(left)
   const headline = left.done ? t('waiting.jToday') : n === 1 ? t('waiting.tomorrow') : t('waiting.inDays', { n })
-  const weekday = formatDate(EVENT_DATE, { weekday: 'long' })
-  const pad = (v) => String(v).padStart(2, '0')
 
   return (
-    <div className="mt-4 flex items-center gap-5 lg:mt-10 lg:gap-8">
-      {/* Hoja de calendario */}
-      <div className="relative w-24 shrink-0 -rotate-3 lg:w-48" role="img" aria-label={formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}>
-        <span aria-hidden className="absolute -top-2 left-[22%] z-10 h-4 w-2 rounded-full bg-slate-300 ring-2 ring-ink lg:-top-3.5 lg:h-7 lg:w-2.5" />
-        <span aria-hidden className="absolute -top-2 right-[22%] z-10 h-4 w-2 rounded-full bg-slate-300 ring-2 ring-ink lg:-top-3.5 lg:h-7 lg:w-2.5" />
-        <div className="overflow-hidden rounded-xl bg-white text-center text-ink shadow-2xl shadow-black/50 lg:rounded-2xl">
-          <div className="bg-accent pb-1 pt-2.5 text-[11px] font-extrabold uppercase tracking-[0.2em] text-ink lg:pb-2.5 lg:pt-5 lg:text-base">
-            {formatDate(EVENT_DATE, { month: 'long' })}
-          </div>
-          <div className="font-display text-5xl font-medium leading-none lg:text-[7.5rem]" style={{ paddingTop: '0.08em' }}>
-            {formatDate(EVENT_DATE, { day: 'numeric' })}
-          </div>
-          <div className="pb-1.5 text-xs font-semibold capitalize text-slate-500 lg:pb-4 lg:text-lg">{weekday}</div>
-        </div>
+    <section className="mt-7 flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
+      <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-brand-soft text-center leading-none text-brand-dark">
+        <span>
+          <span className="block font-display text-2xl font-medium">{formatDate(EVENT_DATE, { day: 'numeric' })}</span>
+          <span className="block text-[10px] font-bold uppercase tracking-wider">{formatDate(EVENT_DATE, { month: 'short' })}</span>
+        </span>
       </div>
-
-      {/* Cuánto falta */}
       <div className="min-w-0">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/60 lg:text-sm">{t('waiting.kicker')}</p>
-        <p className="mt-1 whitespace-nowrap font-display text-3xl font-medium leading-tight text-accent lg:text-5xl xl:text-6xl">{headline}</p>
-        {!left.done && (
-          <p className="mt-1.5 font-mono text-sm tabular-nums text-white/70 lg:mt-3 lg:text-base" aria-live="off">
-            {t('waiting.remaining', { d: left.days, h: pad(left.hours), m: pad(left.minutes) })}
-          </p>
-        )}
+        <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><CalendarDays className="h-3.5 w-3.5" /> {t('waiting.kicker')}</p>
+        <p className="font-display text-xl font-medium text-ink">{headline}</p>
+        <p className="truncate text-sm text-slate-500">{EVENT_PLACE || t('register.placeTbc')}</p>
       </div>
-    </div>
+    </section>
   )
 }
 
-/** Lacre: «Vos rendez-vous sont sous scellés. Le 25 novembre, cette page vous dévoilera tout.» */
-function Sealed() {
+/** Nombre + código de 4 cifras para conectar el móvil el día del evento (QR del proyector) */
+function AccessCode({ name, code }) {
   const { t } = useI18n()
   return (
-    <div className="flex items-center gap-4 lg:mt-12">
-      <span aria-hidden className="relative grid h-14 w-14 shrink-0 rotate-12 place-items-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#FF9474,#FF6238_45%,#B8400F)] shadow-lg shadow-black/40 ring-4 ring-accent/30 lg:h-16 lg:w-16">
-        <span className="absolute inset-1.5 rounded-full border-2 border-dashed border-white/25" />
-        <Heart className="h-6 w-6 fill-white/90 text-white/90" />
-      </span>
-      <p className="text-[15px] leading-snug text-white/80 lg:text-lg">
-        <strong className="block font-semibold text-white">{t('waiting.sealedTitle')}</strong>
-        {t('waiting.sealedText')}
-      </p>
-    </div>
-  )
-}
-
-function EditButton({ onClick }) {
-  const { t } = useI18n()
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-white/30 px-5 text-base font-bold text-white transition hover:border-white/60 hover:bg-white/10 lg:mt-10 lg:w-auto"
-    >
-      <PencilLine className="h-5 w-5" /> {t('waiting.edit')}
-    </button>
+    <section className="mt-4 rounded-xl border border-dashed border-brand/40 bg-white p-4">
+      <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><KeyRound className="h-3.5 w-3.5" /> {t('login.codeTitle')}</p>
+      <div className="mt-2 flex items-baseline justify-between gap-3">
+        <p className="min-w-0 truncate text-[15px] font-semibold text-ink">{name.split(' ')[0]}</p>
+        <p className="font-mono text-3xl font-bold tracking-[0.3em] text-brand-dark">{code}</p>
+      </div>
+      <p className="mt-1.5 text-sm text-slate-500">{t('login.codeHint')}</p>
+    </section>
   )
 }

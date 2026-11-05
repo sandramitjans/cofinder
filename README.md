@@ -1,125 +1,197 @@
 # Cofinder
 
-"Tinder profesional" de competencias para dinamizar sesiones de networking interno.
+**Speed dating de conocimiento** para eventos internos de Cofidis: directores y directoras de marketing
+se apuntan a las mesas (temas) que les interesan, y Cofinder decide con quién se sienta cada uno en
+**5 rondas de 15 minutos**. El día del evento, una pantalla grande (proyector) y el móvil de cada
+participante van sincronizados en directo, y al final de cada ronda cada persona graba una nota de audio
+con lo que se lleva. Esas notas se transcriben con Whisper (código abierto) y se leen por tema de mesa.
 
-## Arranque
+Español por defecto e inglés (selector ES / EN en todas las pantallas). React 18 + Vite + Tailwind 4,
+con Supabase (base de datos, tiempo real y almacenamiento) o en modo local sin servidor.
+
+## Las cuatro partes de la app
+
+| Dirección | Quién | Para qué |
+|---|---|---|
+| `…/` | Participantes, ~2 semanas antes | Registro y espera hasta el evento |
+| `…/#entrar` | Participantes, el día del evento (QR del proyector) | Entrar en el móvil con nombre + código de 4 cifras |
+| `…/#admin` | Admin (PIN) | Panel de control y pantalla del proyector |
+| `…/#resum` | Admin (mismo PIN) | Resúmenes: las notas de audio transcritas, por tema o por ronda |
+
+### 1. Registro (antes del evento)
+
+Cuatro pasos (unos 3 minutos): **Cuéntanos quién eres** (nombre, cargo, filial, foto) → **Apúntate a las
+mesas** (temas que le interesan) → **Tu expertise** (nivel en cada tema) → **Tu arma secreta** (opcional,
+un rasgo divertido para romper el hielo). Después, pantalla de espera con cuenta atrás hasta el evento
+(`VITE_EVENT_DATE`, por defecto el 25/11/2026) y su **código de acceso de 4 cifras** para el día del evento.
+Cada persona puede volver a editar su perfil.
+
+Las mesas (temas) las crea el Admin en el panel («Mesas del evento»): título, quién la propone,
+descripción y familia. Mientras no haya ninguna, se usan los 20 temas por defecto.
+
+### 2. Plan de las rondas
+
+En el panel, «Generar el plan» calcula de una vez las 5 rondas (`lib/matching.js`, en un worker):
+mesas de 2 a 5 personas, como mucho 5 mesas por ronda, pausa de 10 minutos tras la ronda 3. Reparte
+minimizando: personas en un tema que no eligieron, temas repetidos, parejas que ya coincidieron y personas
+de la misma filial (reparto voraz + enfriamiento simulado). El panel muestra la calidad del plan y permite
+intercambiar o mover a alguien con dos clics, o regenerar una ronda.
+
+### 3. El día del evento: proyector + móviles en directo
+
+| Momento | Proyector | Móvil de cada participante |
+|---|---|---|
+| Llegada | Solo el **QR** | «Inicia sesión» (usuario = nombre, contraseña = código) → **«Estas son las mesas en las que participarás»** (mesa y tema de cada ronda) → botón **Preparado** → espera con frases que van cambiando |
+| Todos preparados | Empieza solo (o «Empezar la sesión» en el panel) | |
+| Encuentra tu mesa (2 min) | Todas las mesas con los nombres y la cuenta atrás | Círculo «Empezamos en», mesa + tema y compañeros |
+| Conversación (15 min) | Cronómetro grande | Tema, cronómetro, compañeros de mesa y **«Para romper el hielo»** (preguntas sobre el tema) |
+| Tiempo terminado | «On hold» con «X de Y notas enviadas» | Grabar una **nota de audio** (máx. 1 min: de qué se ha hablado, aprendizajes, highlight) → escuchar / volver a grabar → Continuar → espera |
+| Todas las notas enviadas | Pasa solo a la ronda siguiente (o a la pausa tras la ronda 3, o al final) | |
+| Final | Cierre | «Gracias por compartir»: cada ronda con su tema, compañeros y su nota |
+
+El Admin controla todo con la barra de abajo del proyector o con el panel: **Siguiente** (también Espacio,
+→ o el mando de presentación) y **←** para deshacer. «Siguiente» hace en cada momento lo esperable: salta
+los 2 minutos de buscar mesa, **termina la conversación** (los móviles pasan a grabar la nota) o pasa
+a la ronda siguiente aunque falte alguna nota. En el panel se ven los códigos de todos, quién está
+conectado (punto verde), cuántos están preparados y cuántas notas han llegado. «Volver al principio»
+reinicia la sesión para ensayar (todos vuelven a «no preparados» y se borran las notas).
+
+Los cambios llegan a los móviles al instante por websockets (Supabase Realtime). Cada móvil anuncia su
+conexión con una huella de su identificador, nunca con el identificador en sí. Si el websocket se corta,
+el panel vuelve a pedir el estado cada 15 s.
+
+### 4. Resúmenes y transcripción (`#resum`)
+
+Página aparte, con el PIN de Admin, que funciona en cualquier ordenador sin tener el panel abierto:
+
+- **Por tema** (por defecto): una tarjeta por tema de mesa con las notas de todas las personas que han
+  hablado de él (de cualquier ronda), indicando ronda y mesa. **Por ronda**: ronda → mesa → notas.
+- Buscador (persona, tema o palabra), filtro por ronda, se actualiza sola cada 20 s.
+- Descarga en **.txt** o **Excel (.csv)**.
+
+**Transcribir en este ordenador:** la transcripción la hace el navegador del ordenador que tenga `#resum`
+abierta, con [Whisper](https://github.com/openai/whisper) en versión navegador
+([Transformers.js](https://github.com/huggingface/transformers.js), código abierto). Gratis, sin Python, sin
+Docker, sin servidor propio, y los audios no salen a ninguna empresa. Mientras la página esté abierta,
+cada 20 s transcribe las notas nuevas y guarda el texto. Si nadie la tiene abierta, los audios esperan
+guardados y se transcriben cuando alguien la abra.
+
+- El modelo se descarga de huggingface.co la primera vez y queda en la caché del navegador:
+  «Preciso» (whisper-small, ≈ 250 MB, recomendado) o «Rápido» (whisper-base, ≈ 80 MB).
+- Con WebGPU (Chrome o Edge recientes) va mucho más rápido; si no, usa la CPU (WebAssembly).
+- El motor (ONNX Runtime) se sirve desde la propia web, no desde un CDN.
+- Para que funcione, el móvil guarda una copia del audio en la base de datos (≈ 250 KB por nota de 1 min,
+  grabada a 32 kbps). Las notas grabadas antes de activar esto no tienen copia y no se pueden transcribir.
+
+**Alternativa en servidor:** `transcriptor/` es un pequeño servicio en Python con
+[faster-whisper](https://github.com/SYSTRAN/faster-whisper) que hace lo mismo desde un servidor
+(lee los audios del bucket `audio-notes`). Instrucciones en `transcriptor/LEEME.md`. No hace falta si se
+usa la transcripción en el navegador.
+
+## Probar y publicar
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173 (expuesto en la red local para probar en móviles)
+npm run dev      # http://localhost:5173 (también en la red local, para probar con móviles)
 npm run build
 ```
 
-Configuración opcional en un fichero `.env`:
+Sin variables de Supabase, la app funciona en **modo local**: todo se guarda en el navegador (PIN `2026`).
+Sirve para probar pantallas y el flujo completo en varias pestañas, pero sin transcripción. Más detalle en
+`TESTEAR-EN-LOCAL.md`.
+
+Configuración en un fichero `.env` (ver `.env.example`):
 
 ```
-VITE_SUPABASE_URL=…                            # sin estas dos variables → modo local (localStorage)
-VITE_SUPABASE_ANON_KEY=…
-VITE_MOD_PIN=2026                              # solo modo local; en producción el PIN está en la base de datos
-VITE_EVENT_DATE=2026-11-25T00:00:00+01:00      # fin de la cuenta atrás (por defecto, medianoche del 25/11)
+VITE_SUPABASE_URL=…                            # sin estas dos → modo local
+VITE_SUPABASE_ANON_KEY=…                       # clave publicable (pensada para el navegador)
+VITE_MOD_PIN=2026                              # solo modo local; con Supabase el PIN está en la base de datos
+VITE_EVENT_DATE=2026-11-25T00:00:00+01:00      # fin de la cuenta atrás
+VITE_PUBLIC_URL=http://192.168.1.20:5173       # opcional: dirección que codifica el QR
 ```
 
-## Idiomas
-Francés por defecto e inglés, con selector FR/EN en todas las cabeceras (se recuerda por dispositivo).
-Todos los textos están en `src/lib/i18n.js`. Temas y sucursales se guardan como identificadores
-(`ai_guru`, `es`…), así que el mismo perfil se muestra traducido en cualquier idioma.
+**Publicación:**
+- **GitHub Pages** (`.github/workflows/pages.yml`, se lanza a mano o con cada push a `main`):
+  https://sandramitjans.github.io/cofinder/
+- **Netlify** (`netlify.toml`): se publica con cada push a `main`.
+- Las dos usan la base de Supabase «Cofinder» (`uppsizyvtnyvvtmgyeff`).
+- Para la versión definitiva en un servidor propio con dominio basta servir la carpeta `dist/`
+  (es una web estática). No necesita Python ni Docker.
 
-## Pre-registro «Cofinder : Le Speed-Dating des Directeurs»
-Concepto VIP speed-dating, elegante y con humor (Playfair Display + Inter, rojo #DF0140 y amarillo #fdc100).
-
-1. **Votre profil** — Nom, Poste, Filiale / Département (texto libre con sugerencias; si coincide con una
-   filial conocida se guarda como identificador y se traduce).
-2. **Vos compétences** — una única lista de 20 temas (`TOPICS`) con dos selecciones independientes (1–5 cada una):
-   *Ce que vous apportez au rendez-vous* (Offre) y *Ce que vous cherchez à explorer* (Demande).
-3. **Votre arme secrète au quotidien** — facultativo, hasta 3 de 11 rasgos (`SUPERPOWERS`). No influyen en las
-   mesas; aparecen en la tarjeta de mesa de los compañeros como rompehielos.
-
-Barra **Indice d’attractivité** (Profil timide… → Premier regard → Potentiel élevé ! → Coup de cœur en vue →
-Irrésistible !). El 100 % exige al menos un arma secreta. Al validar: tarjeta **VIP Pass** que entra girando,
-sello **PROFIL VALIDÉ & MATCH READY !** con corazones, y pantalla de espera con cuenta atrás al 25/11 y
-«Le mot de Cupidon» rotativo.
-
-## Flujo
-
-| Quién | Qué ve |
-|---|---|
-| Todos (moderadora incluida), 2 semanas antes | Pre-registro speed-dating → tarjeta VIP + sello MATCH READY → espera con cuenta atrás al 25/11 y frases de Cupidon. Ninguna pista sobre mesas ni rondas. |
-| Participantes, día del evento | La misma URL. En cuanto la moderadora inicia la Ronda 1, su pantalla pasa sola a la tarjeta de mesa y cambia en cada ronda. |
-| Moderadora | Acceso oculto: candado casi invisible del pie de página o enlace directo `…/#moderadora` → PIN → Panel de control (listado, rondas, calidad del reparto, proyector). Se vuelve a bloquear con «Bloquear» o al cerrar la pestaña. |
-
-La moderadora es un participante más para el algoritmo: lo único que la distingue es conocer el PIN.
-
-## Estructura
-
-```
-src/
-├── App.jsx                      # Router + guardas (PIN, sesión)
-├── constants/index.js           # VIEWS, PIN, temas, sucursales, parámetros de rondas
-├── context/AppContext.jsx       # Estado global y acciones (registro, rondas, acceso)
-├── context/I18nContext.jsx      # Idioma actual, t(), formato de fechas
-├── lib/
-│   ├── matching.js              # Algoritmo de mesas multi-ronda
-│   ├── demo.js                  # 12 participantes de prueba
-│   ├── i18n.js                  # Textos FR / EN
-│   ├── useTimeLeft.js           # Cuenta atrás al evento
-│   └── useCountdown.js          # Cronómetro de ronda
-├── components/
-│   ├── ModeratorGate.jsx        # Modal de PIN
-│   ├── AttractivenessMeter.jsx  # Barra «Indice d’attractivité»
-│   ├── layout/PublicFooter.jsx  # Pie con el acceso discreto
-│   └── ui/                      # Logo, Avatar, Button, Field, TagPicker, SuperpowerPicker, RoleBadge, LangSwitch, Stamp, VipCard
-└── views/
-    ├── RegisterView.jsx         # Pre-registro speed-dating
-    ├── MatchScene.jsx           # Tarjeta VIP + sello MATCH READY
-    ├── HomeView.jsx             # Decide: espera / tarjeta de ronda / cierre
-    ├── WaitingView.jsx          # Cuenta atrás + frases de Cupidon + tarjeta VIP
-    ├── RoundCardView.jsx        # Tarjeta de embarque (móvil)
-    ├── ModeratorPanelView.jsx   # Panel de control
-    └── ProjectorView.jsx        # Pantalla grande
-```
-
-## Plan de los 8 tours (`lib/matching.js`)
-
-La soirée tiene 8 tours de 15 minutos, mesas de 2 a 5 personas (5 mesas como máximo por tour) y una
-pausa de 10 minutos tras el tour 4 (`constants/index.js`).
-
-**Semana interna.** En el panel, «Générer le plan des 8 tours» calcula de una vez el plan completo
-(en un worker, `lib/planner.worker.js`, tarda unos segundos). Cada tour elige temas que la gente ha
-elegido y no ha tratado, y reparte a todos minimizando: personas en un tema que no eligieron, temas
-repetidos para una persona, parejas que ya coincidieron (máximo 3 veces) y personas de la misma
-sucursal. Reparto voraz + enfriamiento simulado que intercambia personas, las mueve de mesa (así el
-tamaño sale de la demanda) y cambia temas. El panel muestra la calidad del plan y una rejilla de los
-8 tours donde se puede intercambiar o mover a alguien con dos clics, o regenerar un tour concreto.
-
-**El día del evento.** La moderadora avanza con «Suivant» en el panel, o en el proyector con Espacio,
-→ o el mando de presentación (← deshace): portada del tour → anuncio de cada match (tema, mesa y
-tarjetas con foto) → cuenta atrás de 15 min con todas las mesas → «Temps écoulé» → siguiente tour.
-Tras el tour 4 el proyector muestra la pausa con su cuenta atrás. El móvil de cada director muestra
-su mesa en cuanto se anuncia en pantalla, nunca antes.
-
-Datos: `event.rounds[i]` = `{ plan, tables, revealed, startedAt, pauseStartedAt }`. `plan` son todas
-las mesas del tour; `tables`, solo las ya anunciadas, que es lo que leen los móviles (`get_my_table`).
+Si tras publicar se ve la versión anterior, abrir en una ventana de incógnito (caché del navegador).
 
 ## Base de datos (Supabase)
 
-Proyecto `cofinder` (eu-west-3, París). Las claves públicas están en `netlify.toml`.
+Proyecto **«Cofinder»** (`uppsizyvtnyvvtmgyeff`, Irlanda), con todos los scripts ejecutados. El proyecto
+antiguo de París (`dixhoqdykarenflooirp`) ya no se usa.
 
 | Pieza | Qué es | Quién accede |
 |---|---|---|
-| `public.participants` | Perfiles. Nunca se borran: «Supprimer» los marca como `removed` | Clave pública: **solo insertar**. No se puede listar |
-| `private.event_state` | Rondas y mesas completas | Solo a través de funciones con PIN |
+| `public.participants` | Perfiles, código de acceso, «preparado». Nunca se borran: se marcan `removed` | Clave pública: solo insertar. No se puede listar |
+| `private.event_state` | Plan de rondas y mesas | Solo con funciones que piden el PIN |
 | `public.event_status` | Señal sin datos personales (ronda, versión) | Lectura pública + tiempo real |
+| `public.audio_notes` | Nota de audio de cada persona y ronda: ruta, copia del audio y transcripción | Solo con funciones (participante: enviar la suya; Admin: leer, con PIN) |
+| `public.mesa_topics` | Mesas del evento | Lectura pública; cambios con PIN |
+| Bucket `audio-notes` | Audios (privado, solo subir) | Los móviles suben; se leen desde Supabase o el transcriptor de servidor |
 | `private.settings` | Hash bcrypt del PIN | Nadie desde fuera |
 
-Funciones (RPC):
-- Participante: `get_my_profile(id)`, `get_my_table(id)` → su perfil y, el día del evento, solo sus compañeros de mesa.
-- Moderadora (todas exigen el PIN, bloqueo tras 10 fallos en 10 min): `mod_check_pin`, `mod_get_state`,
-  `mod_set_event`, `mod_delete_participant`, `mod_add_demo`, `mod_clear_demo`, `mod_set_pin`.
+Funciones (RPC), todas `security definer`:
+- **Participante:** `get_my_profile`, `get_my_table` (su mesa, sus compañeros y su plan),
+  `participant_login` (nombre + código; 30 fallos en 10 min bloquean), `set_my_ready`, `submit_audio_note`.
+- **Admin** (exigen el PIN; 10 fallos en 10 min bloquean): `mod_check_pin`, `mod_get_state`, `mod_set_event`,
+  `mod_reset_ready`, `mod_clear_notes`, `mod_get_notes`, `mod_pending_audio`, `mod_get_audio`,
+  `mod_save_transcript`, mesas, demo, `mod_set_pin`…
 
-Cambiar el PIN (desde el SQL editor de Supabase o la consola del navegador con el panel abierto):
+Cambiar el PIN (SQL Editor de Supabase):
 
 ```sql
 select public.mod_set_pin('PIN_ACTUAL', 'PIN_NUEVO');
 ```
 
-El panel y el proyector refrescan el estado cada 4 s; los móviles reciben el cambio de ronda en tiempo real.
+### Montar una base nueva
+
+En el SQL Editor de Supabase, ejecutar en este orden (cada script se puede repetir sin problema):
+
+1. `supabase/00-esquema-base.sql`: tablas, funciones y PIN
+2. `supabase/2026-11-prototipo.sql`: bucket `audio-notes`
+3. `supabase/2026-11-mesas.sql` y `supabase/2026-11-mesas-familia.sql`: mesas del evento desde el panel
+4. `supabase/2026-11-acceso-movil.sql`: código de 4 cifras y entrada desde el móvil
+5. `supabase/2026-11-preparados.sql`: «Preparado» y el plan de cada persona
+6. `supabase/2026-11-notas-audio.sql`: notas de audio de cada ronda
+7. `supabase/2026-11-resumenes.sql`: página `#resum`
+8. `supabase/2026-11-transcribir-navegador.sql`: transcripción en el navegador
+
+La clave secreta de Supabase (`service_role`) nunca va en la web ni en GitHub: solo la usaría el
+transcriptor de servidor, en su `.env`.
+
+## Estructura del código
+
+```
+src/
+├── App.jsx                     # Router: #resum aparte; el resto, vistas + guardas (PIN, sesión)
+├── constants/index.js          # Rondas, minutos, tamaños de mesa, temas, enlaces (#admin, #entrar, #resum)
+├── context/AppContext.jsx      # Estado y acciones: registro, acceso, rondas, preparados, notas
+├── context/I18nContext.jsx     # Idioma, t(), nombres de temas
+├── lib/
+│   ├── backend.js              # Supabase: RPC, tiempo real, presencia, subida de audios
+│   ├── matching.js · planner.worker.js   # Plan de las 5 rondas
+│   ├── audioNotes.js           # Grabar / guardar notas (también en el dispositivo)
+│   ├── browserTranscriber.js · whisper.worker.js   # Whisper en el navegador (#resum)
+│   ├── icebreakers.js          # «Para romper el hielo» por tema (ES / EN)
+│   ├── i18n.js                 # Todos los textos ES / EN
+│   └── topics.js · demo.js · useCountdown.js · useTimeLeft.js · useConnected.js · image.js
+├── components/                 # ModeratorGate (PIN), TopicPicker, LevelPicker, ui/ (Logo, Button, Avatar…)
+└── views/
+    ├── RegisterView.jsx        # Registro en 4 pasos y edición del perfil
+    ├── WaitingView.jsx         # Espera hasta el evento + código de acceso
+    ├── LoginView.jsx           # #entrar: nombre + código
+    ├── MyTablesView.jsx        # Mis mesas + «Preparado»
+    ├── LobbyView.jsx           # Espera con frases
+    ├── HomeView.jsx            # Decide qué pantalla ve el móvil
+    ├── RoundCardView.jsx       # Encuentra tu mesa · ronda · nota de audio · cierre
+    ├── ModeratorPanelView.jsx  # Panel de Admin
+    ├── ProjectorView.jsx       # Pantalla grande
+    └── ResumView.jsx           # #resum: resúmenes y transcripción
+supabase/                       # Scripts SQL (ver «Montar una base nueva»)
+transcriptor/                   # Alternativa: transcriptor de servidor (faster-whisper)
+```

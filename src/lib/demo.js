@@ -16,8 +16,15 @@ const DEMO = [
   ['Emily Carter', 'VP Marketing', 'us', ['analytics', 'paid_performance', 'public_relations', 'cofidis_ninja', 'ai_guru', 'b2b', 'risk_management', 'compliance'], ['shortcuts', 'generations']],
 ]
 
-export const demoParticipants = () =>
-  DEMO.map(([name, role, country, topics, superpowers]) => ({
-    id: crypto.randomUUID(), createdAt: Date.now(), demo: true, name, role, country,
-    offers: topics.slice(0, 3), needs: topics.slice(3), superpowers: superpowers.slice(0, 1),
-  }))
+// `eventTopics` = mesas añadidas desde el panel: si hay, cada perfil de prueba elige 5 al azar entre ellas
+export const demoParticipants = (eventTopics = []) =>
+  DEMO.map(([name, role, country, topics, superpowers]) => {
+    const mine = eventTopics.length
+      ? [...eventTopics].sort(() => Math.random() - 0.5).slice(0, 5)
+      : topics
+    return {
+      id: crypto.randomUUID(), createdAt: Date.now(), demo: true, name, role, country,
+      offers: mine.slice(0, eventTopics.length ? 2 : 3), needs: mine.slice(eventTopics.length ? 2 : 3),
+      customTopics: eventTopics.length ? mine : [], superpowers: superpowers.slice(0, 1),
+    }
+  })

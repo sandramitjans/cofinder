@@ -1,17 +1,25 @@
+import { useState } from 'react'
 import { useApp } from '../context/AppContext'
+import { EVENT_DATE } from '../constants'
 import WaitingView from './WaitingView'
 import RoundCardView from './RoundCardView'
+import LobbyView from './LobbyView'
+import MyTablesView from './MyTablesView'
 
 /**
  * Vista pública de un participante ya registrado:
- *  - por defecto → tarjeta VIP + cuenta atrás al 25/11 + frases de Cupidon
- *  - solo el día del evento, y solo si la persona YA tiene mesa asignada en algún tour
- *    → su tarjeta de mesa (que cambia sola en cada tour) o el cierre del evento
- *
- * Así, quien se registra mientras hay tours de prueba (o se registra tarde) nunca ve
- * pantallas del día del evento sin tener mesa: sigue viendo su tarjeta VIP y la cuenta atrás.
+ *  - por defecto → su perfil, sus mesas y la cuenta atrás al día del evento
+ *  - día del evento (entró con nombre + código tras escanear el QR, o ya es el día):
+ *      mis mesas de cada ronda + «Preparado» → espera con frases hasta que todos estén preparados
+ *  - en cuanto empieza la ronda y tiene mesa → «Encuentra tu mesa» (2 min) → ronda con cuenta atrás
  */
 export default function HomeView() {
-  const { event, seatedEver } = useApp()
-  return event.round && seatedEver ? <RoundCardView /> : <WaitingView />
+  const { event, seatedEver, joinedLive, ready } = useApp()
+  const [peek, setPeek] = useState(false) // ya preparado, repasando sus mesas
+  if (event.round && seatedEver) return <RoundCardView />
+  const eventDay = !event.finished && (joinedLive || Date.now() >= EVENT_DATE)
+  if (!eventDay) return <WaitingView />
+  if (!ready) return <MyTablesView />
+  if (peek) return <MyTablesView onBack={() => setPeek(false)} />
+  return <LobbyView onTables={() => setPeek(true)} />
 }

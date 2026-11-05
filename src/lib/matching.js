@@ -76,8 +76,12 @@ const prepare = (people) =>
     needs: new Set((p.needs ?? []).map(topicKey)),
   }]))
 
-/** Temas candidatos: los 20 de la lista + temas propios compartidos por ≥ 2 personas */
-function candidateTopics(people) {
+/**
+ * Temas candidatos. Si la moderadora ha añadido mesas desde el panel (`topics`), solo esas.
+ * Si no: los 20 de la lista + temas propios compartidos por ≥ 2 personas.
+ */
+function candidateTopics(people, topics = []) {
+  if (topics.length) return topics.map((id) => ({ id, key: topicKey(id) }))
   const list = TOPICS.map((id) => ({ id, key: id }))
   const custom = new Map() // clave → { id original, personas }
   for (const p of people) {
@@ -151,7 +155,7 @@ const snapshot = (tables, cost) => ({ cost, tables: tables.map((t) => ({ topic: 
  * Un tour: todas las personas sentadas en mesas de 2 a 5 (como mucho MAX_TABLES mesas).
  * `previousRounds` = los demás tours del plan, para no repetir temas ni parejas.
  */
-export function generateRound(people, previousRounds = [], { attempts = 24, iterations = 4000 } = {}) {
+export function generateRound(people, previousRounds = [], { attempts = 24, iterations = 4000, topics = [] } = {}) {
   if (!people.length) return { tables: [], cost: 0 }
   const byId = prepare(people)
   const history = buildHistory(previousRounds)
@@ -159,12 +163,13 @@ export function generateRound(people, previousRounds = [], { attempts = 24, iter
   const [kMin, kMax] = tableRange(people.length)
   const minSize = people.length < MIN_TABLE_SIZE * 2 ? 1 : MIN_TABLE_SIZE
   const maxSize = Math.max(MAX_TABLE_SIZE, Math.ceil(people.length / kMax))
-  const scored = scoreTopics(candidateTopics(people), byId, history)
+  const scored = scoreTopics(candidateTopics(people, topics), byId, history)
   const cost = (t) => tableCost(t.key, t.members, byId, history, expertMode)
   let best = null
 
   for (let a = 0; a < attempts; a++) {
-    const k = kMin + (a % (kMax - kMin + 1))
+    // Con pocas mesas añadidas desde el panel puede haber menos temas que mesas: se usan las que hay
+    const k = Math.max(1, Math.min(kMin + (a % (kMax - kMin + 1)), scored.length))
     const sizes = evenSizes(people.length, k)
     const tables = pickTopics(scored, k).map((c, i) => ({ topic: c.id, key: c.key, cap: sizes[i], members: [] }))
 
@@ -238,13 +243,13 @@ export function generateRound(people, previousRounds = [], { attempts = 24, iter
  * Plan completo de la soirée: `rounds` tours encadenados. Se repite varias veces y se queda
  * con el de menor coste total. Devuelve [{ tables }, …].
  */
-export function generatePlan(people, { rounds = TOTAL_ROUNDS, restarts = 2, attempts = 10, iterations = 3000 } = {}) {
+export function generatePlan(people, { rounds = TOTAL_ROUNDS, restarts = 2, attempts = 10, iterations = 3000, topics = [] } = {}) {
   let best = null
   for (let r = 0; r < restarts; r++) {
     const plan = []
     let cost = 0
     for (let i = 0; i < rounds; i++) {
-      const res = generateRound(people, plan, { attempts, iterations })
+      const res = generateRound(people, plan, { attempts, iterations, topics })
       plan.push({ tables: res.tables })
       cost += res.cost
     }

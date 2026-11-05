@@ -5,13 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start": "vite",
     "dev:cloud": "vite --mode cloud",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
     "@supabase/supabase-js": "^2.117.3",
     "lucide-react": "^0.460.0",
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

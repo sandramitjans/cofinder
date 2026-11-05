@@ -5,32 +5,53 @@ export const VIEWS = {
   EDIT: 'edit',           // pública: el participante modifica su propio perfil
   MOD_PANEL: 'mod-panel', // oculta: panel de moderadora
   PROJECTOR: 'projector', // oculta: pantalla grande
+  LOGIN: 'login',         // pública: entrar desde otro dispositivo con nombre + código (QR del proyector)
 }
 
 // Vistas que solo se abren con el PIN desbloqueado
 export const MODERATOR_VIEWS = [VIEWS.MOD_PANEL, VIEWS.PROJECTOR]
 
 // Acceso oculto: enlace directo .../#moderadora o el candado discreto del pie
-export const MOD_HASH = '#moderadora'
+export const MOD_HASH = '#admin'
+// Enlaces antiguos que siguen funcionando
+export const isModHash = (h) => h === MOD_HASH || h === '#moderadora'
+// El QR del proyector abre la app con este enlace: …/#entrar → pantalla de acceso
+export const JOIN_HASH = '#entrar'
+// Página de resúmenes: transcripciones de las notas de audio (pide el PIN de Admin)
+export const RESUM_HASH = '#resum'
+// Dirección que codifica el QR. Por defecto, la de la propia página; en pruebas en red local
+// conviene poner la IP del ordenador (p. ej. VITE_PUBLIC_URL=http://192.168.1.20:5173)
+// Si no se indica y la app está abierta en «localhost» (npm run dev), se usa sola la IP del ordenador.
+const LAN_IP = typeof __LAN_IP__ === 'string' ? __LAN_IP__ : ''
+const isLocalhost = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname)
+export const PUBLIC_URL = import.meta.env?.VITE_PUBLIC_URL
+  || (isLocalhost && LAN_IP ? `${window.location.protocol}//${LAN_IP}:${window.location.port}${window.location.pathname}` : '')
 // PIN configurable con VITE_MOD_PIN en un fichero .env
-export const MOD_PIN = import.meta.env?.VITE_MOD_PIN ?? '2026'
+export const MOD_PIN = import.meta.env?.VITE_MOD_PIN || '2026'
 
 // Día del evento: la cuenta atrás termina a las 00:00 (hora de Madrid/París) del 25/11/2026.
 // Para contar hasta la hora de inicio, cambia la hora, p. ej. '2026-11-25T09:30:00+01:00'.
-export const EVENT_DATE = new Date(import.meta.env?.VITE_EVENT_DATE ?? '2026-11-25T00:00:00+01:00').getTime()
+// Una variable vacía (p. ej. un secreto de GitHub sin rellenar) cuenta como no indicada
+const EVENT_DATE_RAW = new Date(import.meta.env?.VITE_EVENT_DATE || '2026-11-25T00:00:00+01:00').getTime()
+export const EVENT_DATE = Number.isNaN(EVENT_DATE_RAW) ? new Date('2026-11-25T00:00:00+01:00').getTime() : EVENT_DATE_RAW
 
-// Soirée: 8 tours de 15 minutes, mesas de 2 a 5 personas y como mucho 5 mesas por tour.
-// Tras el tour 4 hay una pausa de 10 minutos con su propia pantalla en el proyector.
-export const TOTAL_ROUNDS = 8
+// Lugar del evento (VITE_EVENT_PLACE en el .env); vacío = «Lugar por confirmar»
+export const EVENT_PLACE = import.meta.env?.VITE_EVENT_PLACE ?? ''
+
+// Sesión: 5 rondas de 15 minutos, mesas de 2 a 5 personas y como mucho 5 mesas por ronda.
+// Tras la ronda 3 hay una pausa de 10 minutos con su propia pantalla en el proyector.
+export const TOTAL_ROUNDS = 5
 export const ROUND_MINUTES = 15
 export const MIN_TABLE_SIZE = 2
 export const MAX_TABLE_SIZE = 5
 export const MAX_TABLES = 5
-export const PAUSE_AFTER_ROUND = 4
+export const PAUSE_AFTER_ROUND = 3
 export const PAUSE_MINUTES = 10
+// Al empezar cada ronda: minutos para encontrar la mesa antes de que arranque la conversación
+export const FIND_MINUTES = 2
 export const MAX_TAGS = 5
 // Paso 2 del formulario: una sola selección de temas de interés (se guarda en `needs`)
-export const MAX_INTERESTS = 8
+export const MAX_INTERESTS = 5
 
 // Identificadores estables: los textos visibles están en lib/i18n.js (FR / EN).
 // Una única lista de temas: cada persona hace con ella DOS selecciones independientes (Offre / Demande).
@@ -78,5 +99,5 @@ export const MAX_SUPERPOWERS = 1
 
 export const COUNTRIES = ['fr', 'es', 'pt', 'it', 'de', 'uk', 'mx', 'co', 'ar', 'cl', 'br', 'us']
 
-export const LANGS = ['fr', 'en']
-export const DEFAULT_LANG = 'fr'
+export const LANGS = ['es', 'en']
+export const DEFAULT_LANG = 'es'

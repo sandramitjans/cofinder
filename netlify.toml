@@ -5,10 +5,11 @@
 
 [build.environment]
   NODE_VERSION = "22"
-  # Supabase (proyecto «cofinder», París). La clave pública está pensada para ir en el navegador:
-  # con ella solo se puede registrar un perfil; leer datos exige el PIN o el propio identificador.
-  VITE_SUPABASE_URL = "https://dixhoqdykarenflooirp.supabase.co"
-  VITE_SUPABASE_ANON_KEY = "sb_publishable_K-q_0QnQV6QYNjCKp4mJOQ_L4xWylDp"
+  # Supabase (proyecto «Cofinder», Irlanda: el que tiene el día del evento, notas y #resum).
+  # La clave pública está pensada para ir en el navegador: con ella solo se puede registrar un perfil;
+  # leer datos exige el PIN o el propio identificador. (Antes: proyecto de París, dixhoqdykarenflooirp.)
+  VITE_SUPABASE_URL = "https://uppsizyvtnyvvtmgyeff.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "sb_publishable_WYZdHmJyqB0GQ4hxcpptnA_aIM9qmGb"
 
 # SPA: cualquier ruta sirve index.html
 [[redirects]]
