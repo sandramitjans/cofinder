@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
 import {
   AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Coffee, Eraser, Flag, LayoutGrid, Loader2, Lock, Monitor,
-  MessagesSquare, Plus, RefreshCcw, RotateCcw, Shuffle, Sparkles, TimerReset, Trash2, UserPlus, Users,
+  MessagesSquare, Plus, RefreshCcw, RotateCcw, Search, Shuffle, Sparkles, TimerReset, Trash2, UserPlus, Users,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { FIND_MINUTES, PAUSE_AFTER_ROUND, PAUSE_MINUTES, TOPIC_FAMILIES, VIEWS } from '../constants'
 import { planStats, tableRange } from '../lib/matching'
-import { MAX_CUSTOM_LENGTH, makeEventTopic, topicKey, topicsWithLevel } from '../lib/topics'
+import { MAX_CUSTOM_LENGTH, makeEventTopic, normalizeText, topicKey, topicsWithLevel } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
 import { useConnected } from '../lib/useConnected'
 import Logo from '../components/ui/Logo'
@@ -56,6 +56,14 @@ export default function ModeratorPanelView() {
 
   // Personas inscritas después de generar el plan (sin mesa en los tours que faltan)
   const planned = new Set(event.rounds.slice(Math.max(0, event.round)).flatMap((x) => x.plan.flatMap((tb) => tb.members)))
+  // Buscador de la lista de participantes (nombre sin acentos, o código)
+  const [who, setWho] = useState('')
+  const shown = useMemo(() => {
+    const q = normalizeText(who)
+    if (!q) return participants
+    return participants.filter((p) => normalizeText(p.name).includes(q) || (p.accessCode ?? '').includes(q))
+  }, [participants, who])
+
   const unplanned = hasPlan && !event.finished && event.round < total ? participants.filter((p) => !planned.has(p.id)) : []
 
   const confirmThen = (msg, fn) => () => window.confirm(msg) && fn()
@@ -214,6 +222,14 @@ export default function ModeratorPanelView() {
         <section className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4">
             <h2 className="flex items-center gap-2 text-lg font-bold"><Users className="h-5 w-5 text-brand-dark" /> {t('panel.participants', { n: participants.length })}</h2>
+            {participants.length > 0 && (
+              // El día del evento: «no encuentro mi código» → se busca por nombre (sin acentos) o por código
+              <label className="relative order-last w-full sm:order-none sm:ml-auto sm:w-64">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input value={who} onChange={(e) => setWho(e.target.value)} placeholder={t('panel.searchPh')} aria-label={t('panel.searchPh')}
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/25" />
+              </label>
+            )}
             {hasDemo
               ? <Button variant="ghost" icon={RefreshCcw} className="py-2" onClick={confirmThen(t('panel.confirmClearDemo'), clearDemo)}>{t('panel.clearDemo')}</Button>
               : <Button variant="outline" icon={UserPlus} className="py-2" onClick={seedDemo}>{t('panel.addDemo')}</Button>}
@@ -223,7 +239,8 @@ export default function ModeratorPanelView() {
             <p className="p-8 text-center text-sm text-slate-500">{t('panel.empty')}</p>
           ) : (
             <ul className="divide-y divide-slate-100">
-              {participants.map((p) => (
+              {shown.length === 0 && <li className="p-6 text-center text-sm text-slate-500">{t('panel.searchNone')}</li>}
+              {shown.map((p) => (
                 <li key={p.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
                   <div className="flex min-w-0 items-center gap-3 sm:w-64">
                     <Avatar name={p.name} photo={p.photo} />
