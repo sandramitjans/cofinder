@@ -10,6 +10,7 @@
 --   2026-11-transcribir-navegador.sql (Whisper en el navegador desde #resum)
 --   2026-11-esperas.sql      («14 de 20» en las esperas del móvil)
 --   2026-11-nota-escrita.sql («Prefiero escribirla» en vez de grabar)
+--   2026-11-valoracion.sql   (valoración al final; se ve en #resum)
 -- PIN inicial de la moderadora: 2026. Cambiarlo con:  select public.mod_set_pin('2026', 'NUEVO');
 
 create extension if not exists pgcrypto with schema extensions;

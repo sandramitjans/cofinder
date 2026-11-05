@@ -252,16 +252,80 @@ function Closing() {
     <>
       <h1 className="text-center font-display text-4xl font-medium tracking-tight">{t('round.finishedTitle')}</h1>
       <p className="mt-1 text-center text-slate-600">{t('round.finishedText')}</p>
+      <Feedback userId={currentUser.id} />
+      {rounds.length > 0 && (
+        <section className="mt-6 rounded-xl bg-mint-soft p-4">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-mint-dark">{t('round.nextTitle')}</h2>
+          <ol className="mt-2 space-y-1.5 text-sm text-ink">
+            {[1, 2].map((n) => (
+              <li key={n} className="flex gap-2"><span className="font-bold text-mint-dark">{n}.</span> {t(`round.next${n}`)}</li>
+            ))}
+          </ol>
+        </section>
+      )}
       {rounds.length ? (
-        <ul className="mt-6 space-y-3">
+        <>
+        <h2 className="mt-7 text-xs font-bold uppercase tracking-wider text-slate-500">{t('round.convTitle')}</h2>
+        <ul className="mt-2.5 space-y-3">
           {rounds.map((r) => (
             <ConversationCard key={r} round={r} entry={history[r]} userId={currentUser.id} open={open === r} onToggle={() => setOpen(open === r ? null : r)} />
           ))}
         </ul>
+        </>
       ) : (
         <p className="mt-6 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600">{t('round.noHistory')}</p>
       )}
     </>
+  )
+}
+
+const RATE_EMOJI = ['😞', '🙁', '😐', '🙂', '😍']
+const fbKey = (id) => `cofinder:feedback:${id}`
+
+/** «¿Qué te ha parecido?»: de 1 a 5 y un comentario opcional. Se recuerda en el móvil para no volver a pedirla. */
+function Feedback({ userId }) {
+  const { t } = useI18n()
+  const [sent, setSent] = useState(() => { try { return !!localStorage.getItem(fbKey(userId)) } catch { return false } })
+  const [score, setScore] = useState(0)
+  const [comment, setComment] = useState('')
+  const [state, setState] = useState('idle') // idle · sending · error
+
+  const send = async (e) => {
+    e.preventDefault()
+    if (!score) return
+    setState('sending')
+    try {
+      if (api.isRemote) await api.submitFeedback({ id: userId, score, comment: comment.trim() })
+      try { localStorage.setItem(fbKey(userId), String(score)) } catch { /* noop */ }
+      setSent(true)
+    } catch { setState('error') }
+  }
+
+  if (sent) {
+    return <p role="status" className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-mint-dark ring-1 ring-slate-200"><Check className="h-4 w-4" /> {t('round.rateThanks')}</p>
+  }
+  return (
+    <form onSubmit={send} className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 text-center">
+      <h2 className="font-display text-xl font-medium">{t('round.rateTitle')}</h2>
+      <div className="mt-3 flex justify-center gap-1.5" role="radiogroup" aria-label={t('round.rateTitle')}>
+        {RATE_EMOJI.map((em, i) => (
+          <button key={i} type="button" role="radio" aria-checked={score === i + 1} aria-label={t(`round.rate${i + 1}`)} title={t(`round.rate${i + 1}`)}
+            onClick={() => setScore(i + 1)}
+            className={`grid h-12 w-12 place-items-center rounded-xl text-2xl transition ${score === i + 1 ? 'scale-110 bg-brand-soft ring-2 ring-brand' : score ? 'opacity-50 hover:opacity-100' : 'hover:bg-slate-50'}`}>
+            {em}
+          </button>
+        ))}
+      </div>
+      {score > 0 && (
+        <>
+          <p className="mt-1 text-sm font-semibold text-brand-dark">{t(`round.rate${score}`)}</p>
+          <textarea value={comment} onChange={(e) => setComment(e.target.value)} maxLength={1000} rows={2} placeholder={t('round.rateComment')} aria-label={t('round.rateComment')}
+            className="mt-3 w-full rounded-xl border border-slate-200 p-3 text-left text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+          {state === 'error' && <p role="alert" className="mt-2 text-sm font-semibold text-brand-dark">{t('round.rateError')}</p>}
+          <Button type="submit" disabled={state === 'sending'} icon={Send} className="mt-3 w-full">{t('round.rateSend')}</Button>
+        </>
+      )}
+    </form>
   )
 }
 

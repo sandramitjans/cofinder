@@ -223,6 +223,16 @@ export const DICT = {
       lastDone: 'Era la última ronda.',
       finishedTitle: 'Gracias por compartir',
       finishedText: 'Aquí tienes tus conversaciones de hoy.',
+      rateTitle: '¿Qué te ha parecido?',
+      rate1: 'Nada útil', rate2: 'Poco útil', rate3: 'Normal', rate4: 'Útil', rate5: 'Muy útil',
+      rateComment: '¿Algo que mejorarías? (opcional)',
+      rateSend: 'Enviar valoración',
+      rateThanks: '¡Gracias por tu opinión!',
+      rateError: 'No se ha podido enviar. Inténtalo otra vez.',
+      nextTitle: 'Y ahora…',
+      next1: 'Abre cada ronda: tienes los nombres de tu mesa y tu nota.',
+      next2: 'Pulsa «Copiar» y escribe esta semana a quien quieras volver a ver.',
+      convTitle: 'Tus conversaciones',
       noHistory: 'Gracias por participar. Guarda bien estas nuevas conexiones.',
       noteSaved: 'Tu nota de audio:',
       noNote: 'Sin nota de audio en esta ronda.',
@@ -238,6 +248,7 @@ export const DICT = {
     },
 
     resum: {
+      fbTitle: 'Valoración del evento', fbCount: '{n} respuestas', fbAvg: 'de media sobre 5', fbNoComment: 'Sin comentario',
       title: 'Resúmenes de las mesas', pinText: 'Introduce el PIN de Admin para ver las transcripciones.',
       count: '{n} notas de audio · {done} transcritas', refresh: 'Actualizar', all: 'Todas',
       round: 'Ronda', table: 'Mesa', topic: 'Tema', person: 'Persona', role: 'Cargo', text: 'Resumen',
@@ -262,6 +273,9 @@ export const DICT = {
     },
 
     panel: {
+      phaseBefore: 'Antes del evento · mesas, inscripciones y plan',
+      phaseDuring: 'Durante el evento',
+      phasePrep: 'Preparación',
       badge: 'Admin',
       projector: 'Proyector',
       lock: 'Bloquear',
@@ -648,6 +662,16 @@ export const DICT = {
       lastDone: 'That was the last round.',
       finishedTitle: 'Thanks for sharing',
       finishedText: 'Here are your conversations from today.',
+      rateTitle: 'How was it?',
+      rate1: 'Not useful', rate2: 'A bit useful', rate3: 'OK', rate4: 'Useful', rate5: 'Very useful',
+      rateComment: 'Anything you’d improve? (optional)',
+      rateSend: 'Send rating',
+      rateThanks: 'Thanks for your feedback!',
+      rateError: 'It couldn’t be sent. Please try again.',
+      nextTitle: 'What now…',
+      next1: 'Open each round: you’ll find your table’s names and your note.',
+      next2: 'Tap «Copy» and write this week to anyone you’d like to see again.',
+      convTitle: 'Your conversations',
       noHistory: 'Thanks for taking part. Keep those new connections close.',
       noteSaved: 'Your audio note:',
       noNote: 'No audio note for this round.',
@@ -663,6 +687,7 @@ export const DICT = {
     },
 
     resum: {
+      fbTitle: 'Event rating', fbCount: '{n} responses', fbAvg: 'average out of 5', fbNoComment: 'No comment',
       title: 'Table summaries', pinText: 'Enter the Admin PIN to see the transcripts.',
       count: '{n} voice notes · {done} transcribed', refresh: 'Refresh', all: 'All',
       round: 'Round', table: 'Table', topic: 'Topic', person: 'Person', role: 'Role', text: 'Summary',
@@ -687,6 +712,9 @@ export const DICT = {
     },
 
     panel: {
+      phaseBefore: 'Before the event · tables, sign-ups and plan',
+      phaseDuring: 'During the event',
+      phasePrep: 'Set-up',
       badge: 'Admin',
       projector: 'Projector',
       lock: 'Lock',

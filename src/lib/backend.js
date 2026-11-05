@@ -119,6 +119,10 @@ export async function submitAudioNote({ id, round, tableId, topic, path, blob })
 export const submitTextNote = ({ id, round, tableId, topic, text }) =>
   rpc('submit_text_note', { p_id: id, p_round: round, p_table: tableId ?? null, p_topic: topic ?? null, p_text: text })
 
+/** Valoración del evento (1–5 y comentario opcional), en la pantalla final */
+export const submitFeedback = ({ id, score, comment }) => rpc('submit_feedback', { p_id: id, p_score: score, p_comment: comment ?? '' })
+export const modGetFeedback = async (pin) => (await rpc('mod_get_feedback', { p_pin: pin }))?.feedback ?? []
+
 /* ---------- Página #resum: transcripción en el navegador (con el PIN de Admin) ---------- */
 export const modPendingAudio = async (pin) => (await rpc('mod_pending_audio', { p_pin: pin }))?.notes ?? []
 export async function modGetAudio(pin, id, round) {
