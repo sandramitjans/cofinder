@@ -12,7 +12,9 @@ export const VIEWS = {
 export const MODERATOR_VIEWS = [VIEWS.MOD_PANEL, VIEWS.PROJECTOR]
 
 // Acceso oculto: enlace directo .../#moderadora o el candado discreto del pie
-export const MOD_HASH = '#moderadora'
+export const MOD_HASH = '#admin'
+// Enlaces antiguos que siguen funcionando
+export const isModHash = (h) => h === MOD_HASH || h === '#moderadora'
 // El QR del proyector abre la app con este enlace: …/#entrar → pantalla de acceso
 export const JOIN_HASH = '#entrar'
 // Dirección que codifica el QR. Por defecto, la de la propia página; en pruebas en red local

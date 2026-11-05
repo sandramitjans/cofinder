@@ -45,7 +45,7 @@ sello **PROFIL VALIDÉ & MATCH READY !** con corazones, y pantalla de espera con
 |---|---|
 | Todos (moderadora incluida), 2 semanas antes | Pre-registro speed-dating → tarjeta VIP + sello MATCH READY → espera con cuenta atrás al 25/11 y frases de Cupidon. Ninguna pista sobre mesas ni rondas. |
 | Participantes, día del evento | La misma URL. En cuanto la moderadora inicia la Ronda 1, su pantalla pasa sola a la tarjeta de mesa y cambia en cada ronda. |
-| Moderadora | Acceso oculto: candado casi invisible del pie de página o enlace directo `…/#moderadora` → PIN → Panel de control (listado, rondas, calidad del reparto, proyector). Se vuelve a bloquear con «Bloquear» o al cerrar la pestaña. |
+| Moderadora | Acceso oculto: candado casi invisible del pie de página o enlace directo `…/#admin` (el antiguo `#moderadora` sigue funcionando) → PIN → Panel de control (listado, rondas, calidad del reparto, proyector). Se vuelve a bloquear con «Bloquear» o al cerrar la pestaña. |
 
 La moderadora es un participante más para el algoritmo: lo único que la distingue es conocer el PIN.
 

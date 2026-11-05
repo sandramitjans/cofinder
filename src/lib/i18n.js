@@ -128,7 +128,7 @@ export const DICT = {
       roundTable: 'Ronda {n} · Mesa {k}',
       nextRound: 'Ronda {n} de {total}',
       goTo: 'Ve a la mesa {n}',
-      startsSoon: 'La conversación empieza cuando la moderadora dé la salida.',
+      startsSoon: 'La conversación empieza cuando el admin dé la salida.',
       timeLeft: 'Tiempo restante',
       topic: 'Tema a tratar',
       you: 'Tú: {role}',
@@ -162,7 +162,7 @@ export const DICT = {
     },
 
     panel: {
-      badge: 'Moderadora',
+      badge: 'Admin',
       projector: 'Proyector',
       lock: 'Bloquear',
       control: 'Control de la sesión',
@@ -445,7 +445,7 @@ export const DICT = {
       roundTable: 'Round {n} · Table {k}',
       nextRound: 'Round {n} of {total}',
       goTo: 'Go to table {n}',
-      startsSoon: 'The conversation starts when the moderator gives the signal.',
+      startsSoon: 'The conversation starts when the admin gives the signal.',
       timeLeft: 'Time left',
       topic: 'Topic',
       you: 'You: {role}',
@@ -479,7 +479,7 @@ export const DICT = {
     },
 
     panel: {
-      badge: 'Moderator',
+      badge: 'Admin',
       projector: 'Projector',
       lock: 'Lock',
       control: 'Session control',

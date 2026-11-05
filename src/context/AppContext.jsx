@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { VIEWS, MODERATOR_VIEWS, MOD_HASH, JOIN_HASH, MOD_PIN, PAUSE_AFTER_ROUND } from '../constants'
+import { VIEWS, MODERATOR_VIEWS, isModHash, JOIN_HASH, MOD_PIN, PAUSE_AFTER_ROUND } from '../constants'
 import { demoParticipants } from '../lib/demo'
 import * as api from '../lib/backend'
 import { clearNotes } from '../lib/audioNotes'
@@ -56,7 +56,7 @@ export function AppProvider({ children }) {
   const [profileUpdatedAt, setProfileUpdatedAt] = useState(0)
   const [modPin, setModPin] = useState(() => read(sessionStorage, MOD_KEY, null)) // remoto: PIN; local: true
   const modUnlocked = !!modPin
-  const [gateOpen, setGateOpen] = useState(() => window.location.hash === MOD_HASH)
+  const [gateOpen, setGateOpen] = useState(() => isModHash(window.location.hash))
   const [view, setView] = useState(() => {
     if (read(sessionStorage, MOD_KEY, null)) return VIEWS.MOD_PANEL
     if (read(localStorage, ME_KEY, null)) return VIEWS.HOME
@@ -100,7 +100,7 @@ export function AppProvider({ children }) {
       setLocalTopics(next.topics ?? [])
     }
     const onHash = () => {
-      if (window.location.hash === MOD_HASH) setGateOpen(true)
+      if (isModHash(window.location.hash)) setGateOpen(true)
       if (window.location.hash === JOIN_HASH) setView((v) => (v === VIEWS.REGISTER ? VIEWS.LOGIN : v))
     }
     window.addEventListener('storage', onStorage)
@@ -250,7 +250,7 @@ export function AppProvider({ children }) {
   const openGate = useCallback(() => setGateOpen(true), [])
   const closeGate = useCallback(() => {
     setGateOpen(false)
-    if (window.location.hash === MOD_HASH) window.history.replaceState(null, '', window.location.pathname)
+    if (isModHash(window.location.hash)) window.history.replaceState(null, '', window.location.pathname)
   }, [])
 
   // Devuelve 'ok' | 'invalid_pin' | 'locked' | 'network'
@@ -266,7 +266,7 @@ export function AppProvider({ children }) {
     setModPin(REMOTE ? pin : true)
     setGateOpen(false)
     setView(VIEWS.MOD_PANEL)
-    if (window.location.hash === MOD_HASH) window.history.replaceState(null, '', window.location.pathname)
+    if (isModHash(window.location.hash)) window.history.replaceState(null, '', window.location.pathname)
     return 'ok'
   }, [])
 
