@@ -1,0 +1,16 @@
+# Servicio de Linux (systemd) para que el transcriptor arranque solo con el servidor.
+# Copiar a /etc/systemd/system/ y ajustar las rutas y el usuario. Ver LEEME.md, paso 5.
+[Unit]
+Description=Cofinder · transcriptor de notas de audio (Whisper)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=cofinder
+WorkingDirectory=/opt/cofinder/transcriptor
+ExecStart=/opt/cofinder/transcriptor/venv/bin/python transcribir.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
