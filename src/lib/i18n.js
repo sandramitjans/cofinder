@@ -371,9 +371,9 @@ export const DICT = {
       back: 'Atrás',
       nextStep: 'Siguiente',
       keysHint: 'Espacio / → para avanzar · ← para volver',
-      welcome: 'Bienvenida a',
+      welcome: 'Te damos la bienvenida a',
       soon: 'Empezamos en unos instantes',
-      thanks: '¡Gracias a todas y a todos!',
+      thanks: '¡Gracias por participar!',
       summary: '{rounds} rondas · {people} participantes · nuevas conexiones',
     },
 
@@ -794,7 +794,7 @@ export const DICT = {
       keysHint: 'Space / → to move on · ← to go back',
       welcome: 'Welcome to',
       soon: 'We’ll start in a few moments',
-      thanks: 'Thank you all!',
+      thanks: 'Thanks for taking part!',
       summary: '{rounds} rounds · {people} participants · new connections',
     },
 

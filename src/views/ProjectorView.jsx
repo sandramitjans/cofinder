@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import QRCode from 'qrcode'
 import { ArrowLeft, ChevronLeft, ChevronRight, Coffee, Expand, MapPin, PartyPopper, TimerOff } from 'lucide-react'
 import { useApp } from '../context/AppContext'
@@ -49,6 +49,7 @@ export default function ProjectorView() {
     return () => window.removeEventListener('keydown', onKey)
   }, [navigate, advance, stepBack])
 
+  const idle = useIdle(3000)
   const fullscreen = () => document.documentElement.requestFullscreen?.().catch(() => {})
 
   let scene
@@ -102,17 +103,17 @@ export default function ProjectorView() {
             <article key={tb.id} className="animate-pop-in overflow-hidden rounded-xl bg-white shadow-lg shadow-slate-900/5 ring-1 ring-slate-200" style={{ animationDelay: `${i * 100}ms` }}>
               <div className="bg-brand px-5 py-4 text-white">
                 <p className="text-sm font-semibold uppercase tracking-widest text-white/70">{t('round.table', { n: tb.id })}</p>
-                <h2 className="mt-1 font-display text-2xl font-medium leading-tight tracking-tight xl:text-3xl">{topic(tb.topic)}</h2>
+                <h2 className="mt-1 font-display text-3xl font-medium leading-tight tracking-tight xl:text-4xl">{topic(tb.topic)}</h2>
               </div>
-              <ul className="space-y-3 p-5">
+              <ul className="space-y-4 p-5">
                 {tb.members.map((id) => {
                   const p = byId.get(id)
                   return p ? (
                     <li key={id} className="flex items-center gap-3">
-                      <Avatar name={p.name} photo={p.photo} />
+                      <Avatar name={p.name} photo={p.photo} size="lg" />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-lg font-semibold">{p.name}</p>
-                        <p className="truncate text-sm text-slate-500">{country(p.country)}</p>
+                        <p className="truncate text-2xl font-semibold leading-tight xl:text-[1.7rem]">{p.name}</p>
+                        <p className="truncate text-base text-slate-500">{country(p.country)}</p>
                       </div>
                     </li>
                   ) : null
@@ -186,7 +187,7 @@ export default function ProjectorView() {
   }
 
   return (
-    <div className="vip-glow group flex min-h-dvh flex-col bg-paper">
+    <div className={`vip-glow flex min-h-dvh flex-col bg-paper ${idle ? 'cursor-none' : ''}`}>
       <header className="flex items-center justify-between gap-4 px-8 py-6">
         <Logo size="lg" />
         {event.round > 0 && !event.finished && (
@@ -201,8 +202,8 @@ export default function ProjectorView() {
         )}
       </header>
 
-      {/* Controles discretos: aparecen al pasar el ratón */}
-      <div className="fixed bottom-5 left-1/2 z-30 flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center whitespace-nowrap justify-center gap-2 rounded-2xl bg-white/90 px-3 py-2 shadow-lg ring-1 ring-slate-200 backdrop-blur opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+      {/* Controles discretos: aparecen al mover el ratón y se esconden (con el cursor) a los 3 s sin moverlo */}
+      <div className={`fixed bottom-5 left-1/2 z-30 flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center whitespace-nowrap justify-center gap-2 rounded-2xl bg-white/90 px-3 py-2 shadow-lg ring-1 ring-slate-200 backdrop-blur transition-opacity duration-500 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 ${idle ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
         <LangSwitch />
         <button onClick={() => navigate(VIEWS.MOD_PANEL)} className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-medium shadow ring-1 ring-slate-200"><ArrowLeft className="h-3.5 w-3.5" /> {t('projector.panel')}</button>
         <button onClick={fullscreen} className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-medium shadow ring-1 ring-slate-200"><Expand className="h-3.5 w-3.5" /> {t('projector.fullscreen')}</button>
@@ -242,7 +243,7 @@ function JoinScene() {
     <div className="flex flex-1 flex-col items-center justify-center gap-10 animate-view-in">
       <div className="flex w-full max-w-6xl flex-col items-center gap-12 lg:flex-row lg:justify-center">
         <div className="max-w-xl text-center lg:text-left">
-          <p className="text-xl font-semibold uppercase tracking-[0.3em] text-brand-dark">{t('projector.welcome')} Cofinder</p>
+          <p className="text-xl font-semibold uppercase tracking-[0.12em] text-brand-dark">{t('projector.welcome')} Cofinder</p>
           <h1 className="mt-3 font-display text-7xl font-medium leading-none tracking-tight">{t('join.title')}</h1>
           <ol className="mt-10 space-y-5 text-left">
             {steps.map((txt, i) => (
@@ -268,12 +269,30 @@ function currentPauseRound(total) {
   return total > PAUSE_AFTER_ROUND ? PAUSE_AFTER_ROUND : -1
 }
 
+/** true cuando el ratón lleva `ms` sin moverse (para esconder los controles y el cursor en el proyector) */
+function useIdle(ms) {
+  const [idle, setIdle] = useState(false)
+  const timer = useRef(null)
+  useEffect(() => {
+    const wake = () => {
+      setIdle(false)
+      clearTimeout(timer.current)
+      timer.current = setTimeout(() => setIdle(true), ms)
+    }
+    wake()
+    const events = ['mousemove', 'mousedown', 'touchstart'] // sin teclas: el mando de presentación no debe sacar la barra
+    events.forEach((e) => window.addEventListener(e, wake, { passive: true }))
+    return () => { clearTimeout(timer.current); events.forEach((e) => window.removeEventListener(e, wake)) }
+  }, [ms])
+  return idle
+}
+
 /** Tarjeta blanca de una persona en el anuncio de su mesa */
 function PersonCard({ person, branch }) {
   return (
     <article className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
       <Avatar name={person.name} photo={person.photo} size="xl" className="!rounded-full" />
-      <p className="mt-4 font-display text-2xl font-medium leading-tight">{person.name}</p>
+      <p className="mt-4 font-display text-3xl font-medium leading-tight">{person.name}</p>
       {person.role && <p className="mt-1 text-base text-slate-600">{person.role}</p>}
       {branch && <p className="mt-0.5 flex items-center gap-1 text-sm text-slate-500"><MapPin className="h-3.5 w-3.5" /> {branch}</p>}
     </article>
