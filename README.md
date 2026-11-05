@@ -195,4 +195,8 @@ siguiente con sus 2 minutos para encontrar la mesa, la pausa tras la ronda 3, o 
 
 Con Supabase, ejecutar una vez `supabase/2026-11-notas-audio.sql` (tabla `audio_notes` con la ruta del
 audio y su `transcript`, `submit_audio_note`, `mod_clear_notes`). La transcripción la hace el
-transcriptor de `transcriptor/` (Whisper de código abierto en vuestro servidor; ver `transcriptor/LEEME.md`).
+transcriptor de `transcriptor/` (faster-whisper, código abierto, en vuestro servidor; ver `transcriptor/LEEME.md`).
+
+Las transcripciones se leen en **`…/#resum`** (pide el PIN de Admin): por ronda y mesa, con buscador,
+se actualiza sola cada 20 s y se descarga en .txt o .csv (Excel). Con Supabase, ejecutar antes
+`supabase/2026-11-resumenes.sql` (función `mod_get_notes`).

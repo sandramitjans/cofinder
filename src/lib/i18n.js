@@ -212,6 +212,17 @@ export const DICT = {
       title: 'Acceso reservado', text: 'Introduce el PIN.', wrong: 'PIN incorrecto', locked: 'Demasiados intentos. Vuelve a probar en 10 minutos.', network: 'Sin conexión. Vuelve a intentarlo.', checking: 'Comprobando…', enter: 'Entrar', close: 'Cerrar', pin: 'PIN',
     },
 
+    resum: {
+      title: 'Resúmenes de las mesas', pinText: 'Introduce el PIN de Admin para ver las transcripciones.',
+      count: '{n} notas de audio · {done} transcritas', refresh: 'Actualizar', all: 'Todas',
+      round: 'Ronda', table: 'Mesa', topic: 'Tema', person: 'Persona', role: 'Cargo', text: 'Resumen',
+      search: 'Buscar persona, tema o palabra…', pending: 'Transcribiendo…', loading: 'Cargando…',
+      empty: 'Todavía no hay notas de audio. Aparecerán aquí al acabar cada ronda.', noMatch: 'Nada coincide con la búsqueda.',
+      local: 'En modo local (sin servidor) las notas solo quedan en cada móvil y no se transcriben.',
+      logout: 'Salir',
+      error: { sql: 'Falta ejecutar supabase/2026-11-resumenes.sql en Supabase.', network: 'Sin conexión. Se volverá a intentar en unos segundos.' },
+    },
+
     panel: {
       badge: 'Admin',
       projector: 'Proyector',
@@ -584,6 +595,17 @@ export const DICT = {
 
     gate: {
       title: 'Restricted access', text: 'Enter the PIN.', wrong: 'Wrong PIN', locked: 'Too many attempts. Try again in 10 minutes.', network: 'No connection. Try again.', checking: 'Checking…', enter: 'Enter', close: 'Close', pin: 'PIN',
+    },
+
+    resum: {
+      title: 'Table summaries', pinText: 'Enter the Admin PIN to see the transcripts.',
+      count: '{n} voice notes · {done} transcribed', refresh: 'Refresh', all: 'All',
+      round: 'Round', table: 'Table', topic: 'Topic', person: 'Person', role: 'Role', text: 'Summary',
+      search: 'Search person, topic or word…', pending: 'Transcribing…', loading: 'Loading…',
+      empty: 'No voice notes yet. They will show up here after each round.', noMatch: 'Nothing matches your search.',
+      local: 'In local mode (no server) notes stay on each phone and are not transcribed.',
+      logout: 'Log out',
+      error: { sql: 'supabase/2026-11-resumenes.sql still has to be run in Supabase.', network: 'No connection. Retrying in a few seconds.' },
     },
 
     panel: {

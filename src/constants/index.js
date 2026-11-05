@@ -17,6 +17,8 @@ export const MOD_HASH = '#admin'
 export const isModHash = (h) => h === MOD_HASH || h === '#moderadora'
 // El QR del proyector abre la app con este enlace: …/#entrar → pantalla de acceso
 export const JOIN_HASH = '#entrar'
+// Página de resúmenes: transcripciones de las notas de audio (pide el PIN de Admin)
+export const RESUM_HASH = '#resum'
 // Dirección que codifica el QR. Por defecto, la de la propia página; en pruebas en red local
 // conviene poner la IP del ordenador (p. ej. VITE_PUBLIC_URL=http://192.168.1.20:5173)
 // Si no se indica y la app está abierta en «localhost» (npm run dev), se usa sola la IP del ordenador.

@@ -97,6 +97,8 @@ export const modResetReady = (pin) => rpc('mod_reset_ready', { p_pin: pin })
 export const submitAudioNote = ({ id, round, tableId, topic, path }) =>
   rpc('submit_audio_note', { p_id: id, p_round: round, p_table: tableId ?? null, p_topic: topic ?? null, p_path: path })
 export const modClearNotes = (pin) => rpc('mod_clear_notes', { p_pin: pin })
+/** Página #resum: transcripciones de todas las notas (con el PIN de Admin) */
+export const modGetNotes = async (pin) => (await rpc('mod_get_notes', { p_pin: pin }))?.notes ?? []
 
 /** Entrar desde otro dispositivo (el móvil) con el nombre y el código de 4 cifras.
  *  Devuelve { id, secret }; lanza un error con code 'invalid' | 'locked'. */
