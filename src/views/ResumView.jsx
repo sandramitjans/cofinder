@@ -2,17 +2,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Download, FileText, KeyRound, Loader2, LogOut, RefreshCw, Search } from 'lucide-react'
 import * as api from '../lib/backend'
 import { MOD_PIN } from '../constants'
+import { topicKey } from '../lib/topics'
 import { useI18n } from '../context/I18nContext'
 import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
 import LangSwitch from '../components/ui/LangSwitch'
 
 /**
- * Página …/#resum: las transcripciones de las notas de audio de cada ronda, agrupadas por ronda y mesa.
+ * Página …/#resum: las transcripciones de las notas de audio, agrupadas por tema de mesa (todas las
+ * personas que han hablado de ese tema) o por ronda y mesa.
  * Pide el PIN de Admin (es independiente del panel: se puede abrir en otro ordenador).
  * Se actualiza sola cada 20 s, a medida que el transcriptor del servidor termina cada audio.
  */
 const PIN_KEY = 'cofinder:resum-pin'
+const BY_KEY = 'cofinder:resum-by'
 const REFRESH_MS = 20_000
 
 const readPin = () => { try { return sessionStorage.getItem(PIN_KEY) } catch { return null } }
@@ -67,6 +70,8 @@ function Summaries({ pin, onLogout }) {
   const [notes, setNotes] = useState(null) // null = cargando
   const [error, setError] = useState(null)
   const [round, setRound] = useState('all')
+  const [by, setBy] = useState(() => { try { return localStorage.getItem(BY_KEY) || 'topic' } catch { return 'topic' } })
+  useEffect(() => { try { localStorage.setItem(BY_KEY, by) } catch { /* noop */ } }, [by])
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState(false)
   const alive = useRef(true)
@@ -98,18 +103,31 @@ function Summaries({ pin, onLogout }) {
       && (!q || [n.name, n.transcript, topic(n.topic ?? '')].some((s) => s?.toLowerCase().includes(q))))
   }, [notes, round, query, topic])
 
-  // Ronda → mesa → notas
-  const groups = useMemo(() => {
+  // Secciones → tarjetas → notas. Por tema: una tarjeta por tema con todas sus notas (de cualquier ronda).
+  // Por ronda: una sección por ronda y una tarjeta por mesa.
+  const sections = useMemo(() => {
+    if (by === 'topic') {
+      const cards = new Map()
+      for (const n of visible) {
+        const k = topicKey(n.topic ?? '')
+        if (!cards.has(k)) cards.set(k, { key: k, topic: n.topic, notes: [] })
+        cards.get(k).notes.push(n)
+      }
+      const list = [...cards.values()].sort((a, b) => topic(a.topic ?? '').localeCompare(topic(b.topic ?? '')))
+      return [{ key: 'topics', heading: null, cards: list }]
+    }
     const byRound = new Map()
     for (const n of visible) {
       if (!byRound.has(n.round)) byRound.set(n.round, new Map())
       const tables = byRound.get(n.round)
       const k = n.table ?? '–'
-      if (!tables.has(k)) tables.set(k, { table: n.table, topic: n.topic, notes: [] })
+      if (!tables.has(k)) tables.set(k, { key: k, table: n.table, topic: n.topic, notes: [] })
       tables.get(k).notes.push(n)
     }
-    return [...byRound.entries()].map(([r, tables]) => ({ round: r, tables: [...tables.values()] }))
-  }, [visible])
+    return [...byRound.entries()].map(([r, tables]) => ({ key: r, heading: `${t('resum.round')} ${r}`, cards: [...tables.values()] }))
+  }, [visible, by, topic, t])
+
+  const where = (n) => `${t('resum.round')} ${n.round} · ${t('resum.table')} ${n.table ?? '–'}`
 
   const done = (notes ?? []).filter((n) => n.transcript).length
 
@@ -122,9 +140,10 @@ function Summaries({ pin, onLogout }) {
         .map((r) => r.map(cell).join(';')).join('\r\n')
       type = 'text/csv'
     } else {
-      body = groups.map((g) => `${t('resum.round')} ${g.round}\n${'='.repeat(30)}\n\n` + g.tables.map((tb) =>
-        `${t('resum.table')} ${tb.table ?? '–'} · ${topic(tb.topic ?? '')}\n${'-'.repeat(30)}\n` + tb.notes.map((n) =>
-          `${n.name}${n.role ? ` (${n.role})` : ''}:\n${n.transcript || t('resum.pending')}\n`).join('\n')).join('\n')).join('\n\n')
+      const title = (c) => (by === 'topic' ? topic(c.topic ?? '') : `${t('resum.table')} ${c.table ?? '–'} · ${topic(c.topic ?? '')}`)
+      const line = (n) => `${n.name}${n.role ? ` (${n.role})` : ''}${by === 'topic' ? ` · ${where(n)}` : ''}:\n${n.transcript || t('resum.pending')}\n`
+      body = sections.map((sec) => (sec.heading ? `${sec.heading}\n${'='.repeat(30)}\n\n` : '') + sec.cards.map((c) =>
+        `${title(c)}\n${'-'.repeat(30)}\n` + c.notes.map(line).join('\n')).join('\n')).join('\n\n')
       type = 'text/plain'
     }
     const url = URL.createObjectURL(new Blob([body], { type: `${type};charset=utf-8` }))
@@ -160,6 +179,14 @@ function Summaries({ pin, onLogout }) {
 
       {notes?.length > 0 && (
         <div className="mt-5 flex flex-wrap items-center gap-2">
+          <div className="mr-2 inline-flex rounded-full bg-white p-1 ring-1 ring-slate-200" role="group" aria-label={t('resum.groupBy')}>
+            {['topic', 'round'].map((k) => (
+              <button key={k} onClick={() => setBy(k)} aria-pressed={by === k}
+                className={`rounded-full px-3 py-1 text-sm font-semibold transition ${by === k ? 'bg-brand text-white' : 'text-slate-600 hover:text-ink'}`}>
+                {t(`resum.by.${k}`)}
+              </button>
+            ))}
+          </div>
           {['all', ...rounds].map((r) => (
             <button key={r} onClick={() => setRound(r)}
               className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${round === r ? 'bg-ink text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:ring-slate-300'}`}>
@@ -178,20 +205,24 @@ function Summaries({ pin, onLogout }) {
       {notes?.length === 0 && api.isRemote && !error && <p className="mt-10 text-center text-slate-500">{t('resum.empty')}</p>}
       {notes?.length > 0 && visible.length === 0 && <p className="mt-10 text-center text-slate-500">{t('resum.noMatch')}</p>}
 
-      {groups.map((g) => (
-        <section key={g.round} className="mt-8">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-brand-dark">{t('resum.round')} {g.round}</h2>
-          <div className="mt-3 space-y-4">
-            {g.tables.map((tb) => (
-              <article key={tb.table ?? '–'} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-                <h3 className="font-bold">
-                  <span className="mr-2 rounded-lg bg-brand-soft px-2 py-0.5 text-sm text-brand-dark">{t('resum.table')} {tb.table ?? '–'}</span>
-                  {topic(tb.topic ?? '')}
+      {sections.map((sec) => (
+        <section key={sec.key} className="mt-8">
+          {sec.heading && <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-brand-dark">{sec.heading}</h2>}
+          <div className="space-y-4">
+            {sec.cards.map((c) => (
+              <article key={c.key} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+                <h3 className="flex flex-wrap items-center gap-2 font-bold">
+                  {by === 'round' && <span className="rounded-lg bg-brand-soft px-2 py-0.5 text-sm text-brand-dark">{t('resum.table')} {c.table ?? '–'}</span>}
+                  <span className={by === 'topic' ? 'text-lg' : ''}>{topic(c.topic ?? '')}</span>
+                  {by === 'topic' && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">{c.notes.length === 1 ? t('resum.person1') : t('resum.people', { n: c.notes.length })}</span>}
                 </h3>
                 <ul className="mt-4 space-y-4">
-                  {tb.notes.map((n) => (
-                    <li key={n.id} className="border-l-2 border-slate-100 pl-4">
-                      <p className="text-sm font-semibold">{n.name}{n.role && <span className="font-normal text-slate-500"> · {n.role}</span>}</p>
+                  {c.notes.map((n) => (
+                    <li key={`${n.id}:${n.round}`} className="border-l-2 border-slate-100 pl-4">
+                      <p className="text-sm font-semibold">
+                        {n.name}{n.role && <span className="font-normal text-slate-500"> · {n.role}</span>}
+                        {by === 'topic' && <span className="ml-2 text-xs font-normal text-slate-400">{where(n)}</span>}
+                      </p>
                       {n.transcript
                         ? <p className="mt-1 whitespace-pre-line text-[15px] leading-relaxed text-slate-700">{n.transcript}</p>
                         : <p className="mt-1 text-sm italic text-slate-400"><Loader2 className="mr-1.5 inline h-3.5 w-3.5 animate-spin" />{t('resum.pending')}</p>}

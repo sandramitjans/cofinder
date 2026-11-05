@@ -219,7 +219,7 @@ export const DICT = {
       search: 'Buscar persona, tema o palabra…', pending: 'Transcribiendo…', loading: 'Cargando…',
       empty: 'Todavía no hay notas de audio. Aparecerán aquí al acabar cada ronda.', noMatch: 'Nada coincide con la búsqueda.',
       local: 'En modo local (sin servidor) las notas solo quedan en cada móvil y no se transcriben.',
-      logout: 'Salir',
+      logout: 'Salir', groupBy: 'Agrupar', by: { topic: 'Por tema', round: 'Por ronda' }, people: '{n} notas', person1: '1 nota',
       error: { sql: 'Falta ejecutar supabase/2026-11-resumenes.sql en Supabase.', network: 'Sin conexión. Se volverá a intentar en unos segundos.' },
     },
 
@@ -604,7 +604,7 @@ export const DICT = {
       search: 'Search person, topic or word…', pending: 'Transcribing…', loading: 'Loading…',
       empty: 'No voice notes yet. They will show up here after each round.', noMatch: 'Nothing matches your search.',
       local: 'In local mode (no server) notes stay on each phone and are not transcribed.',
-      logout: 'Log out',
+      logout: 'Log out', groupBy: 'Group', by: { topic: 'By topic', round: 'By round' }, people: '{n} notes', person1: '1 note',
       error: { sql: 'supabase/2026-11-resumenes.sql still has to be run in Supabase.', network: 'No connection. Retrying in a few seconds.' },
     },
 
