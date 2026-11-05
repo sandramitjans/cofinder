@@ -24,7 +24,8 @@ const REMOTE = api.isRemote
 const EVENT_KEY = 'cofinder:event:v4'
 const ME_KEY = 'cofinder:me'
 const PROFILE_KEY = 'cofinder:me:profile' // copia local del propio perfil (pantalla al instante, sin red)
-const SECRET_KEY = 'cofinder:me:secret'   // clave para poder modificar el propio perfil
+const SECRET_KEY = 'cofinder:me:secret'
+const LIVE_KEY = 'cofinder:me:live'       // este dispositivo entró con nombre + código (QR del día del evento)   // clave para poder modificar el propio perfil
 const MOD_KEY = REMOTE ? 'cofinder:mod:pin' : 'cofinder:mod'
 const EMPTY_EVENT = { round: 0, rounds: [], finished: false }
 const MOD_POLL_MS = 15000
@@ -53,6 +54,7 @@ export function AppProvider({ children }) {
   /* ---------- Estado común ---------- */
   const [currentUserId, setCurrentUserId] = useState(() => read(localStorage, ME_KEY, null))
   const [editSecret, setEditSecret] = useState(() => read(localStorage, SECRET_KEY, null))
+  const [joinedLive, setJoinedLive] = useState(() => !!read(localStorage, LIVE_KEY, false))
   const [profileUpdatedAt, setProfileUpdatedAt] = useState(0)
   const [modPin, setModPin] = useState(() => read(sessionStorage, MOD_KEY, null)) // remoto: PIN; local: true
   const modUnlocked = !!modPin
@@ -80,6 +82,7 @@ export function AppProvider({ children }) {
   useEffect(() => { if (!REMOTE) write(localStorage, EVENT_KEY, { participants: localParticipants, event: localEvent, topics: localTopics }) }, [localParticipants, localEvent, localTopics])
   useEffect(() => write(localStorage, ME_KEY, currentUserId), [currentUserId])
   useEffect(() => write(localStorage, SECRET_KEY, editSecret), [editSecret])
+  useEffect(() => write(localStorage, LIVE_KEY, joinedLive || null), [joinedLive])
   useEffect(() => { if (REMOTE) write(localStorage, PROFILE_KEY, me) }, [me])
   useEffect(() => write(sessionStorage, MOD_KEY, modPin), [modPin])
 
@@ -113,6 +116,7 @@ export function AppProvider({ children }) {
 
   /* ---------- Remoto: participante ---------- */
   const forgetLocally = useCallback(() => {
+    setJoinedLive(false)
     setCurrentUserId(null)
     setEditSecret(null)
     setMe(null)
@@ -333,6 +337,7 @@ export function AppProvider({ children }) {
     }
     setEditSecret(secret)
     setCurrentUserId(id)
+    setJoinedLive(true)
     setView(VIEWS.HOME)
     if (window.location.hash === JOIN_HASH) window.history.replaceState(null, '', window.location.pathname)
     window.scrollTo({ top: 0 })
@@ -341,6 +346,7 @@ export function AppProvider({ children }) {
 
   // Solo olvida el perfil en ESTE dispositivo (el registro sigue en la base de datos)
   const forgetMe = useCallback(() => {
+    setJoinedLive(false)
     setCurrentUserId(null)
     setEditSecret(null)
     setMe(null)
@@ -528,14 +534,14 @@ export function AppProvider({ children }) {
     view, navigate,
     participants, currentUser, event, currentRound, seatedEver,
     modLoading: REMOTE && modUnlocked && !modState,
-    register, login, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, joinedLive, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     modUnlocked, gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
   }), [view, navigate, participants, currentUser, event, currentRound, seatedEver, modUnlocked, modState,
-    register, login, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, joinedLive, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     gateOpen, openGate, closeGate, unlockModerator, lockModerator,

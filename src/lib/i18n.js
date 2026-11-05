@@ -73,6 +73,30 @@ export const DICT = {
 
     match: { ready: 'Listo' },
 
+    lobby: {
+      connected: 'Estás conectado/a',
+      hello: '¡Hola, {name}!',
+      sub: 'En cuanto empiece la ronda, aquí verás tu mesa y con quién te sientas.',
+      count: '{n} personas conectadas',
+      onlyYou: 'De momento eres la primera persona conectada',
+      profile: 'Ver mi perfil y mis mesas',
+      back: 'Volver a la sala de espera',
+      phrases: [
+        'Esperando a que todo el mundo se conecte',
+        'Hay alguien que no se guardó la contraseña… 🙈',
+        'Alguien está buscando la wifi del evento 📶',
+        'Calentando las sillas de las mesas 🪑',
+        'El café está empezando a hacer efecto ☕',
+        'Alguien intenta escanear el QR con la cámara de selfie 🤳',
+        'Repartiendo directores con mucho cariño 💘',
+        'Comprobando que nadie se siente consigo mismo 🤔',
+        'Afinando el algoritmo de las mesas 🎯',
+        'Los últimos rezagados están llegando a la sala 🏃',
+        'Alguien acaba de preguntar «¿y esto para qué era?» 😅',
+        'Preparando los temas de conversación más jugosos 🍊',
+      ],
+    },
+
     // Acceso desde el móvil el día del evento (QR del proyector → nombre + código)
     login: {
       kicker: 'Día del evento',
@@ -389,6 +413,30 @@ export const DICT = {
     },
 
     match: { ready: 'Ready' },
+
+    lobby: {
+      connected: 'You’re connected',
+      hello: 'Hi, {name}!',
+      sub: 'As soon as the round starts, you’ll see your table and who you’re sitting with here.',
+      count: '{n} people connected',
+      onlyYou: 'You’re the first one connected so far',
+      profile: 'See my profile and tables',
+      back: 'Back to the waiting room',
+      phrases: [
+        'Waiting for everyone to connect',
+        'Someone didn’t save their code… 🙈',
+        'Someone is looking for the event wifi 📶',
+        'Warming up the chairs 🪑',
+        'The coffee is starting to kick in ☕',
+        'Someone is trying to scan the QR with the selfie camera 🤳',
+        'Matching directors with lots of love 💘',
+        'Making sure nobody sits with themselves 🤔',
+        'Fine-tuning the table algorithm 🎯',
+        'The last stragglers are arriving 🏃',
+        'Someone just asked “wait, what is this for?” 😅',
+        'Preparing the juiciest conversation topics 🍊',
+      ],
+    },
 
     // Joining from the phone on the day (projector QR → name + code)
     login: {

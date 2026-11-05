@@ -11,3 +11,10 @@ export function useConnected() {
   if (!api.isRemote) return null
   return (id) => keys.has(api.presenceKey(id))
 }
+
+/** Cuántos móviles hay conectados ahora mismo (null en modo local) */
+export function useConnectedCount() {
+  const [n, setN] = useState(0)
+  useEffect(() => (api.isRemote ? api.watchPresence((keys) => setN([...keys].filter((k) => !k.startsWith('watch-')).length)) : undefined), [])
+  return api.isRemote ? n : null
+}

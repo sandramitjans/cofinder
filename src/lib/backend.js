@@ -201,7 +201,7 @@ export function announcePresence(id) {
   return () => { presenceOwnKey = null; syncPresence() }
 }
 
-/** El proyector recibe el conjunto de huellas conectadas cada vez que alguien entra o sale */
+/** El proyector (y la sala de espera del móvil) recibe el conjunto de huellas conectadas cada vez que alguien entra o sale */
 export function watchPresence(cb) {
   presenceWatchers.add(cb)
   syncPresence()

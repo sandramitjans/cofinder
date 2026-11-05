@@ -15,7 +15,7 @@ import { SuperpowerChips } from '../components/ui/SuperpowerPicker'
  * Confirmación tras validar el perfil (pantalla 5 del prototipo): tarjeta roja con la persona,
  * sus mesas con su nivel, cuánto falta para la sesión y «Todo listo». Desde aquí se edita el perfil.
  */
-export default function WaitingView() {
+export default function WaitingView({ onLobby }) {
   const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt } = useApp()
   const { t, topic, country } = useI18n()
   const [justUpdated, setJustUpdated] = useState(() => Date.now() - profileUpdatedAt < 3000)
@@ -37,6 +37,11 @@ export default function WaitingView() {
         </header>
 
         <main className="flex flex-1 flex-col py-6">
+          {onLobby && (
+            <button type="button" onClick={onLobby} className="mb-4 self-start text-sm font-semibold text-brand-dark underline-offset-4 hover:underline">
+              ← {t('lobby.back')}
+            </button>
+          )}
           {justUpdated && (
             <p role="status" className="animate-pop-in mb-4 flex items-center gap-2 rounded-xl bg-mint-soft px-3 py-2.5 text-[15px] font-semibold text-mint-dark">
               <CheckCircle2 className="h-5 w-5 shrink-0" /> {t('waiting.updated')}
