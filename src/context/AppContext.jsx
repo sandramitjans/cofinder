@@ -547,7 +547,8 @@ export function AppProvider({ children }) {
   })
 
   // Siguiente paso (clic, espacio, flecha o mando de presentación):
-  // encontrar la mesa (2 min) → conversación → (pausa tras la ronda 3) → ronda siguiente → fin
+  // encontrar la mesa (2 min) → conversación → «Tiempo terminado» (notas de audio) → (pausa tras la ronda 3)
+  // → ronda siguiente → fin. Pulsar durante la conversación la termina ya: los móviles pasan a grabar la nota.
   const nextStep = (e) => {
     if (e.finished || !e.rounds.length) return e
     if (!e.round) return enterRound(e, 1)
@@ -555,6 +556,7 @@ export function AppProvider({ children }) {
     const r = e.rounds[i]
     if (!r.startedAt) return enterRound(e, e.round)
     if (r.startedAt > Date.now()) return patchRound(e, i, { startedAt: Date.now() }) // ya están todos sentados
+    if (Date.now() < r.startedAt + ROUND_MS) return patchRound(e, i, { startedAt: Date.now() - ROUND_MS }) // terminar la conversación
     if (e.round === PAUSE_AFTER_ROUND && e.round < e.rounds.length && !r.pauseStartedAt) return patchRound(e, i, { pauseStartedAt: Date.now() })
     if (e.round < e.rounds.length) return enterRound(e, e.round + 1)
     return { ...e, finished: true }
@@ -580,6 +582,7 @@ export function AppProvider({ children }) {
     const i = e.round - 1
     const r = e.rounds[i]
     if (r.pauseStartedAt) return patchRound(e, i, { pauseStartedAt: null })
+    if (r.startedAt && r.startedAt + ROUND_MS <= Date.now()) return patchRound(e, i, { startedAt: Date.now() }) // «Tiempo terminado» → conversación de nuevo
     if (r.startedAt && r.startedAt <= Date.now()) return patchRound(e, i, { startedAt: Date.now() + FIND_MS })
     const back = patchRound(e, i, { tables: [], revealed: 0, startedAt: null })
     return { ...back, round: e.round - 1 }

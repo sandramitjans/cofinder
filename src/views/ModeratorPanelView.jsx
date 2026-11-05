@@ -48,6 +48,7 @@ export default function ModeratorPanelView() {
   else if (r) {
     if (!r.startedAt) nextLabel = t('panel.nextTimer')
     else if (phase === 'find') nextLabel = t('panel.skipFind')
+    else if (phase === 'talk' && !timer.done) nextLabel = t('panel.endTalk')
     else if (event.round === PAUSE_AFTER_ROUND && event.round < total && !r.pauseStartedAt) nextLabel = t('panel.nextPause')
     else if (event.round < total) nextLabel = t('panel.nextRound', { n: event.round + 1 })
     else nextLabel = t('panel.finish')
@@ -136,7 +137,7 @@ export default function ModeratorPanelView() {
                 </Button>
               )}
               {hasPlan && nextLabel && (
-                <Button icon={ChevronRight} onClick={event.round === total && r?.startedAt ? confirmThen(t('panel.confirmFinish'), advance) : advance}>{nextLabel}</Button>
+                <Button icon={ChevronRight} onClick={event.round === total && phase === 'talk' && timer.done ? confirmThen(t('panel.confirmFinish'), advance) : advance}>{nextLabel}</Button>
               )}
               {event.round > 0 && (
                 <Button variant="outline" icon={ChevronLeft} onClick={stepBack}>{t('panel.back')}</Button>
