@@ -86,6 +86,7 @@ export async function fetchMyTable(id) {
     notes: d.notes ?? [], // rondas en las que ya envió su nota de audio
     plan: d.plan ?? null, // [{ round, table, topic }] · null si falta 2026-11-preparados.sql
     people: (d.people ?? []).map(fromRow),
+    progress: d.progress ?? null, // { ready, readyTotal, noted, notedTotal } · null si falta 2026-11-esperas.sql
   }
 }
 
@@ -113,6 +114,14 @@ export async function submitAudioNote({ id, round, tableId, topic, path, blob })
   }
   return rpc('submit_audio_note', args)
 }
+
+/** Nota escrita («Prefiero escribirla»): cuenta como enviada y sale ya como texto en #resum */
+export const submitTextNote = ({ id, round, tableId, topic, text }) =>
+  rpc('submit_text_note', { p_id: id, p_round: round, p_table: tableId ?? null, p_topic: topic ?? null, p_text: text })
+
+/** Valoración del evento (1–5 y comentario opcional), en la pantalla final */
+export const submitFeedback = ({ id, score, comment }) => rpc('submit_feedback', { p_id: id, p_score: score, p_comment: comment ?? '' })
+export const modGetFeedback = async (pin) => (await rpc('mod_get_feedback', { p_pin: pin }))?.feedback ?? []
 
 /* ---------- Página #resum: transcripción en el navegador (con el PIN de Admin) ---------- */
 export const modPendingAudio = async (pin) => (await rpc('mod_pending_audio', { p_pin: pin }))?.notes ?? []

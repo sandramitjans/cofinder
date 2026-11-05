@@ -51,6 +51,19 @@ export async function saveNote({ userId, round, tableId, topic, blob }) {
   return { uploaded: note.uploaded }
 }
 
+/** Igual que saveNote, pero con una nota escrita (se guarda también como .txt en el dispositivo) */
+export async function saveTextNote({ userId, round, tableId, topic, text }) {
+  const note = { text, blob: new Blob([text], { type: 'text/plain' }), mime: 'text/plain', createdAt: Date.now(), uploaded: false }
+  if (api.isRemote) {
+    try {
+      const res = await api.submitTextNote({ id: userId, round, tableId, topic, text })
+      note.uploaded = !res?.error
+    } catch { /* sin red o sin el SQL de la nota escrita */ }
+  }
+  try { await tx('readwrite', (s) => s.put(note, key(userId, round))) } catch { /* sin IndexedDB */ }
+  return { uploaded: note.uploaded }
+}
+
 /** Borra las notas de una persona (al volver la sesión al principio, p. ej. tras un ensayo) */
 export async function clearNotes(userId) {
   try { await tx('readwrite', (s) => s.delete(IDBKeyRange.bound(`${userId}:`, `${userId}:￿`))) } catch { /* noop */ }
@@ -64,4 +77,4 @@ export function recorderMime() {
 
 export const canRecord = () => !!navigator.mediaDevices?.getUserMedia && recorderMime() !== null
 
-export const extensionOf = (mime = '') => (mime.includes('mp4') ? 'm4a' : mime.includes('ogg') ? 'ogg' : 'webm')
+export const extensionOf = (mime = '') => (mime.includes('text') ? 'txt' : mime.includes('mp4') ? 'm4a' : mime.includes('ogg') ? 'ogg' : 'webm')

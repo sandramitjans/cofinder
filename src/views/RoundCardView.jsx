@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, ChevronDown, Copy, Download, Hourglass, Lightbulb, MapPin, Mic, RotateCcw, Send, Sparkles, Square, Timer, TimerOff, Users } from 'lucide-react'
+import { Check, ChevronDown, Copy, Download, Hourglass, Lightbulb, Lock, MapPin, Mic, PencilLine, RotateCcw, Send, Sparkles, Square, Timer, TimerOff, Users } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { FIND_MINUTES, TOPIC_EMOJI, TOTAL_ROUNDS } from '../constants'
@@ -29,7 +29,7 @@ const expertModeOf = (participants) => participants.some((p) => p.offers?.length
  *  - evento terminado → «Gracias por compartir»: tus conversaciones ronda a ronda
  */
 export default function RoundCardView() {
-  const { currentUser, currentRound, event, noteSent } = useApp()
+  const { currentUser, currentRound, event, noteSent, progress, myPlan } = useApp()
   const { t } = useI18n()
   const startedAt = event.finished ? null : currentRound?.startedAt
   const timer = useCountdown(startedAt)
@@ -43,7 +43,12 @@ export default function RoundCardView() {
   else if (!startedAt) { scene = <GoToTable table={table} />; key = `go-${event.round}` }
   else if (!findTimer.done) { scene = <FindTable table={table} findTimer={findTimer} />; key = `find-${event.round}` }
   else if (!timer.done) { scene = <ActiveRound table={table} timer={timer} />; key = `talk-${event.round}` }
-  else if (noteSent) { scene = <LobbyView embedded badge={t('note.sentBadge')} />; key = `hold-${event.round}` }
+  else if (noteSent) {
+    // Ya ha enviado su nota: cuántas faltan y su próxima mesa (para ir pensando y moverse antes)
+    const next = myPlan.find((x) => x.round === event.round + 1)
+    scene = <LobbyView embedded badge={t('note.sentBadge')} count={progress && { n: progress.noted, total: progress.notedTotal }} countKey="lobby.notedCount" next={next} />
+    key = `hold-${event.round}`
+  }
   else { scene = <TimeUp table={table} />; key = `up-${event.round}` }
 
   return (
@@ -77,29 +82,36 @@ function Waiting() {
   )
 }
 
-/** «Encuentra tu mesa»: círculo con la cuenta atrás, número de mesa + tema y los compañeros */
+/** «Encuentra tu mesa»: el número de mesa en grande (lo primero que se ve), el tema, la cuenta atrás y con quién */
 function FindTable({ table, findTimer }) {
   const { event } = useApp()
   const { t, topic } = useI18n()
   const desc = useTopicDesc(table.topic)
   return (
     <div className="flex flex-col items-center text-center">
-      <span className="rounded-full bg-brand-soft px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-dark">{t('round.badge', { n: event.round, total: TOTAL_ROUNDS })}</span>
-      <h1 className="mt-4 font-display text-4xl font-medium tracking-tight">{t('find.title')}</h1>
-      <div className="mt-6 grid h-48 w-48 place-items-center rounded-full border-[7px] border-brand bg-white shadow-xl shadow-brand/15">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t('find.startsIn')}</p>
-          <p className="font-display text-5xl font-medium tabular-nums tracking-tight text-ink">{findTimer.label}</p>
+      <span className="rounded-full bg-brand-soft px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-dark">{t('round.badge', { n: event.round, total: TOTAL_ROUNDS })} · {t('find.title')}</span>
+      <section aria-label={t('round.goTo', { n: table.id })} className="animate-pop-in mt-5 w-full overflow-hidden rounded-3xl bg-brand text-white shadow-xl shadow-brand/25">
+        <div className="px-5 pb-4 pt-5">
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/80">{t('find.goLabel')}</p>
+          <p className="text-2xl font-semibold uppercase tracking-[0.2em]">{t('find.table')}</p>
+          <p className="font-display text-[9rem] font-bold leading-[0.85] tracking-tighter tabular-nums">{table.id}</p>
+        </div>
+        <div className="border-t border-white/20 bg-black/10 px-5 py-3.5">
+          <p className="font-display text-xl font-medium leading-tight"><span aria-hidden className="mr-1.5">{emojiOf(table.topic)}</span>{topic(table.topic)}</p>
+          {desc && <p className="mt-1 text-sm text-white/85">{desc}</p>}
+        </div>
+      </section>
+      <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-slate-600"><MapPin className="h-4 w-4 shrink-0 text-brand" /> {t('find.sign', { n: table.id })}</p>
+      <div className="mt-5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="flex items-center gap-1.5 text-sm text-slate-600"><Timer className="h-4 w-4" /> {t('find.left')}</p>
+          <p className="font-display text-2xl font-medium tabular-nums text-ink">{findTimer.label}</p>
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full rounded-full bg-brand transition-[width] duration-1000" style={{ width: `${(1 - findTimer.progress) * 100}%` }} />
         </div>
       </div>
-      <section className="mt-7 w-full rounded-2xl bg-brand p-5 text-left text-white shadow-lg shadow-brand/20">
-        <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/80"><MapPin className="h-3.5 w-3.5" /> {t('round.table', { n: table.id })}</p>
-        <h2 className="mt-1 font-display text-2xl font-medium leading-tight">
-          <span aria-hidden className="mr-1.5">{emojiOf(table.topic)}</span>{topic(table.topic)}
-        </h2>
-        {desc && <p className="mt-1.5 text-sm text-white/85">{desc}</p>}
-      </section>
-      <div className="w-full text-left"><Companions table={table} /></div>
+      <div className="w-full text-left"><Companions table={table} title={t('find.people')} /></div>
     </div>
   )
 }
@@ -240,16 +252,80 @@ function Closing() {
     <>
       <h1 className="text-center font-display text-4xl font-medium tracking-tight">{t('round.finishedTitle')}</h1>
       <p className="mt-1 text-center text-slate-600">{t('round.finishedText')}</p>
+      <Feedback userId={currentUser.id} />
+      {rounds.length > 0 && (
+        <section className="mt-6 rounded-xl bg-mint-soft p-4">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-mint-dark">{t('round.nextTitle')}</h2>
+          <ol className="mt-2 space-y-1.5 text-sm text-ink">
+            {[1, 2].map((n) => (
+              <li key={n} className="flex gap-2"><span className="font-bold text-mint-dark">{n}.</span> {t(`round.next${n}`)}</li>
+            ))}
+          </ol>
+        </section>
+      )}
       {rounds.length ? (
-        <ul className="mt-6 space-y-3">
+        <>
+        <h2 className="mt-7 text-xs font-bold uppercase tracking-wider text-slate-500">{t('round.convTitle')}</h2>
+        <ul className="mt-2.5 space-y-3">
           {rounds.map((r) => (
             <ConversationCard key={r} round={r} entry={history[r]} userId={currentUser.id} open={open === r} onToggle={() => setOpen(open === r ? null : r)} />
           ))}
         </ul>
+        </>
       ) : (
         <p className="mt-6 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600">{t('round.noHistory')}</p>
       )}
     </>
+  )
+}
+
+const RATE_EMOJI = ['😞', '🙁', '😐', '🙂', '😍']
+const fbKey = (id) => `cofinder:feedback:${id}`
+
+/** «¿Qué te ha parecido?»: de 1 a 5 y un comentario opcional. Se recuerda en el móvil para no volver a pedirla. */
+function Feedback({ userId }) {
+  const { t } = useI18n()
+  const [sent, setSent] = useState(() => { try { return !!localStorage.getItem(fbKey(userId)) } catch { return false } })
+  const [score, setScore] = useState(0)
+  const [comment, setComment] = useState('')
+  const [state, setState] = useState('idle') // idle · sending · error
+
+  const send = async (e) => {
+    e.preventDefault()
+    if (!score) return
+    setState('sending')
+    try {
+      if (api.isRemote) await api.submitFeedback({ id: userId, score, comment: comment.trim() })
+      try { localStorage.setItem(fbKey(userId), String(score)) } catch { /* noop */ }
+      setSent(true)
+    } catch { setState('error') }
+  }
+
+  if (sent) {
+    return <p role="status" className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-mint-dark ring-1 ring-slate-200"><Check className="h-4 w-4" /> {t('round.rateThanks')}</p>
+  }
+  return (
+    <form onSubmit={send} className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 text-center">
+      <h2 className="font-display text-xl font-medium">{t('round.rateTitle')}</h2>
+      <div className="mt-3 flex justify-center gap-1.5" role="radiogroup" aria-label={t('round.rateTitle')}>
+        {RATE_EMOJI.map((em, i) => (
+          <button key={i} type="button" role="radio" aria-checked={score === i + 1} aria-label={t(`round.rate${i + 1}`)} title={t(`round.rate${i + 1}`)}
+            onClick={() => setScore(i + 1)}
+            className={`grid h-12 w-12 place-items-center rounded-xl text-2xl transition ${score === i + 1 ? 'scale-110 bg-brand-soft ring-2 ring-brand' : score ? 'opacity-50 hover:opacity-100' : 'hover:bg-slate-50'}`}>
+            {em}
+          </button>
+        ))}
+      </div>
+      {score > 0 && (
+        <>
+          <p className="mt-1 text-sm font-semibold text-brand-dark">{t(`round.rate${score}`)}</p>
+          <textarea value={comment} onChange={(e) => setComment(e.target.value)} maxLength={1000} rows={2} placeholder={t('round.rateComment')} aria-label={t('round.rateComment')}
+            className="mt-3 w-full rounded-xl border border-slate-200 p-3 text-left text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+          {state === 'error' && <p role="alert" className="mt-2 text-sm font-semibold text-brand-dark">{t('round.rateError')}</p>}
+          <Button type="submit" disabled={state === 'sending'} icon={Send} className="mt-3 w-full">{t('round.rateSend')}</Button>
+        </>
+      )}
+    </form>
   )
 }
 
@@ -279,7 +355,12 @@ function ConversationCard({ round, entry, userId, open, onToggle }) {
       </button>
       {open && (
         <div className="border-t border-slate-100 px-4 pb-4 pt-3">
-          {note === undefined ? null : note ? (
+          {note === undefined ? null : note?.text ? (
+            <>
+              <p className="text-sm text-slate-600">{t('note.textLabel')}</p>
+              <p className="mt-2 whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-sm text-ink">{note.text}</p>
+            </>
+          ) : note ? (
             <>
               <p className="text-sm text-slate-600">{t('round.noteSaved')}</p>
               <audio controls src={url ?? undefined} className="mt-2 w-full" />
@@ -328,14 +409,14 @@ function TopicCard({ table }) {
   )
 }
 
-function Companions({ table }) {
+function Companions({ table, title }) {
   const { currentUser, participants } = useApp()
   const { t, country } = useI18n()
   const byId = new Map(participants.map((p) => [p.id, p]))
   const people = table.members.filter((id) => id !== currentUser.id).map((id) => byId.get(id)).filter(Boolean)
   return (
     <section className="mt-6">
-      <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><Users className="h-3.5 w-3.5" /> {t('round.with')}</h2>
+      <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><Users className="h-3.5 w-3.5" /> {title ?? t('round.with')}</h2>
       <ul className="mt-2.5 space-y-2">
         {people.map((p) => (
           <li key={p.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5">
@@ -360,7 +441,9 @@ function Companions({ table }) {
 function NoteRecorder({ table }) {
   const { event, submitNote } = useApp()
   const { t } = useI18n()
-  const [state, setState] = useState(() => (canRecord() ? 'idle' : 'unsupported')) // idle · recording · review · sending · error · unsupported
+  const [state, setState] = useState(() => (canRecord() ? 'idle' : 'unsupported')) // idle · recording · review · sending · error · unsupported · write
+  const [text, setText] = useState('')
+  const [writing, setWriting] = useState(() => !canRecord()) // sin micrófono: directamente a escribirla
   const [failed, setFailed] = useState(false)
   const [seconds, setSeconds] = useState(0)
   const [blob, setBlob] = useState(null)
@@ -413,7 +496,37 @@ function NoteRecorder({ table }) {
     // si ha ido bien, la pantalla cambia sola a la espera
   }
 
-  if (state === 'unsupported') return <p className="text-sm text-slate-500">{t('round.noMic')}</p>
+  const sendText = async (e) => {
+    e.preventDefault()
+    if (!text.trim()) return
+    setState('sending')
+    setFailed(false)
+    const res = await submitNote({ round: event.round, tableId: table.id, topic: table.topic, text: text.trim() })
+    if (api.isRemote && !res.uploaded) setFailed(true)
+    setState(canRecord() ? 'idle' : 'unsupported')
+  }
+
+  if (writing) {
+    return (
+      <form onSubmit={sendText} className="flex w-full flex-col items-center">
+        <span className="grid h-16 w-16 place-items-center rounded-full bg-brand-soft text-brand-dark"><PencilLine className="h-8 w-8" /></span>
+        <h1 className="mt-4 font-display text-3xl font-medium tracking-tight">{t('note.writeTitle')}</h1>
+        {state === 'unsupported' && <p className="mt-2 max-w-xs text-sm text-slate-500">{t('round.noMic')}</p>}
+        <NoteGuide />
+        <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} rows={6} autoFocus
+          aria-label={t('note.writeTitle')} placeholder={t('note.writePh')}
+          className="mt-4 w-full rounded-xl border border-slate-200 bg-white p-3.5 text-left text-base text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+        <PrivacyNote />
+        {failed && <p role="alert" className="mt-4 w-full rounded-xl bg-brand-soft px-3.5 py-3 text-sm font-semibold text-brand-dark">{t('note.sendError')}</p>}
+        <Button type="submit" disabled={state === 'sending' || !text.trim()} icon={Send} className="mt-5 w-full py-4 text-base">
+          {state === 'sending' ? t('note.sending') : t('note.send')}
+        </Button>
+        {state !== 'unsupported' && (
+          <Button type="button" variant="outline" onClick={() => setWriting(false)} disabled={state === 'sending'} icon={Mic} className="mt-2 w-full py-3.5 text-base">{t('note.toRecord')}</Button>
+        )}
+      </form>
+    )
+  }
 
   if (state === 'recording') {
     const left = MAX_NOTE_SECONDS - seconds
@@ -425,8 +538,9 @@ function NoteRecorder({ table }) {
           <span className="relative grid h-32 w-32 place-items-center rounded-full bg-brand text-white shadow-xl shadow-brand/30"><Mic className="h-12 w-12" /></span>
         </div>
         <p className="mt-6 font-display text-5xl font-medium tabular-nums text-ink">0:{String(left).padStart(2, '0')}</p>
-        <p className="mt-2 max-w-xs text-sm text-slate-500">{t('note.hint')}</p>
-        <Button type="button" onClick={stop} icon={Square} className="mt-8 w-full py-4 text-base">{t('round.stop')}</Button>
+        <NoteGuide />
+        <p className="mt-3 text-xs text-slate-500">{t('note.noiseTip')}</p>
+        <Button type="button" onClick={stop} icon={Square} className="mt-6 w-full py-4 text-base">{t('round.stop')}</Button>
       </div>
     )
   }
@@ -451,11 +565,37 @@ function NoteRecorder({ table }) {
     <div className="flex w-full flex-col items-center">
       <span className="grid h-20 w-20 place-items-center rounded-full bg-ink text-white"><TimerOff className="h-9 w-9" /></span>
       <h1 className="mt-5 font-display text-4xl font-medium tracking-tight">{t('round.timeUp')}</h1>
-      <p className="mt-2 max-w-sm text-slate-600">{t('round.recordPrompt')}</p>
-      <Button type="button" onClick={start} icon={Mic} className="mt-8 w-full py-4 text-base">{t('round.record')}</Button>
+      <NoteGuide />
+      <p className="mt-3 text-xs text-slate-500">{t('note.noiseTip')}</p>
+      <Button type="button" onClick={start} icon={Mic} className="mt-6 w-full py-4 text-base">{t('round.record')}</Button>
       {state === 'error' && <p role="alert" className="mt-3 text-sm font-semibold text-brand-dark">{t('round.micError')}</p>}
+      <Button type="button" variant="outline" onClick={() => setWriting(true)} icon={PencilLine} className="mt-2 w-full py-3.5 text-base">{t('note.write')}</Button>
+      <PrivacyNote />
     </div>
   )
+}
+
+/** Guía de lo que contar en la nota (grabada o escrita) */
+function NoteGuide() {
+  const { t } = useI18n()
+  return (
+    <div className="mt-5 w-full rounded-xl border border-slate-200 bg-white p-4 text-left">
+      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('note.guideTitle')}</p>
+      <ol className="mt-2 space-y-1.5">
+        {[1, 2, 3].map((n) => (
+          <li key={n} className="flex items-center gap-2.5 text-[15px] font-semibold text-ink">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-soft text-xs font-bold text-brand-dark">{n}</span>
+            {t(`note.guide${n}`)}
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+function PrivacyNote() {
+  const { t } = useI18n()
+  return <p className="mt-4 flex items-start gap-1.5 text-left text-xs text-slate-500"><Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {t('note.privacy')}</p>
 }
 
 /** URL temporal para reproducir/descargar un Blob (se libera al desmontar) */

@@ -23,7 +23,8 @@ con Supabase (base de datos, tiempo real y almacenamiento) o en modo local sin s
 Cuatro pasos (unos 3 minutos): **Cuéntanos quién eres** (nombre, cargo, filial, foto) → **Apúntate a las
 mesas** (temas que le interesan) → **Tu expertise** (nivel en cada tema) → **Tu arma secreta** (opcional,
 un rasgo divertido para romper el hielo). Después, pantalla de espera con cuenta atrás hasta el evento
-(`VITE_EVENT_DATE`, por defecto el 25/11/2026) y su **código de acceso de 4 cifras** para el día del evento.
+(`VITE_EVENT_DATE`, por defecto el 25/11/2026) y su **código de acceso de 4 cifras** para el día del evento,
+con botones para guardarlo en el calendario (.ics) o enviárselo por email.
 Cada persona puede volver a editar su perfil.
 
 Las mesas (temas) las crea el Admin en el panel («Mesas del evento»): título, quién la propone,
@@ -42,17 +43,18 @@ intercambiar o mover a alguien con dos clics, o regenerar una ronda.
 | Momento | Proyector | Móvil de cada participante |
 |---|---|---|
 | Llegada | Solo el **QR** | «Inicia sesión» (usuario = nombre, contraseña = código) → **«Estas son las mesas en las que participarás»** (mesa y tema de cada ronda) → botón **Preparado** → espera con frases que van cambiando |
-| Todos preparados | Empieza solo (o «Empezar la sesión» en el panel) | |
+| Todos preparados | Empieza solo (o «Empezar la sesión» en el panel) | Mientras, la espera muestra «14 de 20 personas preparadas» |
 | Encuentra tu mesa (2 min) | Todas las mesas con los nombres y la cuenta atrás | Círculo «Empezamos en», mesa + tema y compañeros |
 | Conversación (15 min) | Cronómetro grande | Tema, cronómetro, compañeros de mesa y **«Para romper el hielo»** (preguntas sobre el tema) |
 | Tiempo terminado | «On hold» con «X de Y notas enviadas» | Grabar una **nota de audio** (máx. 1 min: de qué se ha hablado, aprendizajes, highlight) → escuchar / volver a grabar → Continuar → espera |
+| Nota enviada | | Espera con «14 de 20 notas enviadas» y su próxima mesa: «Siguiente · Ronda 2 · Mesa 3 · Branding» |
 | Todas las notas enviadas | Pasa solo a la ronda siguiente (o a la pausa tras la ronda 3, o al final) | |
 | Final | Cierre | «Gracias por compartir»: cada ronda con su tema, compañeros y su nota |
 
 El Admin controla todo con la barra de abajo del proyector o con el panel: **Siguiente** (también Espacio,
 → o el mando de presentación) y **←** para deshacer. «Siguiente» hace en cada momento lo esperable: salta
 los 2 minutos de buscar mesa, **termina la conversación** (los móviles pasan a grabar la nota) o pasa
-a la ronda siguiente aunque falte alguna nota. En el panel se ven los códigos de todos, quién está
+a la ronda siguiente aunque falte alguna nota. En el panel se ven los códigos de todos (con buscador por nombre o código), quién está
 conectado (punto verde), cuántos están preparados y cuántas notas han llegado. «Volver al principio»
 reinicia la sesión para ensayar (todos vuelven a «no preparados» y se borran las notas).
 
@@ -160,6 +162,13 @@ En el SQL Editor de Supabase, ejecutar en este orden (cada script se puede repet
 6. `supabase/2026-11-notas-audio.sql`: notas de audio de cada ronda
 7. `supabase/2026-11-resumenes.sql`: página `#resum`
 8. `supabase/2026-11-transcribir-navegador.sql`: transcripción en el navegador
+9. `supabase/2026-11-esperas.sql`: «14 de 20 preparados / notas enviadas» en las esperas del móvil
+10. `supabase/2026-11-nota-escrita.sql`: opción «Prefiero escribirla» en vez de grabar la nota
+11. `supabase/2026-11-valoracion.sql`: valoración del evento (1–5 y comentario) en la pantalla final; se ve en #resum
+
+Antes de abrir las inscripciones reales: `supabase/2026-11-limpiar-pruebas.sql` borra de verdad las
+inscripciones, las notas y el plan (conserva las mesas y el PIN). «Eliminar» desde el panel, en cambio,
+solo oculta a la persona (sus datos siguen en la base, marcados `removed`, y no salen en `#resum`).
 
 La clave secreta de Supabase (`service_role`) nunca va en la web ni en GitHub: solo la usaría el
 transcriptor de servidor, en su `.env`.

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { CalendarDays, CheckCircle2, KeyRound, MapPin, PencilLine } from 'lucide-react'
+import { CalendarDays, CalendarPlus, CheckCircle2, KeyRound, Mail, MapPin, PencilLine } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { EVENT_DATE, EVENT_PLACE, TOPIC_EMOJI, VIEWS } from '../constants'
+import { EVENT_DATE, EVENT_PLACE, JOIN_HASH, PUBLIC_URL, TOPIC_EMOJI, VIEWS } from '../constants'
 import { useTimeLeft } from '../lib/useTimeLeft'
 import { isCustom, topicsWithLevel } from '../lib/topics'
 import Logo from '../components/ui/Logo'
@@ -135,8 +135,39 @@ function DateBlock() {
 }
 
 /** Nombre + código de 4 cifras para conectar el móvil el día del evento (QR del proyector) */
+// Dirección a la que lleva el QR del proyector (…/#entrar)
+const joinUrl = () => `${(PUBLIC_URL || window.location.origin + window.location.pathname).replace(/#.*$/, '')}${JOIN_HASH}`
+
+// Día del evento en Madrid (AAAAMMDD), para un evento de día completo en el calendario
+const ymd = (ms) => {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .formatToParts(new Date(ms)).map((x) => [x.type, x.value]))
+  return `${p.year}${p.month}${p.day}`
+}
+const icsText = (s) => String(s).replace(/\\/g, '\\\\').replace(/[,;]/g, (c) => `\\${c}`).replace(/\n/g, '\\n')
+
+/** Evento de calendario (.ics) con el código: así no se pierde si la persona se registró en otro dispositivo */
+function downloadIcs({ title, description, place }) {
+  const day = ymd(EVENT_DATE)
+  const next = ymd(EVENT_DATE + 36 * 3600_000)
+  const lines = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Cofinder//ES', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT',
+    `UID:cofinder-${day}@cofinder`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '')}`,
+    `DTSTART;VALUE=DATE:${day}`, `DTEND;VALUE=DATE:${next}`,
+    `SUMMARY:${icsText(title)}`, `DESCRIPTION:${icsText(description)}`, ...(place ? [`LOCATION:${icsText(place)}`] : []),
+    'END:VEVENT', 'END:VCALENDAR',
+  ]
+  const url = URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' }))
+  const a = Object.assign(document.createElement('a'), { href: url, download: 'cofinder.ics' })
+  document.body.appendChild(a); a.click(); a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
 function AccessCode({ name, code }) {
   const { t } = useI18n()
+  const first = name.split(' ')[0]
+  const text = t('login.saveText', { name: first, code, url: joinUrl() })
+  const mail = `mailto:?subject=${encodeURIComponent(t('login.saveSubject'))}&body=${encodeURIComponent(text)}`
   return (
     <section className="mt-4 rounded-xl border border-dashed border-brand/40 bg-white p-4">
       <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><KeyRound className="h-3.5 w-3.5" /> {t('login.codeTitle')}</p>
@@ -145,6 +176,17 @@ function AccessCode({ name, code }) {
         <p className="font-mono text-3xl font-bold tracking-[0.3em] text-brand-dark">{code}</p>
       </div>
       <p className="mt-1.5 text-sm text-slate-500">{t('login.codeHint')}</p>
+      <p className="mt-3 text-xs font-semibold text-slate-600">{t('login.saveTitle')}</p>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <button type="button" onClick={() => downloadIcs({ title: `Cofinder · ${t('register.titleMain')}`, description: text, place: EVENT_PLACE })}
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300">
+          <CalendarPlus className="h-4 w-4" /> {t('login.saveCalendar')}
+        </button>
+        <a href={mail} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300">
+          <Mail className="h-4 w-4" /> {t('login.saveEmail')}
+        </a>
+      </div>
+      <p className="mt-2 text-xs text-slate-500">{t('login.saveShot')}</p>
     </section>
   )
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Cpu, Download, FileText, KeyRound, Loader2, LogOut, Pause, Play, RefreshCw, Search } from 'lucide-react'
+import { Cpu, Download, Star, FileText, KeyRound, Loader2, LogOut, Pause, Play, RefreshCw, Search } from 'lucide-react'
 import * as api from '../lib/backend'
 import { MOD_PIN } from '../constants'
 import { topicKey } from '../lib/topics'
@@ -178,6 +178,7 @@ function Summaries({ pin, onLogout }) {
       </div>
 
       {!api.isRemote && <Notice>{t('resum.local')}</Notice>}
+      {api.isRemote && <FeedbackSummary pin={pin} />}
       {api.isRemote && notes && <Transcriber pin={pin} pending={notes.filter((n) => !n.transcript).length} onSaved={load} />}
       {error && <Notice>{t(`resum.error.${error}`)}</Notice>}
 
@@ -239,6 +240,58 @@ function Summaries({ pin, onLogout }) {
         </section>
       ))}
     </main>
+  )
+}
+
+/** Valoración del evento: media, reparto y comentarios (sale solo cuando alguien ha valorado y está el SQL) */
+function FeedbackSummary({ pin }) {
+  const { t } = useI18n()
+  const [items, setItems] = useState([])
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    let alive = true
+    const load = () => api.modGetFeedback(pin).then((x) => alive && setItems(x)).catch(() => {})
+    load()
+    const id = setInterval(load, REFRESH_MS)
+    return () => { alive = false; clearInterval(id) }
+  }, [pin])
+  if (!items.length) return null
+  const avg = items.reduce((s, x) => s + x.score, 0) / items.length
+  const comments = items.filter((x) => x.comment)
+  return (
+    <section className="mt-5 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('resum.fbTitle')}</p>
+          <p className="mt-1 flex items-baseline gap-2"><span className="text-3xl font-extrabold">{avg.toFixed(1).replace('.', ',')}</span><span className="text-sm text-slate-500">{t('resum.fbAvg')} · {t('resum.fbCount', { n: items.length })}</span></p>
+        </div>
+        <ul className="flex items-end gap-2" aria-label={t('resum.fbTitle')}>
+          {[1, 2, 3, 4, 5].map((n) => {
+            const c = items.filter((x) => x.score === n).length
+            return (
+              <li key={n} className="flex flex-col items-center gap-1 text-xs text-slate-500">
+                <span className="font-semibold text-ink">{c}</span>
+                <span className="w-6 rounded-t bg-brand" style={{ height: `${4 + (c / items.length) * 40}px` }} />
+                <span className="flex items-center">{n}<Star className="h-3 w-3" /></span>
+              </li>
+            )
+          })}
+        </ul>
+        {comments.length > 0 && (
+          <button onClick={() => setOpen(!open)} className="ml-auto text-sm font-semibold text-brand-dark hover:underline">{open ? '−' : '+'} {comments.length} 💬</button>
+        )}
+      </div>
+      {open && (
+        <ul className="mt-4 space-y-3 border-t border-slate-100 pt-4">
+          {comments.map((x, i) => (
+            <li key={i} className="text-sm">
+              <span className="font-semibold">{x.name}</span> <span className="text-slate-400">· {x.score}/5</span>
+              <p className="mt-0.5 whitespace-pre-line text-slate-700">{x.comment}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
 

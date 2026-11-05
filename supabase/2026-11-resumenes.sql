@@ -16,7 +16,8 @@ begin
       'round', n.round, 'table', n.table_id, 'topic', n.topic,
       'transcript', n.transcript, 'createdAt', n.created_at, 'transcribedAt', n.transcribed_at
     ) order by n.round, n.table_id, p.name)
-    from public.audio_notes n join public.participants p on p.id = n.participant_id), '[]'::jsonb));
+    from public.audio_notes n join public.participants p on p.id = n.participant_id
+    where not p.removed), '[]'::jsonb)); -- las personas eliminadas desde Admin no salen
 end $$;
 
 revoke all on function public.mod_get_notes(text) from public;
