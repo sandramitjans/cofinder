@@ -168,3 +168,19 @@ En modo local los códigos se guardan en el navegador.
 El QR apunta a la dirección de la página. Con `npm run dev` abierto en `localhost`, usa sola la IP del
 ordenador en la wifi; si sale una IP equivocada, fijarla con `VITE_PUBLIC_URL=http://192.168.1.20:5173`
 en el `.env`.
+
+### Día del evento: Preparado y 2 minutos para encontrar la mesa (noviembre 2026)
+
+Flujo: proyector con el QR → el móvil abre «Inicia sesión» (usuario = nombre, contraseña = código) →
+«Estas son las mesas en las que participarás» (mesa y tema de cada ronda) + botón **Preparado** →
+espera con frases. El panel muestra «X de Y preparados» (solo cuentan las personas reales con mesa en la
+ronda 1) y, cuando lo están todos, la ronda 1 empieza sola; «Empezar la sesión» la arranca igualmente.
+
+Cada ronda empieza con todas sus mesas a la vez y `FIND_MINUTES` (2) para encontrar la mesa: el proyector
+muestra todas las mesas con los nombres y la cuenta atrás; el móvil, «Ve a la mesa N». `startedAt` se
+guarda 2 minutos en el futuro, así que la conversación de 15 minutos arranca sola. «Siguiente» durante
+esos 2 minutos los salta. Ya no hay anuncio mesa a mesa.
+
+Con Supabase, ejecutar una vez `supabase/2026-11-preparados.sql` (columna `ready_at`, `set_my_ready`,
+`mod_reset_ready` y `get_my_table` con el plan de la persona). «Volver al principio» y «Borrar el plan»
+ponen a todos como no preparados.

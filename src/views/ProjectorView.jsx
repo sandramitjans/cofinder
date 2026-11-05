@@ -3,7 +3,7 @@ import QRCode from 'qrcode'
 import { ArrowLeft, ChevronLeft, ChevronRight, Coffee, Expand, MapPin, PartyPopper, TimerOff } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { JOIN_HASH, PAUSE_AFTER_ROUND, PAUSE_MINUTES, PUBLIC_URL, ROUND_MINUTES, VIEWS } from '../constants'
+import { FIND_MINUTES, JOIN_HASH, PAUSE_AFTER_ROUND, PAUSE_MINUTES, PUBLIC_URL, ROUND_MINUTES, VIEWS } from '../constants'
 import { roleOf } from '../lib/matching'
 import { useCountdown } from '../lib/useCountdown'
 import Logo from '../components/ui/Logo'
@@ -30,8 +30,12 @@ export default function ProjectorView() {
   const total = event.rounds.length
 
   const pausing = !!currentRound?.pauseStartedAt && !event.finished
-  const talking = !!currentRound?.startedAt && !pausing && !event.finished
-  const timer = useCountdown(talking ? currentRound.startedAt : null)
+  const started = !!currentRound?.startedAt && !pausing && !event.finished
+  const timer = useCountdown(started ? currentRound.startedAt : null)
+  // Primeros minutos de la ronda: todas las mesas con sus nombres para que cada uno encuentre la suya
+  const findTimer = useCountdown(started ? currentRound.startedAt - FIND_MINUTES * 60_000 : null, FIND_MINUTES)
+  const finding = started && !findTimer.done
+  const talking = started
   const pauseTimer = useCountdown(pausing ? currentRound.pauseStartedAt : null, PAUSE_MINUTES)
 
   useEffect(() => {
@@ -77,14 +81,21 @@ export default function ProjectorView() {
       <div key={`talk-${event.round}`} className="flex flex-1 flex-col gap-8">
         <div className="flex items-center justify-center gap-8">
           <span className={`rounded-2xl px-8 py-3 font-mono text-8xl font-bold tabular-nums transition-colors ${
-            timer.done ? 'bg-brand' : timer.remaining <= 60_000 ? 'animate-pulse bg-brand' : 'bg-white text-ink ring-1 ring-slate-200'
+            finding ? 'bg-brand' : timer.done ? 'bg-brand' : timer.remaining <= 60_000 ? 'animate-pulse bg-brand' : 'bg-white text-ink ring-1 ring-slate-200'
           }`}>
-            {timer.label}
+            {finding ? findTimer.label : timer.label}
           </span>
-          <div>
-            <p className="font-display text-4xl font-medium tracking-tight">{t('projector.inProgress', { n: event.round })}</p>
-            <p className="mt-1 text-xl text-slate-500">{event.round < total ? t('projector.nextRound', { n: event.round + 1 }) : t('projector.lastRound')}</p>
-          </div>
+          {finding ? (
+            <div>
+              <p className="font-display text-5xl font-medium tracking-tight">{t('find.projector')}</p>
+              <p className="mt-1 text-xl text-slate-500">{t('projector.roundOf', { n: event.round, total })} · {t('find.left')} {findTimer.label}</p>
+            </div>
+          ) : (
+            <div>
+              <p className="font-display text-4xl font-medium tracking-tight">{t('projector.inProgress', { n: event.round })}</p>
+              <p className="mt-1 text-xl text-slate-500">{event.round < total ? t('projector.nextRound', { n: event.round + 1 }) : t('projector.lastRound')}</p>
+            </div>
+          )}
         </div>
         <div className={`mx-auto grid w-full content-start gap-5 md:grid-cols-2 ${GRID[Math.min(n, 5)]}`}>
           {currentRound.tables.map((tb, i) => (
@@ -201,7 +212,7 @@ export default function ProjectorView() {
 
       {talking && (
         <div className="h-2 bg-slate-200">
-          <div className="h-full bg-brand transition-all duration-1000" style={{ width: `${timer.progress * 100}%` }} />
+          <div className="h-full bg-brand transition-all duration-1000" style={{ width: `${(finding ? findTimer.progress : timer.progress) * 100}%` }} />
         </div>
       )}
     </div>

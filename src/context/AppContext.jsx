@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { VIEWS, MODERATOR_VIEWS, isModHash, JOIN_HASH, MOD_PIN, PAUSE_AFTER_ROUND } from '../constants'
+import { VIEWS, MODERATOR_VIEWS, isModHash, JOIN_HASH, MOD_PIN, PAUSE_AFTER_ROUND, FIND_MINUTES } from '../constants'
 import { demoParticipants } from '../lib/demo'
 import * as api from '../lib/backend'
 import { clearNotes } from '../lib/audioNotes'
@@ -31,6 +31,7 @@ const EMPTY_EVENT = { round: 0, rounds: [], finished: false }
 const MOD_POLL_MS = 15000
 const historyKey = (id) => `cofinder:history:${id}`
 const TABLE_POLL_MS = 30000
+const FIND_MS = FIND_MINUTES * 60_000
 
 const read = (storage, key, fallback) => {
   try { return JSON.parse(storage.getItem(key)) ?? fallback } catch { return fallback }
@@ -242,6 +243,34 @@ export function AppProvider({ children }) {
     if (JSON.stringify(prev[event.round]) !== JSON.stringify(entry)) write(localStorage, historyKey(myId), next)
     syncHistory(next)
   }, [myId, event.round, event.finished, myTableNow, participants, syncHistory])
+
+  /* ---------- Día del evento: mis mesas de todas las rondas y «Preparado» ---------- */
+  const [readyOverride, setReadyOverride] = useState(null) // respuesta inmediata al pulsar, antes de que llegue el servidor
+  const remoteReady = myTable?.ready
+  useEffect(() => { setReadyOverride(null) }, [remoteReady, currentUserId])
+  let myPlan, ready
+  if (!REMOTE) {
+    myPlan = event.rounds.map((r, i) => {
+      const tb = r.plan.find((x) => x.members.includes(currentUserId))
+      return tb ? { round: i + 1, table: tb.id, topic: tb.topic } : null
+    }).filter(Boolean)
+    ready = !!currentUser?.readyAt
+  } else {
+    myPlan = myTable?.plan ?? []
+    ready = readyOverride ?? !!myTable?.ready
+  }
+  const setReady = useCallback(async (value = true) => {
+    if (!currentUserId) return false
+    if (REMOTE) {
+      setReadyOverride(value)
+      try { await api.setMyReady(currentUserId, value) } catch { setReadyOverride(null); return false }
+      api.ping('ready')
+      refreshMine()
+    } else {
+      setLocalParticipants((prev) => prev.map((p) => (p.id === currentUserId ? { ...p, readyAt: value ? Date.now() : null } : p)))
+    }
+    return true
+  }, [currentUserId, refreshMine])
 
   /* ---------- Navegación ---------- */
   const navigate = useCallback((next) => {
@@ -491,19 +520,30 @@ export function AppProvider({ children }) {
     return tables
   }), [editPlanRound])
 
-  // Siguiente paso de la soirée (clic, espacio, flecha o mando de presentación):
-  // portada del tour → anuncio de cada match → chrono → (pausa tras la ronda 3) → ronda siguiente → fin
+  // Empezar una ronda: todas sus mesas a la vez (proyector con todos los nombres, cada móvil con la
+  // suya) y FIND_MINUTES para encontrar la mesa. `startedAt` queda en el futuro: hasta esa hora es
+  // «encuentra tu mesa» y a partir de ella corre la conversación, sin que nadie tenga que pulsar nada.
+  const enterRound = (e, n) => patchRound({ ...e, round: n }, n - 1, {
+    tables: e.rounds[n - 1].plan, revealed: e.rounds[n - 1].plan.length, startedAt: Date.now() + FIND_MS, pauseStartedAt: null,
+  })
+
+  // Siguiente paso (clic, espacio, flecha o mando de presentación):
+  // encontrar la mesa (2 min) → conversación → (pausa tras la ronda 3) → ronda siguiente → fin
   const advance = useCallback(() => changeEvent((e) => {
     if (e.finished || !e.rounds.length) return e
-    if (!e.round) return { ...e, round: 1 }
+    if (!e.round) return enterRound(e, 1)
     const i = e.round - 1
     const r = e.rounds[i]
-    if (r.revealed < r.plan.length) return patchRound(e, i, { revealed: r.revealed + 1, tables: r.plan.slice(0, r.revealed + 1) })
-    if (!r.startedAt) return patchRound(e, i, { startedAt: Date.now() })
+    if (!r.startedAt) return enterRound(e, e.round)
+    if (r.startedAt > Date.now()) return patchRound(e, i, { startedAt: Date.now() }) // ya están todos sentados
     if (e.round === PAUSE_AFTER_ROUND && e.round < e.rounds.length && !r.pauseStartedAt) return patchRound(e, i, { pauseStartedAt: Date.now() })
-    if (e.round < e.rounds.length) return { ...e, round: e.round + 1 }
+    if (e.round < e.rounds.length) return enterRound(e, e.round + 1)
     return { ...e, finished: true }
   }), [changeEvent])
+
+  // Solo desde el principio: lo usa el arranque automático cuando todos están «Preparados»
+  // (si hay dos paneles abiertos, el segundo no se salta la búsqueda de mesa)
+  const startEvent = useCallback(() => changeEvent((e) => (e.round || e.finished || !e.rounds.length ? e : enterRound(e, 1))), [changeEvent])
 
   // Deshace el último paso (por si se pulsa una vez de más)
   const stepBack = useCallback(() => changeEvent((e) => {
@@ -512,9 +552,9 @@ export function AppProvider({ children }) {
     const i = e.round - 1
     const r = e.rounds[i]
     if (r.pauseStartedAt) return patchRound(e, i, { pauseStartedAt: null })
-    if (r.startedAt) return patchRound(e, i, { startedAt: null })
-    if (r.revealed > 0) return patchRound(e, i, { revealed: r.revealed - 1, tables: r.plan.slice(0, r.revealed - 1) })
-    return { ...e, round: e.round - 1 }
+    if (r.startedAt && r.startedAt <= Date.now()) return patchRound(e, i, { startedAt: Date.now() + FIND_MS })
+    const back = patchRound(e, i, { tables: [], revealed: 0, startedAt: null })
+    return { ...back, round: e.round - 1 }
   }), [changeEvent])
 
   const restartTimer = useCallback(() => changeEvent((e) => {
@@ -526,22 +566,40 @@ export function AppProvider({ children }) {
 
   const finishEvent = useCallback(() => changeEvent((e) => ({ ...e, finished: true })), [changeEvent])
   // Vuelve al principio conservando el plan (para ensayar), o borra el plan entero
-  const resetEvent = useCallback(() => changeEvent((e) => ({ round: 0, finished: false, rounds: e.rounds.map((r) => newRound(r.plan)) })), [changeEvent])
-  const clearPlan = useCallback(() => changeEvent(() => EMPTY_EVENT), [changeEvent])
+  // Todos vuelven a «no preparados» (al reiniciar o borrar el plan)
+  const resetReady = useCallback(() => {
+    if (REMOTE) return modAction((pin) => api.modResetReady(pin))
+    setLocalParticipants((prev) => prev.map((p) => (p.readyAt ? { ...p, readyAt: null } : p)))
+  }, [modAction])
+  const resetEvent = useCallback(() => {
+    resetReady()
+    return changeEvent((e) => ({ round: 0, finished: false, rounds: e.rounds.map((r) => newRound(r.plan)) }))
+  }, [changeEvent, resetReady])
+  const clearPlan = useCallback(() => {
+    resetReady()
+    return changeEvent(() => EMPTY_EVENT)
+  }, [changeEvent, resetReady])
+
+  // Arranque automático: en cuanto todas las personas reales con mesa en la ronda 1 han pulsado «Preparado»
+  const firstRoundPeople = event.rounds[0]?.plan.flatMap((t) => t.members) ?? []
+  const realPeople = participants.filter((p) => !p.demo && firstRoundPeople.includes(p.id))
+  const readyCount = realPeople.filter((p) => p.readyAt).length
+  const allReady = modUnlocked && !event.round && !event.finished && realPeople.length > 0 && readyCount === realPeople.length
+  useEffect(() => { if (allReady) startEvent() }, [allReady, startEvent])
 
   const value = useMemo(() => ({
     remote: REMOTE,
     view, navigate,
     participants, currentUser, event, currentRound, seatedEver,
     modLoading: REMOTE && modUnlocked && !modState,
-    register, login, joinedLive, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, joinedLive, myPlan, ready, setReady, readyCount, readyTotal: realPeople.length, startEvent, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     modUnlocked, gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
   }), [view, navigate, participants, currentUser, event, currentRound, seatedEver, modUnlocked, modState,
-    register, login, joinedLive, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, joinedLive, myPlan, ready, setReady, readyCount, realPeople.length, startEvent, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     gateOpen, openGate, closeGate, unlockModerator, lockModerator,

@@ -4,23 +4,22 @@ import { EVENT_DATE } from '../constants'
 import WaitingView from './WaitingView'
 import RoundCardView from './RoundCardView'
 import LobbyView from './LobbyView'
+import MyTablesView from './MyTablesView'
 
 /**
  * Vista pública de un participante ya registrado:
  *  - por defecto → su perfil, sus mesas y la cuenta atrás al día del evento
- *  - si ha entrado con nombre + código (QR del proyector) o ya es el día del evento, y la sesión
- *    aún no ha empezado → sala de espera con frases que van cambiando («esperando a que todo el mundo se conecte…»)
- *  - solo el día del evento, y solo si la persona YA tiene mesa asignada en algún tour
- *    → su tarjeta de mesa (que cambia sola en cada tour) o el cierre del evento
- *
- * Así, quien se registra mientras hay tours de prueba (o se registra tarde) nunca ve
- * pantallas del día del evento sin tener mesa.
+ *  - día del evento (entró con nombre + código tras escanear el QR, o ya es el día):
+ *      mis mesas de cada ronda + «Preparado» → espera con frases hasta que todos estén preparados
+ *  - en cuanto empieza la ronda y tiene mesa → «Encuentra tu mesa» (2 min) → ronda con cuenta atrás
  */
 export default function HomeView() {
-  const { event, seatedEver, joinedLive } = useApp()
-  const [showProfile, setShowProfile] = useState(false)
+  const { event, seatedEver, joinedLive, ready } = useApp()
+  const [peek, setPeek] = useState(false) // ya preparado, repasando sus mesas
   if (event.round && seatedEver) return <RoundCardView />
-  const lobby = !event.finished && (joinedLive || Date.now() >= EVENT_DATE)
-  if (lobby && !showProfile) return <LobbyView onProfile={() => setShowProfile(true)} />
-  return <WaitingView onLobby={lobby ? () => setShowProfile(false) : null} />
+  const eventDay = !event.finished && (joinedLive || Date.now() >= EVENT_DATE)
+  if (!eventDay) return <WaitingView />
+  if (!ready) return <MyTablesView />
+  if (peek) return <MyTablesView onBack={() => setPeek(false)} />
+  return <LobbyView onTables={() => setPeek(true)} />
 }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Check, ChevronDown, Copy, Download, Hourglass, Lightbulb, Mic, Sparkles, Square, Timer, Users } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { TOPIC_EMOJI, TOTAL_ROUNDS } from '../constants'
+import { FIND_MINUTES, TOPIC_EMOJI, TOTAL_ROUNDS } from '../constants'
 import { roleOf } from '../lib/matching'
 import { isCustom, topicKey } from '../lib/topics'
 import { icebreakerFor } from '../lib/icebreakers'
@@ -29,13 +29,17 @@ const expertModeOf = (participants) => participants.some((p) => p.offers?.length
  */
 export default function RoundCardView() {
   const { currentUser, currentRound, event } = useApp()
-  const timer = useCountdown(event.finished ? null : currentRound?.startedAt)
+  const startedAt = event.finished ? null : currentRound?.startedAt
+  const timer = useCountdown(startedAt)
+  // Los primeros minutos de cada ronda son para encontrar la mesa (la conversación empieza en `startedAt`)
+  const findTimer = useCountdown(startedAt ? startedAt - FIND_MINUTES * 60_000 : null, FIND_MINUTES)
   const table = currentRound?.tables.find((x) => x.members.includes(currentUser?.id))
 
   let scene, key
   if (event.finished) { scene = <Closing />; key = 'end' }
   else if (!table) { scene = <Waiting />; key = `wait-${event.round}` }
-  else if (!currentRound.startedAt) { scene = <GoToTable table={table} />; key = `go-${event.round}` }
+  else if (!startedAt) { scene = <GoToTable table={table} />; key = `go-${event.round}` }
+  else if (!findTimer.done) { scene = <GoToTable table={table} findTimer={findTimer} />; key = `find-${event.round}` }
   else if (!timer.done) { scene = <ActiveRound table={table} timer={timer} />; key = `talk-${event.round}` }
   else { scene = <TimeUp table={table} />; key = `up-${event.round}` }
 
@@ -70,18 +74,29 @@ function Waiting() {
   )
 }
 
-function GoToTable({ table }) {
+function GoToTable({ table, findTimer }) {
   const { event } = useApp()
   const { t } = useI18n()
   return (
     <>
-      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('round.nextRound', { n: event.round, total: TOTAL_ROUNDS })}</p>
+      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('round.nextRound', { n: event.round, total: TOTAL_ROUNDS })}{findTimer && <> · {t('find.title')}</>}</p>
       <h1 className="mt-1 font-display text-4xl font-medium tracking-tight">{t('round.goTo', { n: table.id })}</h1>
+      {findTimer && (
+        <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+          <p className="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><Timer className="h-3.5 w-3.5" /> {t('find.left')}</p>
+          <p className="font-display text-6xl font-medium tabular-nums tracking-tight text-brand">{findTimer.label}</p>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full rounded-full bg-brand transition-[width] duration-1000" style={{ width: `${(1 - findTimer.progress) * 100}%` }} />
+          </div>
+        </section>
+      )}
       <TopicCard table={table} />
       <Companions table={table} />
-      <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm text-slate-500">
-        <Timer className="h-4 w-4" /> {t('round.startsSoon')}
-      </p>
+      {!findTimer && (
+        <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm text-slate-500">
+          <Timer className="h-4 w-4" /> {t('round.startsSoon')}
+        </p>
+      )}
       <IcebreakerFor topicId={table.topic} />
     </>
   )

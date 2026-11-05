@@ -33,7 +33,8 @@ export const fromRow = (r) => r && ({
   customTopics: r.custom_topics ?? [],
   superpowers: r.superpowers ?? [],
   demo: !!r.demo,
-  accessCode: r.access_code ?? null, // solo llega para la propia persona y para la moderadora
+  accessCode: r.access_code ?? null,
+  readyAt: r.ready_at ? Date.parse(r.ready_at) : null, // pulsó «Preparado» el día del evento // solo llega para la propia persona y para la moderadora
   createdAt: r.created_at ? Date.parse(r.created_at) : undefined,
 })
 
@@ -81,9 +82,15 @@ export async function fetchMyTable(id) {
     startedAt: d.startedAt ?? null,
     seatedEver: !!d.seatedEver,
     table: d.table ?? null,
+    ready: !!d.ready,
+    plan: d.plan ?? null, // [{ round, table, topic }] · null si falta 2026-11-preparados.sql
     people: (d.people ?? []).map(fromRow),
   }
 }
+
+/** «Preparado» el día del evento (supabase/2026-11-preparados.sql) */
+export const setMyReady = (id, ready) => rpc('set_my_ready', { p_id: id, p_ready: ready })
+export const modResetReady = (pin) => rpc('mod_reset_ready', { p_pin: pin })
 
 /** Entrar desde otro dispositivo (el móvil) con el nombre y el código de 4 cifras.
  *  Devuelve { id, secret }; lanza un error con code 'invalid' | 'locked'. */

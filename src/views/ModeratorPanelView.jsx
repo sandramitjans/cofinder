@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { PAUSE_AFTER_ROUND, PAUSE_MINUTES, TOPIC_FAMILIES, VIEWS } from '../constants'
+import { FIND_MINUTES, PAUSE_AFTER_ROUND, PAUSE_MINUTES, TOPIC_FAMILIES, VIEWS } from '../constants'
 import { planStats, tableRange } from '../lib/matching'
 import { MAX_CUSTOM_LENGTH, makeEventTopic, topicKey, topicsWithLevel } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
@@ -21,7 +21,7 @@ export default function ModeratorPanelView() {
     navigate, lockModerator, participants, currentUser, event, currentRound,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
-    removeParticipant, seedDemo, clearDemo,
+    removeParticipant, seedDemo, clearDemo, readyCount, readyTotal,
     eventTopics, addEventTopic, removeEventTopic,
   } = useApp()
   const { t, topic, country, superpower } = useI18n()
@@ -36,17 +36,18 @@ export default function ModeratorPanelView() {
 
   // Fase del tour en pantalla
   const r = live ? currentRound : null
-  const phase = !r ? null : r.pauseStartedAt ? 'pause' : r.startedAt ? 'talk' : r.revealed ? 'reveal' : 'intro'
-  const timer = useCountdown(phase === 'talk' ? r.startedAt : null)
+  const timer = useCountdown(r?.startedAt && !r.pauseStartedAt ? r.startedAt : null)
+  const findTimer = useCountdown(r?.startedAt && !r.pauseStartedAt ? r.startedAt - FIND_MINUTES * 60_000 : null, FIND_MINUTES)
+  const phase = !r ? null : r.pauseStartedAt ? 'pause' : r.startedAt ? (findTimer.done ? 'talk' : 'find') : r.revealed ? 'reveal' : 'intro'
   const pauseTimer = useCountdown(phase === 'pause' ? r.pauseStartedAt : null, PAUSE_MINUTES)
-  const shownTimer = phase === 'pause' ? pauseTimer : timer
+  const shownTimer = phase === 'pause' ? pauseTimer : phase === 'find' ? findTimer : timer
 
   // Qué hará el botón «Suivant»
   let nextLabel = t('panel.launch')
   if (event.finished) nextLabel = null
   else if (r) {
-    if (r.revealed < r.plan.length) nextLabel = t('panel.nextReveal', { k: r.revealed + 1, n: r.plan.length })
-    else if (!r.startedAt) nextLabel = t('panel.nextTimer')
+    if (!r.startedAt) nextLabel = t('panel.nextTimer')
+    else if (phase === 'find') nextLabel = t('panel.skipFind')
     else if (event.round === PAUSE_AFTER_ROUND && event.round < total && !r.pauseStartedAt) nextLabel = t('panel.nextPause')
     else if (event.round < total) nextLabel = t('panel.nextRound', { n: event.round + 1 })
     else nextLabel = t('panel.finish')
@@ -88,10 +89,10 @@ export default function ModeratorPanelView() {
                 <p className="text-xs font-bold uppercase tracking-widest text-brand-dark">{t('panel.control')}</p>
                 <h1 className="mt-1 text-2xl font-bold tracking-tight">{status}</h1>
               </div>
-              {(phase === 'talk' || phase === 'pause') && (
+              {(phase === 'talk' || phase === 'pause' || phase === 'find') && (
                 <div className={`rounded-xl px-4 py-2 text-right ${shownTimer.done ? 'bg-brand' : 'bg-brand-soft text-brand-dark'}`}>
                   <p className="font-mono text-3xl font-bold tabular-nums">{shownTimer.label}</p>
-                  <p className="text-[11px] font-medium opacity-70">{shownTimer.done ? t('panel.timeUp') : phase === 'pause' ? t('panel.pauseLeft') : t('panel.remaining')}</p>
+                  <p className="text-[11px] font-medium opacity-70">{shownTimer.done ? t('panel.timeUp') : phase === 'pause' ? t('panel.pauseLeft') : phase === 'find' ? t('panel.findLeft') : t('panel.remaining')}</p>
                 </div>
               )}
             </div>
@@ -114,6 +115,12 @@ export default function ModeratorPanelView() {
                   )
                 })}
               </ol>
+            )}
+
+            {hasPlan && !event.round && !event.finished && readyTotal > 0 && (
+              <p className="mt-5 flex items-center gap-2 rounded-xl bg-mint-soft px-3.5 py-2.5 text-sm font-semibold text-mint-dark">
+                <CheckCircle2 className="h-4 w-4 shrink-0" /> {t('panel.readyCount', { n: readyCount, total: readyTotal })}
+              </p>
             )}
 
             <div className="mt-6 flex flex-wrap gap-2">

@@ -45,6 +45,8 @@ export const MAX_TABLE_SIZE = 5
 export const MAX_TABLES = 5
 export const PAUSE_AFTER_ROUND = 3
 export const PAUSE_MINUTES = 10
+// Al empezar cada ronda: minutos para encontrar la mesa antes de que arranque la conversación
+export const FIND_MINUTES = 2
 export const MAX_TAGS = 5
 // Paso 2 del formulario: una sola selección de temas de interés (se guarda en `needs`)
 export const MAX_INTERESTS = 5
