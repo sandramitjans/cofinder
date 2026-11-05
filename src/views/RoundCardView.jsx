@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, ChevronDown, Copy, Download, Hourglass, Lightbulb, Mic, Sparkles, Square, Timer, Users } from 'lucide-react'
+import { Check, ChevronDown, Copy, Download, Hourglass, Lightbulb, MapPin, Mic, RotateCcw, Send, Sparkles, Square, Timer, TimerOff, Users } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { FIND_MINUTES, TOPIC_EMOJI, TOTAL_ROUNDS } from '../constants'
@@ -7,13 +7,14 @@ import { roleOf } from '../lib/matching'
 import { isCustom, topicKey } from '../lib/topics'
 import { icebreakerFor } from '../lib/icebreakers'
 import { useCountdown } from '../lib/useCountdown'
-import { MAX_NOTE_SECONDS, canRecord, extensionOf, getNote, recorderMime, saveNote } from '../lib/audioNotes'
+import { MAX_NOTE_SECONDS, canRecord, extensionOf, getNote, recorderMime } from '../lib/audioNotes'
 import * as api from '../lib/backend'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
 import RoleBadge from '../components/ui/RoleBadge'
 import LangSwitch from '../components/ui/LangSwitch'
+import LobbyView from './LobbyView'
 import PublicFooter from '../components/layout/PublicFooter'
 
 const emojiOf = (id) => (isCustom(id) ? '💬' : TOPIC_EMOJI[id] ?? '💬')
@@ -28,7 +29,8 @@ const expertModeOf = (participants) => participants.some((p) => p.offers?.length
  *  - evento terminado → «Gracias por compartir»: tus conversaciones ronda a ronda
  */
 export default function RoundCardView() {
-  const { currentUser, currentRound, event } = useApp()
+  const { currentUser, currentRound, event, noteSent } = useApp()
+  const { t } = useI18n()
   const startedAt = event.finished ? null : currentRound?.startedAt
   const timer = useCountdown(startedAt)
   // Los primeros minutos de cada ronda son para encontrar la mesa (la conversación empieza en `startedAt`)
@@ -39,8 +41,9 @@ export default function RoundCardView() {
   if (event.finished) { scene = <Closing />; key = 'end' }
   else if (!table) { scene = <Waiting />; key = `wait-${event.round}` }
   else if (!startedAt) { scene = <GoToTable table={table} />; key = `go-${event.round}` }
-  else if (!findTimer.done) { scene = <GoToTable table={table} findTimer={findTimer} />; key = `find-${event.round}` }
+  else if (!findTimer.done) { scene = <FindTable table={table} findTimer={findTimer} />; key = `find-${event.round}` }
   else if (!timer.done) { scene = <ActiveRound table={table} timer={timer} />; key = `talk-${event.round}` }
+  else if (noteSent) { scene = <LobbyView embedded badge={t('note.sentBadge')} />; key = `hold-${event.round}` }
   else { scene = <TimeUp table={table} />; key = `up-${event.round}` }
 
   return (
@@ -70,6 +73,33 @@ function Waiting() {
       <div className="mt-8 grid h-40 w-40 place-items-center rounded-full border-[6px] border-brand bg-white shadow-lg shadow-brand/10">
         <Hourglass className="h-12 w-12 animate-pulse text-brand" />
       </div>
+    </div>
+  )
+}
+
+/** «Encuentra tu mesa»: círculo con la cuenta atrás, número de mesa + tema y los compañeros */
+function FindTable({ table, findTimer }) {
+  const { event } = useApp()
+  const { t, topic } = useI18n()
+  const desc = useTopicDesc(table.topic)
+  return (
+    <div className="flex flex-col items-center text-center">
+      <span className="rounded-full bg-brand-soft px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-dark">{t('round.badge', { n: event.round, total: TOTAL_ROUNDS })}</span>
+      <h1 className="mt-4 font-display text-4xl font-medium tracking-tight">{t('find.title')}</h1>
+      <div className="mt-6 grid h-48 w-48 place-items-center rounded-full border-[7px] border-brand bg-white shadow-xl shadow-brand/15">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t('find.startsIn')}</p>
+          <p className="font-display text-5xl font-medium tabular-nums tracking-tight text-ink">{findTimer.label}</p>
+        </div>
+      </div>
+      <section className="mt-7 w-full rounded-2xl bg-brand p-5 text-left text-white shadow-lg shadow-brand/20">
+        <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/80"><MapPin className="h-3.5 w-3.5" /> {t('round.table', { n: table.id })}</p>
+        <h2 className="mt-1 font-display text-2xl font-medium leading-tight">
+          <span aria-hidden className="mr-1.5">{emojiOf(table.topic)}</span>{topic(table.topic)}
+        </h2>
+        {desc && <p className="mt-1.5 text-sm text-white/85">{desc}</p>}
+      </section>
+      <div className="w-full text-left"><Companions table={table} /></div>
     </div>
   )
 }
@@ -186,16 +216,13 @@ function Icebreaker({ topicId, desc }) {
 }
 
 function TimeUp({ table }) {
-  const { event, currentUser } = useApp()
+  const { event } = useApp()
   const { t } = useI18n()
   return (
     <div className="flex flex-1 flex-col">
       <span className="self-start rounded-full bg-ink px-3 py-1 text-xs font-bold text-white">{t('round.roundTable', { n: event.round, k: table.id })}</span>
       <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <h1 className="font-display text-4xl font-medium tracking-tight">{t('round.timeUp')}</h1>
-        <p className="mt-2 max-w-sm text-slate-600">{t('round.recordPrompt')}</p>
-        <NoteRecorder userId={currentUser.id} round={event.round} tableId={table.id} />
-        <p className="mt-8 text-sm text-slate-500">{event.round < TOTAL_ROUNDS ? t('round.nextSoon') : t('round.lastDone')}</p>
+        <NoteRecorder table={table} />
       </div>
     </div>
   )
@@ -326,18 +353,21 @@ function Companions({ table }) {
 }
 
 /** Grabación de la nota de audio: un toque para empezar, otro para parar (o se para sola al minuto) */
-function NoteRecorder({ userId, round, tableId }) {
+/**
+ * Nota de audio al acabar la ronda: grabar (máx. 1 min) → escuchar / regrabar → continuar (se envía).
+ * Hasta que todos la han enviado, el móvil se queda en espera y el proyector en «on hold».
+ */
+function NoteRecorder({ table }) {
+  const { event, submitNote } = useApp()
   const { t } = useI18n()
-  const [state, setState] = useState('idle') // idle · recording · saving · saved · error · unsupported
-  const [uploaded, setUploaded] = useState(false)
+  const [state, setState] = useState(() => (canRecord() ? 'idle' : 'unsupported')) // idle · recording · review · sending · error · unsupported
+  const [failed, setFailed] = useState(false)
   const [seconds, setSeconds] = useState(0)
+  const [blob, setBlob] = useState(null)
+  const url = useObjectUrl(blob)
   const rec = useRef(null)
 
-  useEffect(() => {
-    if (!canRecord()) setState('unsupported')
-    getNote(userId, round).then((n) => { if (n) { setState('saved'); setUploaded(n.uploaded) } })
-    return () => stopTracks()
-  }, [userId, round])
+  useEffect(() => () => stopTracks(), [])
 
   useEffect(() => {
     if (state !== 'recording') return
@@ -357,17 +387,14 @@ function NoteRecorder({ userId, round, tableId }) {
       const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined)
       const chunks = []
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data)
-      recorder.onstop = async () => {
+      recorder.onstop = () => {
         stopTracks()
-        setState('saving')
-        const blob = new Blob(chunks, { type: recorder.mimeType || mime || 'audio/webm' })
-        const res = await saveNote({ userId, round, tableId, blob })
-        if (api.isRemote && res.uploaded) api.ping('note')
-        setUploaded(res.uploaded)
-        setState('saved')
+        setBlob(new Blob(chunks, { type: recorder.mimeType || mime || 'audio/webm' }))
+        setState('review')
       }
       rec.current = { recorder, stream }
       setSeconds(0)
+      setFailed(false)
       recorder.start()
       setState('recording')
     } catch {
@@ -379,31 +406,53 @@ function NoteRecorder({ userId, round, tableId }) {
     if (rec.current?.recorder.state === 'recording') rec.current.recorder.stop()
   }
 
-  if (state === 'unsupported') return <p className="mt-8 text-sm text-slate-500">{t('round.noMic')}</p>
-  if (state === 'saved') {
-    return (
-      <div className="mt-8 flex flex-col items-center gap-2">
-        <span className="grid h-14 w-14 place-items-center rounded-full bg-mint-soft text-mint-dark"><Check className="h-7 w-7" /></span>
-        <p className="font-semibold">{t('round.noteDone')}</p>
-        <p className="text-sm text-slate-500">{uploaded || !api.isRemote ? t('round.noteSavedHint') : t('round.noteLocalOnly')}</p>
-        <button type="button" onClick={start} className="mt-1 text-sm font-semibold text-brand-dark underline-offset-4 hover:underline">{t('round.recordAgain')}</button>
-      </div>
-    )
+  const send = async () => {
+    setState('sending')
+    const res = await submitNote({ round: event.round, tableId: table.id, topic: table.topic, blob })
+    if (api.isRemote && !res.uploaded) { setFailed(true); setState('review') }
+    // si ha ido bien, la pantalla cambia sola a la espera
   }
+
+  if (state === 'unsupported') return <p className="text-sm text-slate-500">{t('round.noMic')}</p>
+
   if (state === 'recording') {
     const left = MAX_NOTE_SECONDS - seconds
     return (
-      <div className="mt-8 flex w-full flex-col items-center gap-3">
-        <p className="font-display text-5xl font-medium tabular-nums text-brand">0:{String(left).padStart(2, '0')}</p>
-        <Button type="button" onClick={stop} icon={Square} className="w-full py-4 text-base">{t('round.stop')}</Button>
+      <div className="flex w-full flex-col items-center">
+        <p className="text-xs font-bold uppercase tracking-wider text-brand-dark">{t('note.recording')}</p>
+        <div className="relative mt-6 grid h-40 w-40 place-items-center">
+          <span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-brand/20" />
+          <span className="relative grid h-32 w-32 place-items-center rounded-full bg-brand text-white shadow-xl shadow-brand/30"><Mic className="h-12 w-12" /></span>
+        </div>
+        <p className="mt-6 font-display text-5xl font-medium tabular-nums text-ink">0:{String(left).padStart(2, '0')}</p>
+        <p className="mt-2 max-w-xs text-sm text-slate-500">{t('note.hint')}</p>
+        <Button type="button" onClick={stop} icon={Square} className="mt-8 w-full py-4 text-base">{t('round.stop')}</Button>
       </div>
     )
   }
+
+  if (state === 'review' || state === 'sending') {
+    return (
+      <div className="flex w-full flex-col items-center">
+        <span className="grid h-16 w-16 place-items-center rounded-full bg-mint-soft text-mint-dark"><Check className="h-8 w-8" /></span>
+        <h1 className="mt-4 font-display text-3xl font-medium tracking-tight">{t('note.reviewTitle')}</h1>
+        <p className="mt-2 max-w-xs text-slate-600">{t('note.reviewText')}</p>
+        <audio controls src={url ?? undefined} className="mt-6 w-full" />
+        {failed && <p role="alert" className="mt-4 w-full rounded-xl bg-brand-soft px-3.5 py-3 text-sm font-semibold text-brand-dark">{t('note.sendError')}</p>}
+        <Button type="button" onClick={send} disabled={state === 'sending'} icon={Send} className="mt-6 w-full py-4 text-base">
+          {state === 'sending' ? t('note.sending') : t('note.continue')}
+        </Button>
+        <Button type="button" variant="outline" onClick={start} disabled={state === 'sending'} icon={RotateCcw} className="mt-2 w-full py-3.5 text-base">{t('round.recordAgain')}</Button>
+      </div>
+    )
+  }
+
   return (
-    <div className="mt-8 w-full">
-      <Button type="button" onClick={start} icon={Mic} disabled={state === 'saving'} className="w-full py-4 text-base">
-        {state === 'saving' ? t('register.saving') : t('round.record')}
-      </Button>
+    <div className="flex w-full flex-col items-center">
+      <span className="grid h-20 w-20 place-items-center rounded-full bg-ink text-white"><TimerOff className="h-9 w-9" /></span>
+      <h1 className="mt-5 font-display text-4xl font-medium tracking-tight">{t('round.timeUp')}</h1>
+      <p className="mt-2 max-w-sm text-slate-600">{t('round.recordPrompt')}</p>
+      <Button type="button" onClick={start} icon={Mic} className="mt-8 w-full py-4 text-base">{t('round.record')}</Button>
       {state === 'error' && <p role="alert" className="mt-3 text-sm font-semibold text-brand-dark">{t('round.micError')}</p>}
     </div>
   )

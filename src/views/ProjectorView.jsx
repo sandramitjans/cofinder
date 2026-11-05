@@ -23,7 +23,7 @@ const BACK_KEYS = ['ArrowLeft', 'PageUp']
  * La moderadora avanza con un clic, la barra espaciadora, las flechas o un mando de presentación.
  */
 export default function ProjectorView() {
-  const { navigate, participants, event, currentRound, advance, stepBack } = useApp()
+  const { navigate, participants, event, currentRound, advance, stepBack, notedCount, notedTotal } = useApp()
   const { t, topic, country } = useI18n()
   const byId = new Map(participants.map((p) => [p.id, p]))
   const expertMode = participants.some((p) => p.offers?.length)
@@ -131,6 +131,11 @@ export default function ProjectorView() {
               <p className="mt-4 text-3xl text-slate-600">
                 {event.round === total ? t('projector.lastDone') : event.round === currentPauseRound(total) ? t('projector.toPause') : t('projector.changeTables', { n: event.round + 1 })}
               </p>
+              {/* «On hold»: esperando a que todas las mesas envíen su nota de audio */}
+              <div aria-hidden className="mt-12 flex items-center gap-4">
+                {[0, 1, 2].map((d) => <span key={d} className="h-5 w-5 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: `${d * 160}ms` }} />)}
+              </div>
+              {notedTotal > 0 && <p className="mt-8 text-2xl font-semibold text-slate-500">{t('projector.notesCount', { n: notedCount, total: notedTotal })}</p>}
             </div>
           </div>
         )}

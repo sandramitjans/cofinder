@@ -184,3 +184,15 @@ esos 2 minutos los salta. Ya no hay anuncio mesa a mesa.
 Con Supabase, ejecutar una vez `supabase/2026-11-preparados.sql` (columna `ready_at`, `set_my_ready`,
 `mod_reset_ready` y `get_my_table` con el plan de la persona). «Volver al principio» y «Borrar el plan»
 ponen a todos como no preparados.
+
+### Notas de audio al final de cada ronda (noviembre 2026)
+
+Al acabar los 15 minutos, cada móvil pasa a «Tiempo terminado» → grabar (máx. 1 minuto: de qué se ha
+hablado, aprendizajes y highlight) → escuchar / volver a grabar → «Continuar» (sube el audio y lo
+registra) → espera con frases. El proyector se queda en «on hold» con «X de Y notas enviadas». Cuando
+todas las personas reales de la ronda han enviado la suya, el panel pasa solo a lo siguiente (ronda
+siguiente con sus 2 minutos para encontrar la mesa, la pausa tras la ronda 3, o el final).
+
+Con Supabase, ejecutar una vez `supabase/2026-11-notas-audio.sql` (tabla `audio_notes` con la ruta del
+audio y su `transcript`, `submit_audio_note`, `mod_clear_notes`). La transcripción la hará un
+transcriptor con Whisper en el servidor (pendiente).

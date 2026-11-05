@@ -83,6 +83,7 @@ export async function fetchMyTable(id) {
     seatedEver: !!d.seatedEver,
     table: d.table ?? null,
     ready: !!d.ready,
+    notes: d.notes ?? [], // rondas en las que ya envió su nota de audio
     plan: d.plan ?? null, // [{ round, table, topic }] · null si falta 2026-11-preparados.sql
     people: (d.people ?? []).map(fromRow),
   }
@@ -91,6 +92,11 @@ export async function fetchMyTable(id) {
 /** «Preparado» el día del evento (supabase/2026-11-preparados.sql) */
 export const setMyReady = (id, ready) => rpc('set_my_ready', { p_id: id, p_ready: ready })
 export const modResetReady = (pin) => rpc('mod_reset_ready', { p_pin: pin })
+
+/** Nota de audio validada (supabase/2026-11-notas-audio.sql): el audio ya está en Storage en `path` */
+export const submitAudioNote = ({ id, round, tableId, topic, path }) =>
+  rpc('submit_audio_note', { p_id: id, p_round: round, p_table: tableId ?? null, p_topic: topic ?? null, p_path: path })
+export const modClearNotes = (pin) => rpc('mod_clear_notes', { p_pin: pin })
 
 /** Entrar desde otro dispositivo (el móvil) con el nombre y el código de 4 cifras.
  *  Devuelve { id, secret }; lanza un error con code 'invalid' | 'locked'. */
@@ -237,7 +243,7 @@ export const modRemoveTopic = (pin, id) =>
 export async function uploadAudioNote({ userId, round, tableId, blob }) {
   const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm'
   const path = `ronda-${round}/mesa-${tableId ?? 'x'}/${userId}-${Date.now()}.${ext}`
-  const { error } = await supabase.storage.from('audio-notes').upload(path, blob, { contentType: blob.type || 'audio/webm', upsert: false })
+  const { error } = await supabase.storage.from('audio-notes').upload(path, blob, { contentType: (blob.type || 'audio/webm').split(';')[0], upsert: false })
   if (error) throw error
   return path
 }
@@ -254,6 +260,7 @@ export async function modGetState(pin) {
   return {
     participants: (d.participants ?? []).map(fromRow),
     event: { round: d.event?.round ?? 0, rounds: d.event?.rounds ?? [], finished: !!d.event?.finished },
+    notes: d.notes ?? [], // [{ id, round, transcribed }]
   }
 }
 

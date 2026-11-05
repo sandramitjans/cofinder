@@ -21,7 +21,7 @@ export default function ModeratorPanelView() {
     navigate, lockModerator, participants, currentUser, event, currentRound,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
-    removeParticipant, seedDemo, clearDemo, readyCount, readyTotal,
+    removeParticipant, seedDemo, clearDemo, readyCount, readyTotal, notedCount, notedTotal,
     eventTopics, addEventTopic, removeEventTopic,
   } = useApp()
   const { t, topic, country, superpower } = useI18n()
@@ -120,6 +120,12 @@ export default function ModeratorPanelView() {
             {hasPlan && !event.round && !event.finished && readyTotal > 0 && (
               <p className="mt-5 flex items-center gap-2 rounded-xl bg-mint-soft px-3.5 py-2.5 text-sm font-semibold text-mint-dark">
                 <CheckCircle2 className="h-4 w-4 shrink-0" /> {t('panel.readyCount', { n: readyCount, total: readyTotal })}
+              </p>
+            )}
+
+            {phase === 'talk' && timer.done && notedTotal > 0 && (
+              <p className="mt-5 flex items-center gap-2 rounded-xl bg-mint-soft px-3.5 py-2.5 text-sm font-semibold text-mint-dark">
+                <CheckCircle2 className="h-4 w-4 shrink-0" /> {t('panel.notesCount', { n: notedCount, total: notedTotal })}
               </p>
             )}
 

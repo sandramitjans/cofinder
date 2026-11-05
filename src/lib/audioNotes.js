@@ -35,16 +35,17 @@ export async function getNote(userId, round) {
 }
 
 /**
- * Guarda la nota en el dispositivo y, si hay servidor, la sube.
- * Devuelve { uploaded } (false = solo en este dispositivo).
+ * Guarda la nota en el dispositivo y, si hay servidor, la sube y la registra como enviada
+ * (para que el panel sepa quién ha terminado). Devuelve { uploaded } (false = solo en este dispositivo).
  */
-export async function saveNote({ userId, round, tableId, blob }) {
+export async function saveNote({ userId, round, tableId, topic, blob }) {
   const note = { blob, mime: blob.type, createdAt: Date.now(), uploaded: false }
   if (api.isRemote) {
     try {
-      await api.uploadAudioNote({ userId, round, tableId, blob })
+      const path = await api.uploadAudioNote({ userId, round, tableId, blob })
+      await api.submitAudioNote({ id: userId, round, tableId, topic, path })
       note.uploaded = true
-    } catch { /* sin red o sin bucket: queda en el dispositivo */ }
+    } catch { /* sin red o sin el SQL de notas: queda en el dispositivo */ }
   }
   try { await tx('readwrite', (s) => s.put(note, key(userId, round))) } catch { /* sin IndexedDB */ }
   return { uploaded: note.uploaded }
