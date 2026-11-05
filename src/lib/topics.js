@@ -23,9 +23,11 @@ export const normalizeText = (s = '') =>
 export const topicKey = (id) => (isCustom(id) ? CUSTOM_PREFIX + normalizeText(customLabel(id)) : id)
 
 /* ---------- Mesas del evento (las añade la moderadora desde el panel) ----------
-   Cada mesa: { id: 'custom:<título>', by: 'Quien la propone', desc: 'descripción opcional' }.
+   Cada mesa: { id: 'custom:<título>', by: 'Quien la propone', desc: 'descripción opcional',
+   family: 'acquisition' | 'brand' | 'customer' | 'data' | 'business' | '' }.
    Mientras la moderadora no haya añadido ninguna, el formulario muestra los 20 temas de la lista. */
-export const makeEventTopic = ({ label, by = '', desc = '' }) => ({
+export const makeEventTopic = ({ label, by = '', desc = '', family = '' }) => ({
+  family,
   id: makeCustom(label),
   by: String(by).trim().replace(/\s+/g, ' '),
   desc: String(desc).trim().replace(/\s+/g, ' '),

@@ -11,7 +11,8 @@ const FAMILY_OF = Object.fromEntries(TOPIC_FAMILIES.flatMap((g) => g.topics.map(
  *
  * `topics` = mesas del evento que la moderadora ha añadido desde el panel:
  *   [{ id: 'custom:…', by: 'Quien la propone', desc: '…' }]. Cada tarjeta muestra «Propuesta por…».
- * Si aún no hay ninguna, se muestran los 20 temas de la lista con sus filtros por familia.
+ * Si aún no hay ninguna, se muestran los 20 temas de la lista. Arriba, filtros por familia
+ * (Adquisición, Marca, Datos/IA…): la de cada mesa la elige la moderadora al añadirla.
  *
  * Las mesas salen en un orden aleatorio distinto para cada persona (estable en su dispositivo),
  * para que las primeras de la lista no se lleven todos los votos.
@@ -45,13 +46,19 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
     () => (eventMode ? seededOrder(topics, seed, (x) => x.id) : seededOrder(TOPICS, seed).map((id) => ({ id }))),
     [eventMode, topics, seed],
   )
-  const filters = eventMode ? [] : [
+  // Familia de cada mesa: la de la lista por defecto o la que eligió la moderadora al añadirla
+  const familyOf = (x) => x.family || FAMILY_OF[x.id] || ''
+  const present = new Set(ordered.map(familyOf))
+  const families = TOPIC_FAMILIES.filter((g) => present.has(g.id))
+  const filters = families.length < 2 ? [] : [
     { id: 'all', label: t('register.filterAll') },
-    ...TOPIC_FAMILIES.map((g) => ({ id: g.id, label: t(`register.families.${g.id}`) })),
+    ...families.map((g) => ({ id: g.id, label: t(`register.families.${g.id}`) })),
   ]
-  const visible = eventMode || filter === 'all' ? ordered : ordered.filter(({ id }) => FAMILY_OF[id] === filter)
+  const visible = filter === 'all' || !filters.length ? ordered : ordered.filter((x) => familyOf(x) === filter)
 
-  const card = ({ id, by, desc }) => {
+  const card = (x) => {
+    const { id, by, desc } = x
+    const family = familyOf(x)
     const selected = value.includes(id)
     const full = !selected && value.length >= max
     const custom = isCustom(id)
@@ -76,15 +83,14 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
           <span className="min-w-0 flex-1">
             <span className="block font-semibold leading-snug text-ink">{topic(id)}</span>
             {description && <span className="mt-0.5 block text-sm leading-snug text-slate-500">{description}</span>}
-            {custom ? (
-              by && (
-                <span className="mt-1.5 block text-sm text-slate-500">
-                  {t('register.proposedBy')} <strong className="font-semibold text-ink">{by}</strong>
-                </span>
-              )
-            ) : (
+            {by && (
+              <span className="mt-1.5 block text-sm text-slate-500">
+                {t('register.proposedBy')} <strong className="font-semibold text-ink">{by}</strong>
+              </span>
+            )}
+            {family && (
               <span className="mt-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                {t(`register.families.${FAMILY_OF[id]}`)}
+                {t(`register.families.${family}`)}
               </span>
             )}
           </span>
@@ -117,16 +123,9 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
         </div>
       )}
 
-      <div className={`${filters.length ? 'mt-4' : ''} flex items-center justify-between gap-3`} aria-live="polite">
-        <p className="text-sm font-semibold text-slate-600">
-          <span className="font-bold text-brand">{value.length} / {max}</span> {t('register.tablesChosen')}
-        </p>
-        {value.length > 0 && (
-          <button type="button" onClick={() => onChange({ needs: [] })} className="text-sm font-medium text-slate-500 underline-offset-4 hover:text-ink hover:underline">
-            {t('register.clearAll')}
-          </button>
-        )}
-      </div>
+      <p className={`${filters.length ? 'mt-4' : ''} text-sm font-semibold text-slate-600`} aria-live="polite">
+        <span className="font-bold text-brand">{value.length} / {max}</span> {t('register.tablesChosen')}
+      </p>
 
       {notice && (
         <p role="alert" className="mt-3 rounded-lg bg-brand-soft px-3 py-2 text-sm font-semibold text-brand-dark">{t('register.maxTables', { max })}</p>

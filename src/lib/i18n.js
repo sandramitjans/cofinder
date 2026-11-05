@@ -57,7 +57,6 @@ export const DICT = {
       filterLabel: 'Filtrar mesas por tema',
       tablesChosen: 'mesas elegidas',
       maxTables: 'Ya tienes {max} mesas. Quita una para elegir otra.',
-      clearAll: 'Quitar todas',
       proposedBy: 'Propuesta por',
       families: {
         acquisition: 'Adquisición',
@@ -194,6 +193,8 @@ export const DICT = {
       topicLabelPh: 'Ej. Retail media',
       topicBy: 'Propuesto por',
       topicByPh: 'Nombre de quien lo propone',
+      topicFamily: 'Familia',
+      topicFamilyNone: 'Sin familia',
       topicDesc: 'Descripción (opcional)',
       topicDescPh: 'Una frase para explicar de qué se hablará',
       topicAdd: 'Añadir mesa',
@@ -339,7 +340,6 @@ export const DICT = {
       filterLabel: 'Filter tables by topic',
       tablesChosen: 'tables chosen',
       maxTables: 'You already have {max} tables. Remove one to choose another.',
-      clearAll: 'Clear all',
       proposedBy: 'Proposed by',
       families: {
         acquisition: 'Acquisition',
@@ -476,6 +476,8 @@ export const DICT = {
       topicLabelPh: 'e.g. Retail media',
       topicBy: 'Proposed by',
       topicByPh: 'Name of the person proposing it',
+      topicFamily: 'Family',
+      topicFamilyNone: 'No family',
       topicDesc: 'Description (optional)',
       topicDescPh: 'One sentence about what will be discussed',
       topicAdd: 'Add table',

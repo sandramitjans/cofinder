@@ -146,4 +146,4 @@ propongan mesas. Mientras no se añada ninguna mesa, se muestra la lista de 20 t
 El reparto en mesas usa solo las mesas añadidas.
 
 En modo local se guardan en el navegador. Con Supabase, ejecutar una vez `supabase/2026-11-mesas.sql`
-(tabla `mesa_topics` y funciones `list_mesa_topics`, `mod_add_mesa_topic`, `mod_remove_mesa_topic`).
+(tabla `mesa_topics` y funciones `list_mesa_topics`, `mod_add_mesa_topic`, `mod_remove_mesa_topic`) y después `supabase/2026-11-mesas-familia.sql` (familia de cada mesa, para los filtros del formulario).

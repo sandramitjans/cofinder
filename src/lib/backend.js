@@ -123,7 +123,7 @@ export function onPing(cb) {
 /* ---------- Mesas del evento ----------
    Las añade la moderadora desde el panel (supabase/2026-11-mesas.sql). La lista es pública: solo
    el título de cada mesa, una descripción opcional y el nombre de quien la propone. */
-const topicFromRow = (r) => ({ id: CUSTOM + r.label, by: r.proposer ?? '', desc: r.description ?? '' })
+const topicFromRow = (r) => ({ id: CUSTOM + r.label, by: r.proposer ?? '', desc: r.description ?? '', family: r.family ?? '' })
 
 export async function fetchEventTopics() {
   const { data, error } = await supabase.rpc('list_mesa_topics')
@@ -131,8 +131,8 @@ export async function fetchEventTopics() {
   return (data ?? []).map(topicFromRow)
 }
 
-export const modAddTopic = (pin, { id, by, desc }) =>
-  rpc('mod_add_mesa_topic', { p_pin: pin, p_label: id.slice(CUSTOM.length), p_proposer: by, p_description: desc })
+export const modAddTopic = (pin, { id, by, desc, family }) =>
+  rpc('mod_add_mesa_topic', { p_pin: pin, p_label: id.slice(CUSTOM.length), p_proposer: by, p_description: desc, p_family: family ?? '' })
 export const modRemoveTopic = (pin, id) =>
   rpc('mod_remove_mesa_topic', { p_pin: pin, p_label: id.slice(CUSTOM.length) })
 

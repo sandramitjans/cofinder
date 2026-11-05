@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { PAUSE_AFTER_ROUND, PAUSE_MINUTES, VIEWS } from '../constants'
+import { PAUSE_AFTER_ROUND, PAUSE_MINUTES, TOPIC_FAMILIES, VIEWS } from '../constants'
 import { planStats, tableRange } from '../lib/matching'
 import { MAX_CUSTOM_LENGTH, makeEventTopic, topicKey } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
@@ -258,16 +258,17 @@ function EventTopics({ topics, participants, onAdd, onRemove, t, topic }) {
   const [label, setLabel] = useState('')
   const [by, setBy] = useState('')
   const [desc, setDesc] = useState('')
+  const [family, setFamily] = useState('')
   const [exists, setExists] = useState(false)
   const votes = (id) => participants.filter((p) => [...p.offers, ...p.needs].some((x) => topicKey(x) === topicKey(id))).length
 
   const add = (e) => {
     e.preventDefault()
     if (!label.trim()) return
-    const entry = makeEventTopic({ label, by, desc })
+    const entry = makeEventTopic({ label, by, desc, family })
     if (topics.some((x) => topicKey(x.id) === topicKey(entry.id))) return setExists(true)
     onAdd(entry)
-    setLabel(''); setBy(''); setDesc(''); setExists(false)
+    setLabel(''); setBy(''); setDesc(''); setExists(false) // la familia se mantiene para la siguiente
   }
 
   const input = 'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15'
@@ -278,7 +279,7 @@ function EventTopics({ topics, participants, onAdd, onRemove, t, topic }) {
         <p className="mt-1 text-sm text-slate-500">{t('panel.topicsSub')}</p>
       </div>
 
-      <form onSubmit={add} className="grid gap-3 border-b border-slate-100 p-4 lg:grid-cols-[1.2fr_1fr_1.6fr_auto] lg:items-end">
+      <form onSubmit={add} className="grid gap-3 border-b border-slate-100 p-4 lg:grid-cols-[1.2fr_1fr_1fr_1.4fr_auto] lg:items-end">
         <label className="block">
           <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicLabel')}</span>
           <input className={input} value={label} maxLength={MAX_CUSTOM_LENGTH * 2} onChange={(e) => { setLabel(e.target.value); setExists(false) }} placeholder={t('panel.topicLabelPh')} required />
@@ -288,11 +289,18 @@ function EventTopics({ topics, participants, onAdd, onRemove, t, topic }) {
           <input className={input} value={by} maxLength={60} onChange={(e) => setBy(e.target.value)} placeholder={t('panel.topicByPh')} />
         </label>
         <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicFamily')}</span>
+          <select className={input} value={family} onChange={(e) => setFamily(e.target.value)}>
+            <option value="">{t('panel.topicFamilyNone')}</option>
+            {TOPIC_FAMILIES.map((g) => <option key={g.id} value={g.id}>{t(`register.families.${g.id}`)}</option>)}
+          </select>
+        </label>
+        <label className="block">
           <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicDesc')}</span>
           <input className={input} value={desc} maxLength={160} onChange={(e) => setDesc(e.target.value)} placeholder={t('panel.topicDescPh')} />
         </label>
         <Button type="submit" icon={Plus} disabled={!label.trim()} className="py-2.5">{t('panel.topicAdd')}</Button>
-        {exists && <p role="alert" className="text-sm font-semibold text-brand-dark lg:col-span-4">{t('panel.topicExists')}</p>}
+        {exists && <p role="alert" className="text-sm font-semibold text-brand-dark lg:col-span-5">{t('panel.topicExists')}</p>}
       </form>
 
       {topics.length === 0 ? (
@@ -303,7 +311,10 @@ function EventTopics({ topics, participants, onAdd, onRemove, t, topic }) {
             <li key={x.id} className="flex items-start gap-3 p-4">
               <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-lg">💬</span>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold">{topic(x.id)}</p>
+                <p className="font-semibold">
+                  {topic(x.id)}
+                  {x.family && <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 align-middle text-[11px] font-bold text-brand-dark">{t(`register.families.${x.family}`)}</span>}
+                </p>
                 {x.desc && <p className="text-sm text-slate-500">{x.desc}</p>}
                 {x.by && <p className="mt-0.5 text-xs text-slate-500">{t('register.proposedBy')} <strong className="font-semibold text-ink">{x.by}</strong></p>}
               </div>
