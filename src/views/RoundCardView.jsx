@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, ChevronDown, Copy, Download, Hourglass, Mic, Square, Timer, Users } from 'lucide-react'
+import { Check, ChevronDown, Copy, Download, Hourglass, Lightbulb, Mic, Sparkles, Square, Timer, Users } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { TOPIC_EMOJI, TOTAL_ROUNDS } from '../constants'
 import { roleOf } from '../lib/matching'
-import { isCustom } from '../lib/topics'
+import { isCustom, topicKey } from '../lib/topics'
+import { icebreakerFor } from '../lib/icebreakers'
 import { useCountdown } from '../lib/useCountdown'
 import { MAX_NOTE_SECONDS, canRecord, extensionOf, getNote, recorderMime, saveNote } from '../lib/audioNotes'
 import * as api from '../lib/backend'
@@ -81,29 +82,91 @@ function GoToTable({ table }) {
       <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm text-slate-500">
         <Timer className="h-4 w-4" /> {t('round.startsSoon')}
       </p>
+      <IcebreakerFor topicId={table.topic} />
     </>
   )
 }
 
 function ActiveRound({ table, timer }) {
   const { event } = useApp()
-  const { t } = useI18n()
+  const { t, topic } = useI18n()
+  const desc = useTopicDesc(table.topic)
   return (
     <>
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <span className="rounded-full bg-ink px-3 py-1 text-xs font-bold text-white">{t('round.badge', { n: event.round, total: TOTAL_ROUNDS })}</span>
           <span className="rounded-full bg-brand px-3 py-1 text-xs font-bold text-white">{t('round.table', { n: table.id })}</span>
         </div>
-        <p className="mt-4 flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><Timer className="h-3.5 w-3.5" /> {t('round.timeLeft')}</p>
-        <p className={`font-display text-7xl font-medium tabular-nums tracking-tight ${timer.remaining <= 60_000 ? 'text-brand' : 'text-ink'}`} aria-live="off">{timer.label}</p>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <p className="mt-5 text-xs font-bold uppercase tracking-wider text-slate-500">{t('round.topic')}</p>
+        <h1 className="mt-1 font-display text-3xl font-medium leading-tight tracking-tight text-ink">
+          <span aria-hidden className="mr-1.5">{emojiOf(table.topic)}</span>{topic(table.topic)}
+        </h1>
+        {desc && <p className="mt-2 text-[15px] leading-relaxed text-slate-600">{desc}</p>}
+        <MyRole table={table} />
+
+        <p className="mt-6 flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><Timer className="h-3.5 w-3.5" /> {t('round.timeLeft')}</p>
+        <p className={`text-center font-display text-7xl font-medium tabular-nums tracking-tight ${timer.remaining <= 60_000 ? 'text-brand' : 'text-ink'}`} aria-live="off">{timer.label}</p>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
           <div className="h-full rounded-full bg-brand transition-[width] duration-1000" style={{ width: `${(1 - timer.progress) * 100}%` }} />
         </div>
       </section>
-      <TopicCard table={table} />
       <Companions table={table} />
+      <Icebreaker topicId={table.topic} desc={desc} />
     </>
+  )
+}
+
+function IcebreakerFor({ topicId }) {
+  const desc = useTopicDesc(topicId)
+  return <Icebreaker topicId={topicId} desc={desc} />
+}
+
+/** Descripción de la mesa (las que añade el admin desde el panel pueden llevarla) */
+function useTopicDesc(topicId) {
+  const { eventTopics, eventTopicsLoaded, loadEventTopics } = useApp()
+  useEffect(() => { if (!eventTopicsLoaded) loadEventTopics() }, [eventTopicsLoaded, loadEventTopics])
+  return eventTopics.find((x) => topicKey(x.id) === topicKey(topicId))?.desc ?? ''
+}
+
+/** «Tú: experto/a…» cuando el plan tiene en cuenta el nivel de cada persona */
+function MyRole({ table }) {
+  const { currentUser, participants } = useApp()
+  const { t } = useI18n()
+  if (!expertModeOf(participants)) return null
+  return (
+    <span className="mt-3 inline-block rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-dark">
+      {t('round.you', { role: t(`roles.${roleOf(currentUser, table.topic)}`) })}
+    </span>
+  )
+}
+
+/** «Para romper el hielo»: contexto del tema, 3 preguntas propuestas por la IA y una pista */
+function Icebreaker({ topicId, desc }) {
+  const { t, lang } = useI18n()
+  const ib = icebreakerFor(topicId, lang, desc)
+  return (
+    <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 className="flex items-center gap-3 font-display text-2xl font-medium tracking-tight text-ink">
+        <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-orange-500 text-white"><Lightbulb className="h-6 w-6" /></span>
+        {t('ice.title')}
+      </h2>
+      {ib.intro !== desc && <p className="mt-4 text-[15px] leading-relaxed text-slate-600">{ib.intro}</p>}
+      <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-dark">
+        <Sparkles className="h-3.5 w-3.5" /> {t('ice.byAi')}
+      </span>
+      <ol className="mt-3 space-y-2.5">
+        {ib.q.map((q, i) => (
+          <li key={i} className="flex gap-3 rounded-xl bg-paper px-3.5 py-3">
+            <span aria-hidden className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand text-sm font-bold text-white">{i + 1}</span>
+            <span className="pt-0.5 text-[15px] font-semibold leading-snug text-ink">{q}</span>
+          </li>
+        ))}
+      </ol>
+      <p className="mt-3 flex gap-2 rounded-xl bg-brand-soft px-3.5 py-3 text-sm font-semibold text-brand-dark">
+        <Sparkles className="mt-0.5 h-4 w-4 shrink-0" /> {ib.tip}
+      </p>
+    </section>
   )
 }
 

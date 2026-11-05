@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, Coffee, Expand, MapPin, PartyPopper, Smartphone, TimerOff } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Coffee, Expand, MapPin, PartyPopper, TimerOff } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { JOIN_HASH, PAUSE_AFTER_ROUND, PAUSE_MINUTES, PUBLIC_URL, ROUND_MINUTES, VIEWS } from '../constants'
 import { roleOf } from '../lib/matching'
 import { useCountdown } from '../lib/useCountdown'
-import { useConnected } from '../lib/useConnected'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
 import RoleBadge from '../components/ui/RoleBadge'
@@ -58,7 +57,7 @@ export default function ProjectorView() {
       </Center>
     )
   } else if (!currentRound) {
-    scene = <JoinScene participants={participants} />
+    scene = <JoinScene />
   } else if (pausing) {
     scene = (
       <Center>
@@ -210,19 +209,17 @@ export default function ProjectorView() {
 }
 
 /**
- * Antes de la ronda 1: QR para conectar el móvil (…/#entrar → nombre + código).
- * Las fotos se encienden a medida que cada persona se conecta.
+ * Antes de la ronda 1: solo el QR para conectar el móvil (…/#entrar → nombre + código).
+ * Quién se ha conectado lo ve el admin en el panel (punto verde junto a cada código).
  */
-function JoinScene({ participants }) {
-  const { t, country } = useI18n()
-  const isOn = useConnected()
+function JoinScene() {
+  const { t } = useI18n()
   const url = `${(PUBLIC_URL || window.location.origin + window.location.pathname).replace(/#.*$/, '')}${JOIN_HASH}`
   const [qr, setQr] = useState(null)
   useEffect(() => {
     QRCode.toDataURL(url, { margin: 1, width: 640, errorCorrectionLevel: 'M', color: { dark: '#16161D', light: '#FFFFFF' } })
       .then(setQr).catch(() => setQr(null))
   }, [url])
-  const on = isOn ? participants.filter((p) => isOn(p.id)).length : 0
   const steps = [t('join.step1'), t('join.step2'), t('join.step3')]
 
   return (
@@ -242,33 +239,10 @@ function JoinScene({ participants }) {
           <p className="mt-8 text-lg text-slate-500">{t('join.orGo')} <span className="font-mono font-semibold text-ink">{url.replace(/^https?:\/\//, '')}</span></p>
         </div>
         <div className="shrink-0 rounded-3xl bg-white p-6 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200">
-          {qr ? <img src={qr} alt={url} className="h-[min(26rem,42vh)] w-[min(26rem,42vh)]" /> : <div className="h-[min(26rem,42vh)] w-[min(26rem,42vh)]" />}
+          {qr ? <img src={qr} alt={url} className="h-[min(34rem,62vh)] w-[min(34rem,62vh)]" /> : <div className="h-[min(34rem,62vh)] w-[min(34rem,62vh)]" />}
         </div>
       </div>
 
-      {isOn ? (
-        <p className="flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-xl font-semibold ring-1 ring-slate-200">
-          <Smartphone className="h-5 w-5 text-mint-dark" /> {t('join.connected', { n: on, total: participants.length })}
-        </p>
-      ) : (
-        <p className="text-base text-slate-500">{t('join.localNote')}</p>
-      )}
-
-      <div className="flex max-w-6xl flex-wrap justify-center gap-4">
-        {participants.map((p) => {
-          const lit = !isOn || isOn(p.id)
-          return (
-            <div key={p.id} className={`relative flex w-24 flex-col items-center gap-1.5 text-center transition duration-500 ${lit ? '' : 'opacity-35 grayscale'}`}>
-              <Avatar name={p.name} photo={p.photo} size="lg" />
-              {isOn && lit && (
-                <span className="animate-pop-in absolute right-3 top-0 grid h-6 w-6 place-items-center rounded-full bg-mint-dark text-white ring-2 ring-paper"><Check className="h-4 w-4" /></span>
-              )}
-              <span className="text-sm font-semibold leading-tight">{p.name.split(' ')[0]}</span>
-              <span className="-mt-1 truncate text-xs text-slate-400">{country(p.country)}</span>
-            </div>
-          )
-        })}
-      </div>
     </div>
   )
 }

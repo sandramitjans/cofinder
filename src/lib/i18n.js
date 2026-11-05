@@ -73,6 +73,7 @@ export const DICT = {
 
     match: { ready: 'Listo' },
 
+    ice: { title: 'Para romper el hielo', byAi: 'Propuestas por la IA' },
     lobby: {
       connected: 'Estás conectado/a',
       hello: '¡Hola, {name}!',
@@ -414,6 +415,7 @@ export const DICT = {
 
     match: { ready: 'Ready' },
 
+    ice: { title: 'Icebreakers', byAi: 'Suggested by AI' },
     lobby: {
       connected: 'You’re connected',
       hello: 'Hi, {name}!',
