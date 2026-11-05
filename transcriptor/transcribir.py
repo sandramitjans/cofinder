@@ -1,10 +1,13 @@
 """
-Cofinder · transcriptor de notas de audio con Whisper (https://github.com/openai/whisper)
+Cofinder · transcriptor de notas de audio con faster-whisper (https://github.com/SYSTRAN/faster-whisper)
+
+faster-whisper usa los mismos modelos de Whisper de OpenAI (misma calidad), pero va unas 4 veces más
+rápido en CPU, gasta menos memoria y no necesita PyTorch ni ffmpeg.
 
 Programa que se deja en marcha en el servidor (o en cualquier ordenador). Cada pocos segundos:
   1. busca en Supabase las notas de audio validadas que aún no tienen texto (tabla `audio_notes`)
   2. descarga el audio del bucket privado `audio-notes`
-  3. lo transcribe con Whisper, en local: los audios no salen a ningún servicio externo
+  3. lo transcribe en el propio servidor: los audios no salen a ningún servicio externo
   4. guarda el texto en `audio_notes.transcript`
 
 Configuración en un fichero `.env` junto a este script (ver `.env.example`) o en variables de entorno.
@@ -36,7 +39,8 @@ def load_env():
 load_env()
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
-MODEL = os.environ.get("WHISPER_MODEL", "small")          # tiny · base · small · medium · turbo
+MODEL = os.environ.get("WHISPER_MODEL", "small")          # tiny · base · small · medium · large-v3 · turbo
+THREADS = int(os.environ.get("WHISPER_HILOS", "0"))         # 0 = todos los núcleos
 LANGUAGE = os.environ.get("WHISPER_LANGUAGE") or None       # vacío = lo detecta solo (es, fr, en…)
 INTERVAL = int(os.environ.get("INTERVALO_SEGUNDOS", "10"))
 MAX_TRIES = 3                                               # audios que fallan: se reintentan 3 veces
@@ -82,17 +86,19 @@ def save_transcript(note, text):
 
 
 def make_transcriber():
-    """Whisper de OpenAI. Con COFINDER_FAKE_WHISPER=1 devuelve un texto fijo (solo para pruebas)"""
+    """faster-whisper. Con COFINDER_FAKE_WHISPER=1 devuelve un texto fijo (solo para pruebas)"""
     if os.environ.get("COFINDER_FAKE_WHISPER") == "1":
         return lambda file: f"(prueba) {Path(file).name}"
-    import whisper  # pip install -U openai-whisper  (necesita ffmpeg instalado)
+    from faster_whisper import WhisperModel  # pip install -U faster-whisper
     log(f"Cargando el modelo de Whisper «{MODEL}» (la primera vez se descarga)…")
-    model = whisper.load_model(MODEL)
+    # int8 en CPU: rápido y con poca memoria, sin pérdida apreciable de calidad
+    model = WhisperModel(MODEL, device="auto", compute_type="int8", cpu_threads=THREADS)
     log("Modelo listo.")
 
     def transcribe(file):
-        result = model.transcribe(file, language=LANGUAGE, fp16=False)
-        return result["text"].strip()
+        # vad_filter: se salta los silencios (menos tiempo y menos frases inventadas)
+        segments, info = model.transcribe(file, language=LANGUAGE, beam_size=5, vad_filter=True)
+        return " ".join(seg.text.strip() for seg in segments).strip()
     return transcribe
 
 

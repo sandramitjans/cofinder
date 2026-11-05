@@ -1,8 +1,10 @@
-# Transcriptor de notas de audio (Whisper)
+# Transcriptor de notas de audio (faster-whisper)
 
 Programa que convierte en texto las notas de audio que graban los participantes al final de cada
-ronda. Usa [Whisper de OpenAI](https://github.com/openai/whisper), el modelo de código abierto,
-**ejecutado en vuestro propio servidor**. Es gratis y los audios no salen a ningún servicio externo.
+ronda. Usa [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (código abierto, licencia MIT):
+los mismos modelos de [Whisper de OpenAI](https://github.com/openai/whisper), con la misma calidad, pero
+unas 4 veces más rápido en CPU, con menos memoria y sin PyTorch ni ffmpeg. Se ejecuta **en vuestro
+propio servidor**: es gratis y los audios no salen a ningún servicio externo.
 
 Funciona así: la web sube cada audio a Supabase y lo apunta en la tabla `audio_notes`. Este
 programa, que se deja en marcha, mira cada 10 segundos si hay notas sin texto, descarga el audio, lo
@@ -12,24 +14,24 @@ sesión sigue aunque el transcriptor vaya con retraso o esté apagado (se pone a
 ## Requisitos del servidor
 
 - Linux (recomendado), Windows o Mac, donde se pueda instalar programas y dejar uno en marcha.
-- **Python 3.9 a 3.11** y **ffmpeg**.
-- CPU de 2 núcleos o más y **4 GB de RAM** con el modelo `small` (8 GB con `medium` o `turbo`).
-  Sin tarjeta gráfica, un audio de 1 minuto tarda unos 10–40 s con `small`.
-- Salida a internet hacia `*.supabase.co` (HTTPS) y, solo la primera vez, para descargar el modelo.
-- Unos 3 GB de disco (Whisper + PyTorch + el modelo).
+- **Python 3.9 o superior** (no hace falta ffmpeg).
+- CPU de 2 núcleos o más y **2 GB de RAM libres** con el modelo `small` (4–6 GB con `medium` o `turbo`).
+  Sin tarjeta gráfica, un audio de 1 minuto tarda unos 5–15 s con `small`.
+- Salida a internet hacia `*.supabase.co` (HTTPS) y, solo la primera vez, a `huggingface.co` para descargar el modelo.
+- Unos 1,5 GB de disco (programa + el modelo `small`).
 
 ## Instalación (Linux, p. ej. Ubuntu)
 
 1. Programas del sistema:
    ```bash
-   sudo apt update && sudo apt install -y python3 python3-venv ffmpeg git
+   sudo apt update && sudo apt install -y python3 python3-venv git
    ```
 2. Descargar Cofinder y entrar en esta carpeta:
    ```bash
    sudo git clone https://github.com/sandramitjans/cofinder.git /opt/cofinder
    cd /opt/cofinder/transcriptor
    ```
-3. Entorno de Python e instalación de Whisper:
+3. Entorno de Python e instalación de faster-whisper:
    ```bash
    python3 -m venv venv
    ./venv/bin/pip install -U pip
@@ -46,7 +48,7 @@ sesión sigue aunque el transcriptor vaya con retraso o esté apagado (se pone a
    ```bash
    ./venv/bin/python transcribir.py
    ```
-   La primera vez descarga el modelo. Después verás «Esperando notas de audio…».
+   La primera vez descarga el modelo (de huggingface.co). Después verás «Esperando notas de audio…».
 6. Dejarlo como servicio para que arranque solo con el servidor:
    ```bash
    sudo useradd -r cofinder; sudo chown -R cofinder /opt/cofinder
@@ -57,8 +59,7 @@ sesión sigue aunque el transcriptor vaya con retraso o esté apagado (se pone a
 
 ## Windows o Mac (para probar en un ordenador)
 
-1. Instalar [Python 3.11](https://www.python.org/downloads/) y ffmpeg
-   (Windows: `winget install ffmpeg` · Mac: `brew install ffmpeg`).
+1. Instalar [Python 3.11 o superior](https://www.python.org/downloads/).
 2. En una terminal, dentro de la carpeta `transcriptor`:
    ```bash
    python -m venv venv
@@ -72,9 +73,10 @@ sesión sigue aunque el transcriptor vaya con retraso o esté apagado (se pone a
 
 | Variable | Por defecto | Para qué |
 |---|---|---|
-| `WHISPER_MODEL` | `small` | `tiny`/`base` más rápidos y menos precisos; `medium`/`turbo` más precisos y lentos sin GPU |
+| `WHISPER_MODEL` | `small` | `tiny`/`base` más rápidos y menos precisos; `medium`/`turbo`/`large-v3` más precisos y más lentos sin GPU |
 | `WHISPER_LANGUAGE` | (vacío) | Vacío = detecta el idioma de cada audio; o fija `es`, `fr`, `en` |
 | `INTERVALO_SEGUNDOS` | `10` | Cada cuánto busca notas nuevas |
+| `WHISPER_HILOS` | `0` | Núcleos de CPU que usa (0 = todos) |
 
 Si un audio falla tres veces seguidas, se salta (queda sin texto) y aparece en el registro.
 

@@ -1,7 +1,7 @@
 # Servicio de Linux (systemd) para que el transcriptor arranque solo con el servidor.
 # Copiar a /etc/systemd/system/ y ajustar las rutas y el usuario. Ver LEEME.md, paso 5.
 [Unit]
-Description=Cofinder · transcriptor de notas de audio (Whisper)
+Description=Cofinder · transcriptor de notas de audio (faster-whisper)
 After=network-online.target
 Wants=network-online.target
 
