@@ -187,15 +187,15 @@ export default function ProjectorView() {
       </header>
 
       {/* Controles discretos: aparecen al pasar el ratón */}
-      <div className="fixed right-4 top-24 z-30 flex flex-col items-end gap-2 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+      <div className="fixed bottom-5 left-1/2 z-30 flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center whitespace-nowrap justify-center gap-2 rounded-2xl bg-white/90 px-3 py-2 shadow-lg ring-1 ring-slate-200 backdrop-blur opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
         <LangSwitch />
         <button onClick={() => navigate(VIEWS.MOD_PANEL)} className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-medium shadow ring-1 ring-slate-200"><ArrowLeft className="h-3.5 w-3.5" /> {t('projector.panel')}</button>
         <button onClick={fullscreen} className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-medium shadow ring-1 ring-slate-200"><Expand className="h-3.5 w-3.5" /> {t('projector.fullscreen')}</button>
-        <div className="flex gap-2">
+        <div className="flex gap-2 border-l border-slate-200 pl-2">
           <button onClick={stepBack} aria-label={t('projector.back')} className="rounded-lg bg-white p-2 shadow ring-1 ring-slate-200"><ChevronLeft className="h-4 w-4" /></button>
           <button onClick={advance} className="flex items-center gap-1 rounded-lg bg-brand px-3 py-2 text-xs font-semibold shadow">{t('projector.nextStep')} <ChevronRight className="h-4 w-4" /></button>
         </div>
-        <p className="text-[11px] text-slate-500">{t('projector.keysHint')}</p>
+        <p className="pl-1 text-[11px] text-slate-500">{t('projector.keysHint')}</p>
       </div>
 
       <main className="flex flex-1 flex-col px-8 pb-8">{scene}</main>
