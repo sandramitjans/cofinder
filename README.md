@@ -131,8 +131,19 @@ el panel vuelve a pedir el estado cada 15 s.
 ### Cambios del prototipo (noviembre 2026)
 
 Ejecutar una vez `supabase/2026-11-prototipo.sql` en el SQL editor. Añade:
-- `list_topic_proposals()`: mesas propuestas por participantes (texto de la mesa + nombre de pila), para el paso «Apúntate a las mesas».
+- `list_topic_proposals()`: mesas propuestas por participantes (ya no se usa: ver «Mesas del evento desde el panel»).
 - Bucket privado `audio-notes`: cada móvil sube su nota de audio al acabar la ronda (solo subir; se escuchan desde Storage).
   Ruta: `ronda-N/mesa-M/<id participante>-<fecha>.webm`. Cada persona también la tiene en su móvil, en el resumen final.
 
 Sin ese script la app funciona igual, pero sin propuestas de otras personas y con las notas solo en cada móvil.
+
+### Mesas del evento desde el panel (noviembre 2026)
+
+Las mesas que eligen los participantes en «Apúntate a las mesas» las añade la moderadora desde el panel
+(sección «Mesas del evento»): tema, quién lo propone y una descripción opcional. Cada participante las ve
+en un orden aleatorio propio (estable en su dispositivo). Ya no hay apartado para que los participantes
+propongan mesas. Mientras no se añada ninguna mesa, se muestra la lista de 20 temas por defecto.
+El reparto en mesas usa solo las mesas añadidas.
+
+En modo local se guardan en el navegador. Con Supabase, ejecutar una vez `supabase/2026-11-mesas.sql`
+(tabla `mesa_topics` y funciones `list_mesa_topics`, `mod_add_mesa_topic`, `mod_remove_mesa_topic`).

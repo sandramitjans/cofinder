@@ -57,6 +57,7 @@ export function AppProvider({ children }) {
   const shared = REMOTE ? {} : read(localStorage, EVENT_KEY, {})
   const [localParticipants, setLocalParticipants] = useState(shared.participants ?? [])
   const [localEvent, setLocalEvent] = useState(shared.event ?? EMPTY_EVENT)
+  const [localTopics, setLocalTopics] = useState(shared.topics ?? []) // mesas añadidas desde el panel
 
   /* ---------- Estado remoto ---------- */
   const [me, setMe] = useState(() => (REMOTE ? read(localStorage, PROFILE_KEY, null) : null))
@@ -66,7 +67,7 @@ export function AppProvider({ children }) {
   modStateRef.current = modState
 
   // Persistencia
-  useEffect(() => { if (!REMOTE) write(localStorage, EVENT_KEY, { participants: localParticipants, event: localEvent }) }, [localParticipants, localEvent])
+  useEffect(() => { if (!REMOTE) write(localStorage, EVENT_KEY, { participants: localParticipants, event: localEvent, topics: localTopics }) }, [localParticipants, localEvent, localTopics])
   useEffect(() => write(localStorage, ME_KEY, currentUserId), [currentUserId])
   useEffect(() => write(localStorage, SECRET_KEY, editSecret), [editSecret])
   useEffect(() => { if (REMOTE) write(localStorage, PROFILE_KEY, me) }, [me])
@@ -79,6 +80,7 @@ export function AppProvider({ children }) {
       const next = JSON.parse(e.newValue)
       setLocalParticipants(next.participants ?? [])
       setLocalEvent(next.event ?? EMPTY_EVENT)
+      setLocalTopics(next.topics ?? [])
     }
     const onHash = () => window.location.hash === MOD_HASH && setGateOpen(true)
     window.addEventListener('storage', onStorage)
@@ -118,6 +120,17 @@ export function AppProvider({ children }) {
     return () => { off(); clearInterval(timer); document.removeEventListener('visibilitychange', onVisible) }
   }, [currentUserId, refreshMine])
 
+  /* ---------- Mesas del evento (las añade la moderadora desde el panel) ---------- */
+  const [remoteTopics, setRemoteTopics] = useState([])
+  const [remoteTopicsLoaded, setRemoteTopicsLoaded] = useState(false)
+  const loadEventTopics = useCallback(async () => {
+    if (!REMOTE) return
+    try { setRemoteTopics(await api.fetchEventTopics()) } catch { /* función aún no instalada: lista por defecto */ }
+    setRemoteTopicsLoaded(true)
+  }, [])
+  const eventTopics = REMOTE ? remoteTopics : localTopics
+  const eventTopicsLoaded = REMOTE ? remoteTopicsLoaded : true
+
   /* ---------- Remoto: moderadora ---------- */
   const lockModerator = useCallback(() => {
     setModPin(null)
@@ -128,11 +141,12 @@ export function AppProvider({ children }) {
   const refreshMod = useCallback(async () => {
     if (!REMOTE || !modPin) return
     try {
-      setModState(await api.modGetState(modPin))
+      const [state] = await Promise.all([api.modGetState(modPin), loadEventTopics()])
+      setModState(state)
     } catch (err) {
       if (err.code === 'invalid_pin') lockModerator() // el PIN ha cambiado
     }
-  }, [modPin, lockModerator])
+  }, [modPin, lockModerator, loadEventTopics])
 
   useEffect(() => {
     if (!REMOTE || !modPin) return
@@ -199,23 +213,6 @@ export function AppProvider({ children }) {
     syncHistory(next)
   }, [myId, event.round, event.finished, myTableNow, participants, syncHistory])
 
-  /* ---------- Mesas propuestas por participantes ---------- */
-  const [remoteProposals, setRemoteProposals] = useState([])
-  const loadProposals = useCallback(async () => {
-    if (!REMOTE) return
-    try { setRemoteProposals(await api.fetchProposals()) } catch { /* función aún no instalada: sin propuestas */ }
-  }, [])
-  const proposals = useMemo(() => {
-    if (REMOTE) return remoteProposals
-    // Local: el primero que la escribió es quien la propone
-    const seen = new Map()
-    ;[...localParticipants].sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0)).forEach((p) => {
-      if (p.id === currentUserId) return
-      ;(p.customTopics ?? []).forEach((id) => { if (!seen.has(id)) seen.set(id, { id, by: p.name.split(' ')[0] }) })
-    })
-    return [...seen.values()]
-  }, [remoteProposals, localParticipants, currentUserId])
-
   /* ---------- Navegación ---------- */
   const navigate = useCallback((next) => {
     if (MODERATOR_VIEWS.includes(next) && !modUnlocked) return setGateOpen(true)
@@ -227,7 +224,7 @@ export function AppProvider({ children }) {
   const openGate = useCallback(() => setGateOpen(true), [])
   const closeGate = useCallback(() => {
     setGateOpen(false)
-    if (window.location.hash === MOD_HASH) history.replaceState(null, '', window.location.pathname)
+    if (window.location.hash === MOD_HASH) window.history.replaceState(null, '', window.location.pathname)
   }, [])
 
   // Devuelve 'ok' | 'invalid_pin' | 'locked' | 'network'
@@ -243,7 +240,7 @@ export function AppProvider({ children }) {
     setModPin(REMOTE ? pin : true)
     setGateOpen(false)
     setView(VIEWS.MOD_PANEL)
-    if (window.location.hash === MOD_HASH) history.replaceState(null, '', window.location.pathname)
+    if (window.location.hash === MOD_HASH) window.history.replaceState(null, '', window.location.pathname)
     return 'ok'
   }, [])
 
@@ -313,10 +310,21 @@ export function AppProvider({ children }) {
   const seedDemo = useCallback(() => {
     const pick = (prev) => {
       const names = new Set(prev.map((p) => p.name.toLowerCase()))
-      return demoParticipants().filter((p) => !names.has(p.name.toLowerCase()))
+      return demoParticipants(eventTopics.map((x) => x.id)).filter((p) => !names.has(p.name.toLowerCase()))
     }
     if (REMOTE) return modAction((pin) => api.modAddDemo(pin, pick(modStateRef.current?.participants ?? [])))
     setLocalParticipants((prev) => [...prev, ...pick(prev)])
+  }, [modAction, eventTopics])
+
+  // La moderadora añade o quita mesas del evento (con el nombre de quien la propone)
+  const addEventTopic = useCallback((entry) => {
+    if (REMOTE) return modAction((pin) => api.modAddTopic(pin, entry))
+    setLocalTopics((prev) => [...prev, entry])
+  }, [modAction])
+
+  const removeEventTopic = useCallback((id) => {
+    if (REMOTE) return modAction((pin) => api.modRemoveTopic(pin, id))
+    setLocalTopics((prev) => prev.filter((x) => x.id !== id))
   }, [modAction])
 
   const clearDemo = useCallback(() => {
@@ -352,6 +360,8 @@ export function AppProvider({ children }) {
   const [planning, setPlanning] = useState(false)
   const peopleRef = useRef(participants)
   peopleRef.current = participants
+  const topicsRef = useRef(eventTopics)
+  topicsRef.current = eventTopics
 
   // Al cálculo solo le hacen falta los temas (las fotos pesan y no se envían al worker)
   const runPlanner = useCallback((payload) => new Promise((resolve, reject) => {
@@ -360,6 +370,7 @@ export function AppProvider({ children }) {
     worker.onerror = (e) => { reject(e); worker.terminate() }
     worker.postMessage({
       ...payload,
+      topics: topicsRef.current.map((x) => x.id),
       people: peopleRef.current.map(({ id, country, offers, needs }) => ({ id, country, offers, needs })),
     })
   }), [])
@@ -461,14 +472,14 @@ export function AppProvider({ children }) {
     modLoading: REMOTE && modUnlocked && !modState,
     register, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
-    proposals, loadProposals, history,
+    eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     modUnlocked, gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
   }), [view, navigate, participants, currentUser, event, currentRound, seatedEver, modUnlocked, modState,
     register, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
-    proposals, loadProposals, history,
+    eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan])

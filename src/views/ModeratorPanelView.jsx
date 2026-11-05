@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
 import {
   AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Coffee, Eraser, Flag, LayoutGrid, Loader2, Lock, Monitor,
-  RefreshCcw, RotateCcw, Shuffle, Sparkles, TimerReset, Trash2, UserPlus, Users,
+  MessagesSquare, Plus, RefreshCcw, RotateCcw, Shuffle, Sparkles, TimerReset, Trash2, UserPlus, Users,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { PAUSE_AFTER_ROUND, PAUSE_MINUTES, VIEWS } from '../constants'
 import { planStats, tableRange } from '../lib/matching'
-import { topicKey } from '../lib/topics'
+import { MAX_CUSTOM_LENGTH, makeEventTopic, topicKey } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
@@ -21,6 +21,7 @@ export default function ModeratorPanelView() {
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
     removeParticipant, seedDemo, clearDemo,
+    eventTopics, addEventTopic, removeEventTopic,
   } = useApp()
   const { t, topic, country, superpower } = useI18n()
   const byId = useMemo(() => new Map(participants.map((p) => [p.id, p])), [participants])
@@ -183,6 +184,16 @@ export default function ModeratorPanelView() {
           />
         )}
 
+        {/* Mesas del evento: los temas propuestos, que los participantes eligen */}
+        <EventTopics
+          topics={eventTopics}
+          participants={participants}
+          onAdd={addEventTopic}
+          onRemove={(x) => window.confirm(t('panel.confirmRemoveTopic', { label: topic(x.id) })) && removeEventTopic(x.id)}
+          t={t}
+          topic={topic}
+        />
+
         {/* Participantes */}
         <section className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4">
@@ -236,6 +247,80 @@ export default function ModeratorPanelView() {
         </section>
       </main>
     </div>
+  )
+}
+
+/**
+ * Mesas del evento: la moderadora añade cada tema propuesto con el nombre de quien lo propone
+ * (y una descripción opcional) y puede quitarlo. Al lado de cada mesa, cuántas personas la han elegido.
+ */
+function EventTopics({ topics, participants, onAdd, onRemove, t, topic }) {
+  const [label, setLabel] = useState('')
+  const [by, setBy] = useState('')
+  const [desc, setDesc] = useState('')
+  const [exists, setExists] = useState(false)
+  const votes = (id) => participants.filter((p) => [...p.offers, ...p.needs].some((x) => topicKey(x) === topicKey(id))).length
+
+  const add = (e) => {
+    e.preventDefault()
+    if (!label.trim()) return
+    const entry = makeEventTopic({ label, by, desc })
+    if (topics.some((x) => topicKey(x.id) === topicKey(entry.id))) return setExists(true)
+    onAdd(entry)
+    setLabel(''); setBy(''); setDesc(''); setExists(false)
+  }
+
+  const input = 'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15'
+  return (
+    <section className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+      <div className="border-b border-slate-100 p-4">
+        <h2 className="flex items-center gap-2 text-lg font-bold"><MessagesSquare className="h-5 w-5 text-brand-dark" /> {t('panel.topicsTitle', { n: topics.length })}</h2>
+        <p className="mt-1 text-sm text-slate-500">{t('panel.topicsSub')}</p>
+      </div>
+
+      <form onSubmit={add} className="grid gap-3 border-b border-slate-100 p-4 lg:grid-cols-[1.2fr_1fr_1.6fr_auto] lg:items-end">
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicLabel')}</span>
+          <input className={input} value={label} maxLength={MAX_CUSTOM_LENGTH * 2} onChange={(e) => { setLabel(e.target.value); setExists(false) }} placeholder={t('panel.topicLabelPh')} required />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicBy')}</span>
+          <input className={input} value={by} maxLength={60} onChange={(e) => setBy(e.target.value)} placeholder={t('panel.topicByPh')} />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicDesc')}</span>
+          <input className={input} value={desc} maxLength={160} onChange={(e) => setDesc(e.target.value)} placeholder={t('panel.topicDescPh')} />
+        </label>
+        <Button type="submit" icon={Plus} disabled={!label.trim()} className="py-2.5">{t('panel.topicAdd')}</Button>
+        {exists && <p role="alert" className="text-sm font-semibold text-brand-dark lg:col-span-4">{t('panel.topicExists')}</p>}
+      </form>
+
+      {topics.length === 0 ? (
+        <p className="p-6 text-center text-sm text-slate-500">{t('panel.topicsDefault')}</p>
+      ) : (
+        <ul className="divide-y divide-slate-100">
+          {topics.map((x) => (
+            <li key={x.id} className="flex items-start gap-3 p-4">
+              <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-lg">💬</span>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">{topic(x.id)}</p>
+                {x.desc && <p className="text-sm text-slate-500">{x.desc}</p>}
+                {x.by && <p className="mt-0.5 text-xs text-slate-500">{t('register.proposedBy')} <strong className="font-semibold text-ink">{x.by}</strong></p>}
+              </div>
+              <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{t('panel.topicVotes', { n: votes(x.id) })}</span>
+              <button
+                type="button"
+                onClick={() => onRemove(x)}
+                className="shrink-0 rounded-lg p-2 text-slate-400 hover:bg-accent-soft hover:text-accent-dark"
+                aria-label={t('panel.topicRemove', { label: topic(x.id) })}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
 

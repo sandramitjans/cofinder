@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { CUSTOM_PREFIX as CUSTOM } from './topics'
 
 /**
  * Acceso a Supabase.
@@ -119,14 +120,21 @@ export function onPing(cb) {
   return () => { listeners.delete(cb) }
 }
 
-/* ---------- Mesas propuestas por participantes ----------
-   Función pública list_topic_proposals (supabase/2026-11-prototipo.sql): solo devuelve el texto de
-   cada mesa propuesta y el nombre de pila de quien la propuso, nunca perfiles completos. */
-export async function fetchProposals() {
-  const { data, error } = await supabase.rpc('list_topic_proposals')
+/* ---------- Mesas del evento ----------
+   Las añade la moderadora desde el panel (supabase/2026-11-mesas.sql). La lista es pública: solo
+   el título de cada mesa, una descripción opcional y el nombre de quien la propone. */
+const topicFromRow = (r) => ({ id: CUSTOM + r.label, by: r.proposer ?? '', desc: r.description ?? '' })
+
+export async function fetchEventTopics() {
+  const { data, error } = await supabase.rpc('list_mesa_topics')
   if (error) throw error
-  return (data ?? []).map((r) => ({ id: r.topic, by: r.proposer }))
+  return (data ?? []).map(topicFromRow)
 }
+
+export const modAddTopic = (pin, { id, by, desc }) =>
+  rpc('mod_add_mesa_topic', { p_pin: pin, p_label: id.slice(CUSTOM.length), p_proposer: by, p_description: desc })
+export const modRemoveTopic = (pin, id) =>
+  rpc('mod_remove_mesa_topic', { p_pin: pin, p_label: id.slice(CUSTOM.length) })
 
 /* ---------- Notas de audio ----------
    Bucket privado `audio-notes`: el público solo puede subir (no listar ni descargar). */

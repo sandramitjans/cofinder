@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, ArrowRight, Briefcase, Building2, CalendarDays, Clock, MapPin, RotateCcw, User } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { COUNTRIES, EVENT_DATE, EVENT_PLACE, MAX_INTERESTS, MAX_SUPERPOWERS, ROUND_MINUTES, TOTAL_ROUNDS, VIEWS } from '../constants'
+import { COUNTRIES, TOPICS, EVENT_DATE, EVENT_PLACE, MAX_INTERESTS, MAX_SUPERPOWERS, ROUND_MINUTES, TOTAL_ROUNDS, VIEWS } from '../constants'
 import { DICT } from '../lib/i18n'
 import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
@@ -41,7 +41,7 @@ const normalizeBranch = (text) => {
 /**
  * Registro «Speed dating de conocimiento», con el estilo del prototipo (cfndr.lovable.app):
  * bienvenida con un único botón y formulario en 4 pasos, cada uno con su barra de progreso:
- * perfil, mesas (hasta 5, incluidas las propuestas por participantes), nivel en cada mesa
+ * perfil, mesas (hasta 5, las que la moderadora añade desde el panel, en orden aleatorio para cada persona), nivel en cada mesa
  * (Con experiencia / Curiosidad) y arma secreta (facultativa). Al validar se pasa a la confirmación.
  */
 export function EditProfileView() {
@@ -70,7 +70,7 @@ const LAST = 4
 
 export default function RegisterView({ mode = 'create' }) {
   const editing = mode === 'edit'
-  const { register, navigate, currentUser, updateProfile, proposals, loadProposals } = useApp()
+  const { register, navigate, currentUser, updateProfile, eventTopics, eventTopicsLoaded, loadEventTopics } = useApp()
   const { t, country } = useI18n()
   const [form, setForm] = useState(() => (editing && currentUser ? formFromProfile(currentUser, country) : loadDraft() ?? EMPTY))
   const [restored, setRestored] = useState(() => !editing && !!loadDraft() && !isEmpty(loadDraft()))
@@ -80,7 +80,16 @@ export default function RegisterView({ mode = 'create' }) {
   const [saveError, setSaveError] = useState(false)
 
   // Las mesas que han propuesto otras personas se cargan al llegar al paso de las mesas
-  useEffect(() => { if (screen === 2) loadProposals() }, [screen, loadProposals])
+  useEffect(() => { if (screen <= 2) loadEventTopics() }, [screen, loadEventTopics])
+  // Si la moderadora ha quitado una mesa que estaba elegida, deja de contar como elegida
+  useEffect(() => {
+    if (!eventTopicsLoaded) return
+    const valid = new Set(eventTopics.length ? eventTopics.map((x) => x.id) : TOPICS)
+    setForm((f) => {
+      const needs = f.needs.filter((id) => valid.has(id))
+      return needs.length === f.needs.length ? f : { ...f, needs }
+    })
+  }, [eventTopics, eventTopicsLoaded])
 
   const set = (key, value) => patch({ [key]: value })
 
@@ -140,18 +149,16 @@ export default function RegisterView({ mode = 'create' }) {
     e.preventDefault()
     if (saving || !validate()) return
     if (screen < LAST) return goTo(screen + 1)
-    // Las mesas propuestas que no se han elegido se descartan.
-    // Cada mesa elegida se guarda según su nivel: «Con experiencia» en `offers`, «Curiosidad» en `needs`
-    const customTopics = form.customTopics.filter((c) => form.needs.includes(c))
-    // Una mesa propuesta por otra persona también es un tema propio para esta persona
-    const joined = form.needs.filter((id) => isCustom(id) && !customTopics.includes(id))
+    // Cada mesa elegida se guarda según su nivel: «Con experiencia» en `offers`, «Curiosidad» en `needs`.
+    // Las mesas añadidas desde el panel (`custom:…`) se guardan también en `customTopics`
+    const customTopics = form.needs.filter(isCustom)
     const levelOf = (id) => form.levels?.[id] ?? 'curious'
     const { levels: _levels, ...rest } = form
     const data = {
       ...rest,
       offers: form.needs.filter((id) => levelOf(id) === 'expert'),
       needs: form.needs.filter((id) => levelOf(id) === 'curious'),
-      customTopics: [...customTopics, ...joined], name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country),
+      customTopics, name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country),
     }
     setSaveError(false)
     setSaving(true)
@@ -239,8 +246,7 @@ export default function RegisterView({ mode = 'create' }) {
               <TopicPicker
                 max={MAX_INTERESTS}
                 value={form.needs}
-                customTopics={form.customTopics}
-                proposals={proposals}
+                topics={eventTopics}
                 onChange={patch}
                 error={errors.needs}
               />
