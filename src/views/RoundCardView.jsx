@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, ChevronDown, Copy, Download, Hourglass, Lightbulb, MapPin, Mic, RotateCcw, Send, Sparkles, Square, Timer, TimerOff, Users } from 'lucide-react'
+import { Check, ChevronDown, Copy, Download, Hourglass, Lightbulb, Lock, MapPin, Mic, PencilLine, RotateCcw, Send, Sparkles, Square, Timer, TimerOff, Users } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { FIND_MINUTES, TOPIC_EMOJI, TOTAL_ROUNDS } from '../constants'
@@ -284,7 +284,12 @@ function ConversationCard({ round, entry, userId, open, onToggle }) {
       </button>
       {open && (
         <div className="border-t border-slate-100 px-4 pb-4 pt-3">
-          {note === undefined ? null : note ? (
+          {note === undefined ? null : note?.text ? (
+            <>
+              <p className="text-sm text-slate-600">{t('note.textLabel')}</p>
+              <p className="mt-2 whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-sm text-ink">{note.text}</p>
+            </>
+          ) : note ? (
             <>
               <p className="text-sm text-slate-600">{t('round.noteSaved')}</p>
               <audio controls src={url ?? undefined} className="mt-2 w-full" />
@@ -365,7 +370,9 @@ function Companions({ table }) {
 function NoteRecorder({ table }) {
   const { event, submitNote } = useApp()
   const { t } = useI18n()
-  const [state, setState] = useState(() => (canRecord() ? 'idle' : 'unsupported')) // idle · recording · review · sending · error · unsupported
+  const [state, setState] = useState(() => (canRecord() ? 'idle' : 'unsupported')) // idle · recording · review · sending · error · unsupported · write
+  const [text, setText] = useState('')
+  const [writing, setWriting] = useState(() => !canRecord()) // sin micrófono: directamente a escribirla
   const [failed, setFailed] = useState(false)
   const [seconds, setSeconds] = useState(0)
   const [blob, setBlob] = useState(null)
@@ -418,7 +425,37 @@ function NoteRecorder({ table }) {
     // si ha ido bien, la pantalla cambia sola a la espera
   }
 
-  if (state === 'unsupported') return <p className="text-sm text-slate-500">{t('round.noMic')}</p>
+  const sendText = async (e) => {
+    e.preventDefault()
+    if (!text.trim()) return
+    setState('sending')
+    setFailed(false)
+    const res = await submitNote({ round: event.round, tableId: table.id, topic: table.topic, text: text.trim() })
+    if (api.isRemote && !res.uploaded) setFailed(true)
+    setState(canRecord() ? 'idle' : 'unsupported')
+  }
+
+  if (writing) {
+    return (
+      <form onSubmit={sendText} className="flex w-full flex-col items-center">
+        <span className="grid h-16 w-16 place-items-center rounded-full bg-brand-soft text-brand-dark"><PencilLine className="h-8 w-8" /></span>
+        <h1 className="mt-4 font-display text-3xl font-medium tracking-tight">{t('note.writeTitle')}</h1>
+        {state === 'unsupported' && <p className="mt-2 max-w-xs text-sm text-slate-500">{t('round.noMic')}</p>}
+        <NoteGuide />
+        <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} rows={6} autoFocus
+          aria-label={t('note.writeTitle')} placeholder={t('note.writePh')}
+          className="mt-4 w-full rounded-xl border border-slate-200 bg-white p-3.5 text-left text-base text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+        <PrivacyNote />
+        {failed && <p role="alert" className="mt-4 w-full rounded-xl bg-brand-soft px-3.5 py-3 text-sm font-semibold text-brand-dark">{t('note.sendError')}</p>}
+        <Button type="submit" disabled={state === 'sending' || !text.trim()} icon={Send} className="mt-5 w-full py-4 text-base">
+          {state === 'sending' ? t('note.sending') : t('note.send')}
+        </Button>
+        {state !== 'unsupported' && (
+          <Button type="button" variant="outline" onClick={() => setWriting(false)} disabled={state === 'sending'} icon={Mic} className="mt-2 w-full py-3.5 text-base">{t('note.toRecord')}</Button>
+        )}
+      </form>
+    )
+  }
 
   if (state === 'recording') {
     const left = MAX_NOTE_SECONDS - seconds
@@ -430,8 +467,9 @@ function NoteRecorder({ table }) {
           <span className="relative grid h-32 w-32 place-items-center rounded-full bg-brand text-white shadow-xl shadow-brand/30"><Mic className="h-12 w-12" /></span>
         </div>
         <p className="mt-6 font-display text-5xl font-medium tabular-nums text-ink">0:{String(left).padStart(2, '0')}</p>
-        <p className="mt-2 max-w-xs text-sm text-slate-500">{t('note.hint')}</p>
-        <Button type="button" onClick={stop} icon={Square} className="mt-8 w-full py-4 text-base">{t('round.stop')}</Button>
+        <NoteGuide />
+        <p className="mt-3 text-xs text-slate-500">{t('note.noiseTip')}</p>
+        <Button type="button" onClick={stop} icon={Square} className="mt-6 w-full py-4 text-base">{t('round.stop')}</Button>
       </div>
     )
   }
@@ -456,11 +494,37 @@ function NoteRecorder({ table }) {
     <div className="flex w-full flex-col items-center">
       <span className="grid h-20 w-20 place-items-center rounded-full bg-ink text-white"><TimerOff className="h-9 w-9" /></span>
       <h1 className="mt-5 font-display text-4xl font-medium tracking-tight">{t('round.timeUp')}</h1>
-      <p className="mt-2 max-w-sm text-slate-600">{t('round.recordPrompt')}</p>
-      <Button type="button" onClick={start} icon={Mic} className="mt-8 w-full py-4 text-base">{t('round.record')}</Button>
+      <NoteGuide />
+      <p className="mt-3 text-xs text-slate-500">{t('note.noiseTip')}</p>
+      <Button type="button" onClick={start} icon={Mic} className="mt-6 w-full py-4 text-base">{t('round.record')}</Button>
       {state === 'error' && <p role="alert" className="mt-3 text-sm font-semibold text-brand-dark">{t('round.micError')}</p>}
+      <Button type="button" variant="outline" onClick={() => setWriting(true)} icon={PencilLine} className="mt-2 w-full py-3.5 text-base">{t('note.write')}</Button>
+      <PrivacyNote />
     </div>
   )
+}
+
+/** Guía de lo que contar en la nota (grabada o escrita) */
+function NoteGuide() {
+  const { t } = useI18n()
+  return (
+    <div className="mt-5 w-full rounded-xl border border-slate-200 bg-white p-4 text-left">
+      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('note.guideTitle')}</p>
+      <ol className="mt-2 space-y-1.5">
+        {[1, 2, 3].map((n) => (
+          <li key={n} className="flex items-center gap-2.5 text-[15px] font-semibold text-ink">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-soft text-xs font-bold text-brand-dark">{n}</span>
+            {t(`note.guide${n}`)}
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+function PrivacyNote() {
+  const { t } = useI18n()
+  return <p className="mt-4 flex items-start gap-1.5 text-left text-xs text-slate-500"><Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {t('note.privacy')}</p>
 }
 
 /** URL temporal para reproducir/descargar un Blob (se libera al desmontar) */

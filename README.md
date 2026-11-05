@@ -163,6 +163,7 @@ En el SQL Editor de Supabase, ejecutar en este orden (cada script se puede repet
 7. `supabase/2026-11-resumenes.sql`: página `#resum`
 8. `supabase/2026-11-transcribir-navegador.sql`: transcripción en el navegador
 9. `supabase/2026-11-esperas.sql`: «14 de 20 preparados / notas enviadas» en las esperas del móvil
+10. `supabase/2026-11-nota-escrita.sql`: opción «Prefiero escribirla» en vez de grabar la nota
 
 Antes de abrir las inscripciones reales: `supabase/2026-11-limpiar-pruebas.sql` borra de verdad las
 inscripciones, las notas y el plan (conserva las mesas y el PIN). «Eliminar» desde el panel, en cambio,

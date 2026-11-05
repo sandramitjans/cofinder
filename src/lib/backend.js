@@ -115,6 +115,10 @@ export async function submitAudioNote({ id, round, tableId, topic, path, blob })
   return rpc('submit_audio_note', args)
 }
 
+/** Nota escrita («Prefiero escribirla»): cuenta como enviada y sale ya como texto en #resum */
+export const submitTextNote = ({ id, round, tableId, topic, text }) =>
+  rpc('submit_text_note', { p_id: id, p_round: round, p_table: tableId ?? null, p_topic: topic ?? null, p_text: text })
+
 /* ---------- Página #resum: transcripción en el navegador (con el PIN de Admin) ---------- */
 export const modPendingAudio = async (pin) => (await rpc('mod_pending_audio', { p_pin: pin }))?.notes ?? []
 export async function modGetAudio(pin, id, round) {

@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { VIEWS, MODERATOR_VIEWS, isModHash, JOIN_HASH, MOD_PIN, PAUSE_AFTER_ROUND, FIND_MINUTES, ROUND_MINUTES } from '../constants'
 import { demoParticipants } from '../lib/demo'
 import * as api from '../lib/backend'
-import { clearNotes, saveNote } from '../lib/audioNotes'
+import { clearNotes, saveNote, saveTextNote } from '../lib/audioNotes'
 
 /**
  * Estado global de Cofinder. Dos modos con la misma interfaz para las vistas:
@@ -290,9 +290,11 @@ export function AppProvider({ children }) {
   const [notesOverride, setNotesOverride] = useState([]) // rondas enviadas en este dispositivo, antes de que lo confirme el servidor
   const myNotes = REMOTE ? [...(myTable?.notes ?? []), ...notesOverride] : (currentUser?.notedRounds ?? [])
   const noteSent = !!event.round && myNotes.includes(event.round)
-  const submitNote = useCallback(async ({ round, tableId, topic, blob }) => {
+  const submitNote = useCallback(async ({ round, tableId, topic, blob, text }) => {
     if (!currentUserId) return { uploaded: false }
-    const res = await saveNote({ userId: currentUserId, round, tableId, topic, blob })
+    const res = text != null
+      ? await saveTextNote({ userId: currentUserId, round, tableId, topic, text })
+      : await saveNote({ userId: currentUserId, round, tableId, topic, blob })
     if (REMOTE) {
       if (!res.uploaded) return res
       setNotesOverride((prev) => [...prev, round])
