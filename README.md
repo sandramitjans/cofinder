@@ -112,9 +112,9 @@ VITE_PUBLIC_URL=http://192.168.1.20:5173       # opcional: dirección que codifi
 
 **Publicación:**
 - **GitHub Pages** (`.github/workflows/pages.yml`, se lanza a mano o con cada push a `main`):
-  desde `main` usa la base real (secretos del repositorio); desde cualquier otra rama, la base de
-  **pruebas**. Prueba actual: https://sandramitjans.github.io/cofinder/ (rama `prototipo-visual`).
-- **Netlify** (`netlify.toml`): la web publicada original, con la base de París.
+  https://sandramitjans.github.io/cofinder/
+- **Netlify** (`netlify.toml`): se publica con cada push a `main`.
+- Las dos usan la base de Supabase «Cofinder» (`uppsizyvtnyvvtmgyeff`).
 - Para la versión definitiva en un servidor propio con dominio basta servir la carpeta `dist/`
   (es una web estática). No necesita Python ni Docker.
 
@@ -122,8 +122,8 @@ Si tras publicar se ve la versión anterior, abrir en una ventana de incógnito 
 
 ## Base de datos (Supabase)
 
-Dos proyectos: **`cofinder`** (París, la web de Netlify) y **pruebas** (`uppsizyvtnyvvtmgyeff`, la de
-GitHub Pages desde ramas que no son `main`).
+Proyecto **«Cofinder»** (`uppsizyvtnyvvtmgyeff`, Irlanda), con todos los scripts ejecutados. El proyecto
+antiguo de París (`dixhoqdykarenflooirp`) ya no se usa.
 
 | Pieza | Qué es | Quién accede |
 |---|---|---|
