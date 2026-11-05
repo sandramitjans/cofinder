@@ -82,29 +82,36 @@ function Waiting() {
   )
 }
 
-/** «Encuentra tu mesa»: círculo con la cuenta atrás, número de mesa + tema y los compañeros */
+/** «Encuentra tu mesa»: el número de mesa en grande (lo primero que se ve), el tema, la cuenta atrás y con quién */
 function FindTable({ table, findTimer }) {
   const { event } = useApp()
   const { t, topic } = useI18n()
   const desc = useTopicDesc(table.topic)
   return (
     <div className="flex flex-col items-center text-center">
-      <span className="rounded-full bg-brand-soft px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-dark">{t('round.badge', { n: event.round, total: TOTAL_ROUNDS })}</span>
-      <h1 className="mt-4 font-display text-4xl font-medium tracking-tight">{t('find.title')}</h1>
-      <div className="mt-6 grid h-48 w-48 place-items-center rounded-full border-[7px] border-brand bg-white shadow-xl shadow-brand/15">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t('find.startsIn')}</p>
-          <p className="font-display text-5xl font-medium tabular-nums tracking-tight text-ink">{findTimer.label}</p>
+      <span className="rounded-full bg-brand-soft px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-dark">{t('round.badge', { n: event.round, total: TOTAL_ROUNDS })} · {t('find.title')}</span>
+      <section aria-label={t('round.goTo', { n: table.id })} className="animate-pop-in mt-5 w-full overflow-hidden rounded-3xl bg-brand text-white shadow-xl shadow-brand/25">
+        <div className="px-5 pb-4 pt-5">
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/80">{t('find.goLabel')}</p>
+          <p className="text-2xl font-semibold uppercase tracking-[0.2em]">{t('find.table')}</p>
+          <p className="font-display text-[9rem] font-bold leading-[0.85] tracking-tighter tabular-nums">{table.id}</p>
+        </div>
+        <div className="border-t border-white/20 bg-black/10 px-5 py-3.5">
+          <p className="font-display text-xl font-medium leading-tight"><span aria-hidden className="mr-1.5">{emojiOf(table.topic)}</span>{topic(table.topic)}</p>
+          {desc && <p className="mt-1 text-sm text-white/85">{desc}</p>}
+        </div>
+      </section>
+      <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-slate-600"><MapPin className="h-4 w-4 shrink-0 text-brand" /> {t('find.sign', { n: table.id })}</p>
+      <div className="mt-5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="flex items-center gap-1.5 text-sm text-slate-600"><Timer className="h-4 w-4" /> {t('find.left')}</p>
+          <p className="font-display text-2xl font-medium tabular-nums text-ink">{findTimer.label}</p>
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full rounded-full bg-brand transition-[width] duration-1000" style={{ width: `${(1 - findTimer.progress) * 100}%` }} />
         </div>
       </div>
-      <section className="mt-7 w-full rounded-2xl bg-brand p-5 text-left text-white shadow-lg shadow-brand/20">
-        <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/80"><MapPin className="h-3.5 w-3.5" /> {t('round.table', { n: table.id })}</p>
-        <h2 className="mt-1 font-display text-2xl font-medium leading-tight">
-          <span aria-hidden className="mr-1.5">{emojiOf(table.topic)}</span>{topic(table.topic)}
-        </h2>
-        {desc && <p className="mt-1.5 text-sm text-white/85">{desc}</p>}
-      </section>
-      <div className="w-full text-left"><Companions table={table} /></div>
+      <div className="w-full text-left"><Companions table={table} title={t('find.people')} /></div>
     </div>
   )
 }
@@ -338,14 +345,14 @@ function TopicCard({ table }) {
   )
 }
 
-function Companions({ table }) {
+function Companions({ table, title }) {
   const { currentUser, participants } = useApp()
   const { t, country } = useI18n()
   const byId = new Map(participants.map((p) => [p.id, p]))
   const people = table.members.filter((id) => id !== currentUser.id).map((id) => byId.get(id)).filter(Boolean)
   return (
     <section className="mt-6">
-      <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><Users className="h-3.5 w-3.5" /> {t('round.with')}</h2>
+      <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><Users className="h-3.5 w-3.5" /> {title ?? t('round.with')}</h2>
       <ul className="mt-2.5 space-y-2">
         {people.map((p) => (
           <li key={p.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5">

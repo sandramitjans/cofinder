@@ -108,6 +108,10 @@ export const DICT = {
       go: 'Ve a la mesa {n}',
       left: 'La conversación empieza en',
       projector: 'Encontrad vuestra mesa',
+      goLabel: 'Ve a la',
+      table: 'Mesa',
+      sign: 'Busca el cartel con el número {n} en la sala',
+      people: 'Allí te esperan',
     },
     lobby: {
       connected: 'Estás conectado/a',
@@ -529,6 +533,10 @@ export const DICT = {
       go: 'Go to table {n}',
       left: 'The conversation starts in',
       projector: 'Find your table',
+      goLabel: 'Go to',
+      table: 'Table',
+      sign: 'Look for the sign with number {n} in the room',
+      people: 'Who you’ll meet there',
     },
     lobby: {
       connected: 'You’re connected',
