@@ -272,7 +272,11 @@ function Transcriber({ pin, pending, onSaved }) {
   else if (!st || st.phase === 'loading') line = t('resum.tr.loading', { p: Math.round((st?.progress ?? 0) * 100) })
   else if (st.phase === 'error') line = t('resum.tr.error')
   else if (st.phase === 'working') line = t('resum.tr.working', { n: st.left ?? pending })
-  else line = pending ? t('resum.tr.waiting', { n: pending }) : t('resum.tr.idle')
+  else {
+    // Notas sin copia del audio (grabadas antes de activar esto): no se pueden transcribir aquí
+    const old = Math.max(0, pending - (st.withAudio ?? 0))
+    line = (st.withAudio ? t('resum.tr.waiting', { n: st.withAudio }) : t('resum.tr.idle')) + (old ? ` ${t('resum.tr.old', { n: old })}` : '')
+  }
 
   return (
     <section className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200">

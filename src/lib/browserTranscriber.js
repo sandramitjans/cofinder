@@ -68,6 +68,7 @@ export function createTranscriber({ pin, model = 'small', onStatus }) {
     try {
       await ready
       const notes = (await api.modPendingAudio(pin)).filter((x) => (failed.get(x.path) ?? 0) < 3)
+      emit({ withAudio: notes.length })
       for (const note of notes) {
         if (stopped) break
         emit({ phase: 'working', current: note, left: notes.length - n })
