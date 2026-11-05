@@ -26,9 +26,11 @@ jobs:
       - run: npm ci
       # Sin secretos → modo demo/local. Con secretos → base real de Supabase.
       - run: npx vite build --base=/${{ github.event.repository.name }}/
+        # Desde main: los secretos del repositorio. Desde cualquier otra rama (pruebas reales con
+        # móviles): la base de PRUEBAS de Supabase. La clave publicable está pensada para el navegador.
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: ${{ github.ref_name == 'main' && secrets.VITE_SUPABASE_URL || 'https://uppsizyvtnyvvtmgyeff.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ github.ref_name == 'main' && secrets.VITE_SUPABASE_ANON_KEY || 'sb_publishable_WYZdHmJyqB0GQ4hxcpptnA_aIM9qmGb' }}
           VITE_EVENT_DATE: ${{ secrets.VITE_EVENT_DATE }}
       # Para que recargar una página interna no dé error 404
       - run: cp dist/index.html dist/404.html
