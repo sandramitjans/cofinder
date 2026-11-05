@@ -7,7 +7,7 @@ import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { PAUSE_AFTER_ROUND, PAUSE_MINUTES, TOPIC_FAMILIES, VIEWS } from '../constants'
 import { planStats, tableRange } from '../lib/matching'
-import { MAX_CUSTOM_LENGTH, makeEventTopic, topicKey } from '../lib/topics'
+import { MAX_CUSTOM_LENGTH, makeEventTopic, topicKey, topicsWithLevel } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
@@ -221,8 +221,9 @@ export default function ModeratorPanelView() {
                     </div>
                   </div>
                   <div className="flex flex-1 flex-wrap gap-1">
-                    {p.offers.map((x) => <span key={x} className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-medium text-brand-dark">{topic(x)}</span>)}
-                    {p.needs.map((x) => <span key={x} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">{topic(x)}</span>)}
+                    {topicsWithLevel(p).map(({ id: x, level }) => (
+                      <span key={x} className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${level === 'high' ? 'bg-brand-soft text-brand-dark' : level === 'medium' ? 'bg-amber-50 text-brand-dark ring-1 ring-brand/20' : 'bg-slate-100 text-slate-700'}`}>{topic(x)}</span>
+                    ))}
                     {(p.superpowers ?? []).map((x) => (
                       <span key={x} title={superpower(x)} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200">
                         {SUPERPOWERS.find((sp) => sp.id === x)?.emoji} {superpower(x)}
@@ -242,6 +243,7 @@ export default function ModeratorPanelView() {
           )}
           <p className="flex items-center gap-4 border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-brand" /> {t('panel.legendOffer')}</span>
+            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-200" /> {t('panel.legendMid')}</span>
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-slate-300" /> {t('panel.legendNeed')}</span>
           </p>
         </section>

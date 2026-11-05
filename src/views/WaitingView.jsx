@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { EVENT_DATE, EVENT_PLACE, TOPIC_EMOJI, VIEWS } from '../constants'
 import { useTimeLeft } from '../lib/useTimeLeft'
-import { isCustom } from '../lib/topics'
+import { isCustom, topicsWithLevel } from '../lib/topics'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
 import LangSwitch from '../components/ui/LangSwitch'
@@ -26,10 +26,7 @@ export default function WaitingView() {
   }, [justUpdated])
   if (!currentUser) return null
 
-  const tables = [
-    ...currentUser.offers.map((id) => ({ id, level: 'expert' })),
-    ...currentUser.needs.map((id) => ({ id, level: 'curious' })),
-  ]
+  const tables = topicsWithLevel(currentUser)
 
   return (
     <div className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
@@ -66,8 +63,8 @@ export default function WaitingView() {
                 <li key={id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5">
                   <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-lg">{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
                   <span className="min-w-0 flex-1 text-[15px] font-semibold leading-snug">{topic(id)}</span>
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${level === 'expert' ? 'bg-brand-soft text-brand-dark' : 'bg-slate-100 text-slate-600'}`}>
-                    {t(level === 'expert' ? 'waiting.masters' : 'waiting.explores')}
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${level === 'high' ? 'bg-brand-soft text-brand-dark' : level === 'medium' ? 'bg-amber-50 text-brand-dark ring-1 ring-brand/20' : 'bg-slate-100 text-slate-600'}`}>
+                    {t(`register.level.${level}Badge`)}
                   </span>
                 </li>
               ))}

@@ -13,10 +13,10 @@ import SuperpowerPicker from '../components/ui/SuperpowerPicker'
 import PhotoPicker from '../components/ui/PhotoPicker'
 import LangSwitch from '../components/ui/LangSwitch'
 import PublicFooter from '../components/layout/PublicFooter'
-import { isCustom } from '../lib/topics'
+import { isCustom, topicsWithLevel } from '../lib/topics'
 
 // `country` guarda «Filial / Departamento» (texto libre, con sugerencias de filiales)
-// `needs` guarda en el formulario las mesas elegidas; `levels` dice para cada una si es «Con experiencia» o «Curiosidad»
+// `needs` guarda en el formulario las mesas elegidas; `levels` dice el nivel en cada una: 'high' | 'medium' | 'low'
 const EMPTY = { name: '', role: '', country: '', photo: '', offers: [], needs: [], levels: {}, customTopics: [], superpowers: [] }
 
 // Borrador automático: se guarda en este dispositivo y se borra al validar el perfil
@@ -42,7 +42,7 @@ const normalizeBranch = (text) => {
  * Registro «Speed dating de conocimiento», con el estilo del prototipo (cfndr.lovable.app):
  * bienvenida con un único botón y formulario en 4 pasos, cada uno con su barra de progreso:
  * perfil, mesas (hasta 5, las que la moderadora añade desde el panel, en orden aleatorio para cada persona), nivel en cada mesa
- * (Con experiencia / Curiosidad) y arma secreta (facultativa). Al validar se pasa a la confirmación.
+ * (Alto / Medio / Bajo) y arma secreta (facultativa). Al validar se pasa a la confirmación.
  */
 export function EditProfileView() {
   return <RegisterView mode="edit" />
@@ -59,7 +59,7 @@ const formFromProfile = (p, countryLabel) => {
     photo: p.photo || '',
     offers: [],
     needs: [...new Set([...(p.offers ?? []), ...(p.needs ?? [])])].slice(0, MAX_INTERESTS), // una sola lista de mesas
-    levels: Object.fromEntries([...(p.needs ?? []).map((x) => [x, 'curious']), ...(p.offers ?? []).map((x) => [x, 'expert'])]),
+    levels: Object.fromEntries(topicsWithLevel(p).map(({ id, level }) => [id, level])),
     customTopics: [...new Set([...(p.customTopics ?? []), ...used])],
     superpowers: (p.superpowers ?? []).slice(0, MAX_SUPERPOWERS),
   }
@@ -149,15 +149,16 @@ export default function RegisterView({ mode = 'create' }) {
     e.preventDefault()
     if (saving || !validate()) return
     if (screen < LAST) return goTo(screen + 1)
-    // Cada mesa elegida se guarda según su nivel: «Con experiencia» en `offers`, «Curiosidad» en `needs`.
+    // Cada mesa elegida se guarda según su nivel: Alto en `offers`, Bajo en `needs`, Medio en las dos.
     // Las mesas añadidas desde el panel (`custom:…`) se guardan también en `customTopics`
     const customTopics = form.needs.filter(isCustom)
-    const levelOf = (id) => form.levels?.[id] ?? 'curious'
+    // Borradores antiguos: «expert» = Alto, «curious» = Bajo
+    const levelOf = (id) => ({ expert: 'high', curious: 'low' })[form.levels?.[id]] ?? form.levels?.[id] ?? 'low'
     const { levels: _levels, ...rest } = form
     const data = {
       ...rest,
-      offers: form.needs.filter((id) => levelOf(id) === 'expert'),
-      needs: form.needs.filter((id) => levelOf(id) === 'curious'),
+      offers: form.needs.filter((id) => levelOf(id) !== 'low'),
+      needs: form.needs.filter((id) => levelOf(id) !== 'high'),
       customTopics, name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country),
     }
     setSaveError(false)

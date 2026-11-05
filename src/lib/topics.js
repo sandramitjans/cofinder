@@ -58,3 +58,18 @@ export function seededOrder(items, seed, keyOf = (x) => x) {
     .sort((a, b) => a.k - b.k)
     .map(({ x }) => x)
 }
+
+/* ---------- Nivel en cada mesa: Alto / Medio / Bajo ----------
+   Se guarda con las mismas dos listas de siempre, para que el reparto no cambie de lógica:
+   Alto → solo en `offers` (puede compartir) · Bajo → solo en `needs` (viene a aprender) ·
+   Medio → en las dos (comparte y aprende). */
+export const LEVELS = ['high', 'medium', 'low']
+export const levelOfTopic = (person, id) => {
+  const key = topicKey(id)
+  const o = (person?.offers ?? []).some((x) => topicKey(x) === key)
+  const n = (person?.needs ?? []).some((x) => topicKey(x) === key)
+  return o && n ? 'medium' : o ? 'high' : n ? 'low' : null
+}
+/** Mesas de una persona, sin repetir, con su nivel */
+export const topicsWithLevel = (person) =>
+  [...new Set([...(person?.offers ?? []), ...(person?.needs ?? [])])].map((id) => ({ id, level: levelOfTopic(person, id) }))
