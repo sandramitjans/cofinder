@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { VIEWS, MODERATOR_VIEWS, MOD_HASH, MOD_PIN, PAUSE_AFTER_ROUND } from '../constants'
+import { VIEWS, MODERATOR_VIEWS, MOD_HASH, JOIN_HASH, MOD_PIN, PAUSE_AFTER_ROUND } from '../constants'
 import { demoParticipants } from '../lib/demo'
 import * as api from '../lib/backend'
 import { clearNotes } from '../lib/audioNotes'
@@ -38,6 +38,15 @@ const write = (storage, key, value) => {
   try { value == null ? storage.removeItem(key) : storage.setItem(key, JSON.stringify(value)) } catch { /* sin almacenamiento */ }
 }
 const currentLang = () => { try { return localStorage.getItem('cofinder:lang') === 'en' ? 'en' : 'es' } catch { return 'es' } }
+// Código de acceso de 4 cifras (modo local; en Supabase lo pone el servidor)
+const newCode = (taken) => {
+  let c
+  do { c = String(1000 + Math.floor(Math.random() * 9000)) } while (taken.has(c))
+  taken.add(c)
+  return c
+}
+// Minúsculas y sin acentos: «lucia» encuentra a «Lucía Ferrer»
+const norm = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 const isSeated = (rounds, id) => rounds.some((r) => r.tables.some((t) => t.members.includes(id)))
 
 export function AppProvider({ children }) {
@@ -50,7 +59,8 @@ export function AppProvider({ children }) {
   const [gateOpen, setGateOpen] = useState(() => window.location.hash === MOD_HASH)
   const [view, setView] = useState(() => {
     if (read(sessionStorage, MOD_KEY, null)) return VIEWS.MOD_PANEL
-    return read(localStorage, ME_KEY, null) ? VIEWS.HOME : VIEWS.REGISTER
+    if (read(localStorage, ME_KEY, null)) return VIEWS.HOME
+    return window.location.hash === JOIN_HASH ? VIEWS.LOGIN : VIEWS.REGISTER
   })
 
   /* ---------- Estado local (modo sin servidor) ---------- */
@@ -73,6 +83,13 @@ export function AppProvider({ children }) {
   useEffect(() => { if (REMOTE) write(localStorage, PROFILE_KEY, me) }, [me])
   useEffect(() => write(sessionStorage, MOD_KEY, modPin), [modPin])
 
+  // Modo local: quien se registró antes de existir los códigos recibe el suyo
+  useEffect(() => {
+    if (REMOTE || localParticipants.every((p) => p.accessCode)) return
+    const taken = new Set(localParticipants.map((p) => p.accessCode).filter(Boolean))
+    setLocalParticipants((prev) => prev.map((p) => (p.accessCode ? p : { ...p, accessCode: newCode(taken) })))
+  }, [localParticipants])
+
   // Enlace secreto #moderadora + sincronización entre pestañas (modo local)
   useEffect(() => {
     const onStorage = (e) => {
@@ -82,7 +99,10 @@ export function AppProvider({ children }) {
       setLocalEvent(next.event ?? EMPTY_EVENT)
       setLocalTopics(next.topics ?? [])
     }
-    const onHash = () => window.location.hash === MOD_HASH && setGateOpen(true)
+    const onHash = () => {
+      if (window.location.hash === MOD_HASH) setGateOpen(true)
+      if (window.location.hash === JOIN_HASH) setView((v) => (v === VIEWS.REGISTER ? VIEWS.LOGIN : v))
+    }
     window.addEventListener('storage', onStorage)
     window.addEventListener('hashchange', onHash)
     return () => {
@@ -119,6 +139,12 @@ export function AppProvider({ children }) {
     const timer = setInterval(refreshMine, TABLE_POLL_MS) // por si el tiempo real se corta
     return () => { off(); clearInterval(timer); document.removeEventListener('visibilitychange', onVisible) }
   }, [currentUserId, refreshMine])
+
+  // El móvil se anuncia como «conectado» (el proyector enciende su foto en la pantalla del QR)
+  useEffect(() => {
+    if (!REMOTE || !currentUserId) return
+    return api.announcePresence(currentUserId)
+  }, [currentUserId])
 
   /* ---------- Mesas del evento (las añade la moderadora desde el panel) ---------- */
   const [remoteTopics, setRemoteTopics] = useState([])
@@ -255,7 +281,7 @@ export function AppProvider({ children }) {
       setMe(user)
       api.ping('participants')
     } else {
-      setLocalParticipants((prev) => [...prev, user])
+      setLocalParticipants((prev) => [...prev, { ...user, accessCode: newCode(new Set(prev.map((p) => p.accessCode))) }])
     }
     setEditSecret(secret)
     setCurrentUserId(user.id)
@@ -283,6 +309,35 @@ export function AppProvider({ children }) {
     window.scrollTo({ top: 0 })
     return true
   }, [currentUserId, editSecret])
+
+  // Entrar desde otro dispositivo (el móvil, tras escanear el QR) con el nombre y el código de 4 cifras.
+  // Devuelve 'ok' | 'invalid' | 'locked' | 'network'
+  const login = useCallback(async (name, rawCode) => {
+    const code = String(rawCode).replace(/\D/g, '')
+    let id, secret
+    if (REMOTE) {
+      try {
+        ({ id, secret } = await api.loginWithCode(name, code))
+        const profile = await api.fetchMyProfile(id)
+        if (!profile) return 'invalid'
+        setMe(profile)
+      } catch (err) {
+        return err.code === 'invalid' || err.code === 'locked' ? err.code : 'network'
+      }
+    } else {
+      const n = norm(name)
+      const p = n.length >= 2 && localParticipants.find((x) => x.accessCode === code && norm(x.name).includes(n))
+      if (!p) return 'invalid'
+      id = p.id
+      secret = crypto.randomUUID()
+    }
+    setEditSecret(secret)
+    setCurrentUserId(id)
+    setView(VIEWS.HOME)
+    if (window.location.hash === JOIN_HASH) window.history.replaceState(null, '', window.location.pathname)
+    window.scrollTo({ top: 0 })
+    return 'ok'
+  }, [localParticipants])
 
   // Solo olvida el perfil en ESTE dispositivo (el registro sigue en la base de datos)
   const forgetMe = useCallback(() => {
@@ -313,7 +368,10 @@ export function AppProvider({ children }) {
       return demoParticipants(eventTopics.map((x) => x.id)).filter((p) => !names.has(p.name.toLowerCase()))
     }
     if (REMOTE) return modAction((pin) => api.modAddDemo(pin, pick(modStateRef.current?.participants ?? [])))
-    setLocalParticipants((prev) => [...prev, ...pick(prev)])
+    setLocalParticipants((prev) => {
+      const taken = new Set(prev.map((p) => p.accessCode))
+      return [...prev, ...pick(prev).map((p) => ({ ...p, accessCode: newCode(taken) }))]
+    })
   }, [modAction, eventTopics])
 
   // La moderadora añade o quita mesas del evento (con el nombre de quien la propone)
@@ -470,14 +528,14 @@ export function AppProvider({ children }) {
     view, navigate,
     participants, currentUser, event, currentRound, seatedEver,
     modLoading: REMOTE && modUnlocked && !modState,
-    register, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     modUnlocked, gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
   }), [view, navigate, participants, currentUser, event, currentRound, seatedEver, modUnlocked, modState,
-    register, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     gateOpen, openGate, closeGate, unlockModerator, lockModerator,

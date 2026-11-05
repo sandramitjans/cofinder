@@ -33,6 +33,7 @@ export const fromRow = (r) => r && ({
   customTopics: r.custom_topics ?? [],
   superpowers: r.superpowers ?? [],
   demo: !!r.demo,
+  accessCode: r.access_code ?? null, // solo llega para la propia persona y para la moderadora
   createdAt: r.created_at ? Date.parse(r.created_at) : undefined,
 })
 
@@ -84,13 +85,34 @@ export async function fetchMyTable(id) {
   }
 }
 
-/** Avisa cada vez que la moderadora cambia de ronda (señal sin datos personales, por websocket) */
+/** Entrar desde otro dispositivo (el móvil) con el nombre y el código de 4 cifras.
+ *  Devuelve { id, secret }; lanza un error con code 'invalid' | 'locked'. */
+export const loginWithCode = (name, code) => rpc('participant_login', { p_name: name, p_code: code })
+
+/** Avisa cada vez que la moderadora cambia de ronda (señal sin datos personales, por websocket).
+ *  Un solo canal compartido: si el mismo dispositivo es participante y moderadora, los dos lo escuchan. */
+const eventListeners = new Set()
+let eventChannel = null
+let eventTeardown = null
 export function onEventChange(cb) {
-  const channel = supabase
-    .channel('event_status')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'event_status' }, cb)
-    .subscribe()
-  return () => { supabase.removeChannel(channel) }
+  eventListeners.add(cb)
+  clearTimeout(eventTeardown)
+  if (!eventChannel) {
+    eventChannel = supabase
+      .channel('event_status')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'event_status' }, (msg) => eventListeners.forEach((f) => f(msg)))
+      .subscribe()
+  }
+  return () => {
+    eventListeners.delete(cb)
+    // Se cierra un poco después: si la pantalla vuelve a suscribirse enseguida, reutiliza el canal abierto
+    clearTimeout(eventTeardown)
+    eventTeardown = setTimeout(() => {
+      if (eventListeners.size || !eventChannel) return
+      supabase.removeChannel(eventChannel)
+      eventChannel = null
+    }, 2000)
+  }
 }
 
 /* ---------- Tiempo real (Supabase Realtime, websocket) ----------
@@ -118,6 +140,73 @@ export function onPing(cb) {
   listeners.add(cb)
   live()
   return () => { listeners.delete(cb) }
+}
+
+/* ---------- Quién está conectado (presencia de Supabase Realtime) ----------
+   Cada móvil con sesión abierta se anuncia en el canal con una huella de su identificador (nunca el
+   identificador en sí, que es lo que da acceso a su mesa). El proyector compara las huellas con la
+   lista de participantes y enciende la foto de quien ya está conectado. */
+const PRESENCE = 'cofinder-presence'
+
+// Huella corta y estable (cyrb53): no permite recuperar el identificador
+export function presenceKey(id) {
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57
+  for (let i = 0; i < id.length; i++) {
+    const ch = id.charCodeAt(i)
+    h1 = Math.imul(h1 ^ ch, 2654435761)
+    h2 = Math.imul(h2 ^ ch, 1597334677)
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36)
+}
+
+// Un solo canal por dispositivo (Supabase devuelve el mismo canal para el mismo nombre, así que
+// antes de abrir uno nuevo hay que esperar a que el anterior se haya cerrado del todo)
+let presenceChannel = null
+let presenceOwnKey = null      // huella del participante de este dispositivo, si lo hay
+const presenceWatchers = new Set()
+let presenceQueue = Promise.resolve()
+const presenceSnapshot = () => new Set(Object.keys(presenceChannel?.presenceState() ?? {}))
+
+async function applyPresence() {
+  const want = !!presenceOwnKey || presenceWatchers.size > 0
+  const key = presenceChannel?.params.config.presence?.key
+  // Hay que cerrar el canal si ya no hace falta o si se abrió con otra identidad
+  const stale = presenceChannel && (!want || (presenceOwnKey ? key !== presenceOwnKey : !key?.startsWith('watch-')))
+  if (stale) {
+    const old = presenceChannel
+    presenceChannel = null
+    await supabase.removeChannel(old).catch(() => {})
+  }
+  if (!want || presenceChannel) return
+  const channel = supabase.channel(PRESENCE, {
+    config: { presence: { key: presenceOwnKey ?? `watch-${Math.random().toString(36).slice(2)}`, enabled: true } },
+  })
+  presenceChannel = channel
+  const tracking = !!presenceOwnKey
+  channel
+    .on('presence', { event: 'sync' }, () => {
+      const keys = new Set(Object.keys(channel.presenceState()))
+      presenceWatchers.forEach((cb) => cb(keys))
+    })
+    .subscribe((status) => { if (status === 'SUBSCRIBED' && tracking) channel.track({ at: Date.now() }) })
+}
+const syncPresence = () => { presenceQueue = presenceQueue.then(applyPresence).catch(() => {}) }
+
+/** El móvil se anuncia como conectado mientras la app está abierta */
+export function announcePresence(id) {
+  presenceOwnKey = presenceKey(id)
+  syncPresence()
+  return () => { presenceOwnKey = null; syncPresence() }
+}
+
+/** El proyector recibe el conjunto de huellas conectadas cada vez que alguien entra o sale */
+export function watchPresence(cb) {
+  presenceWatchers.add(cb)
+  syncPresence()
+  cb(presenceSnapshot())
+  return () => { presenceWatchers.delete(cb); syncPresence() }
 }
 
 /* ---------- Mesas del evento ----------

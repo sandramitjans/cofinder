@@ -2,6 +2,8 @@
 -- Para montar Cofinder en un proyecto de Supabase VACÍO. Después ejecutar, en este orden:
 --   2026-11-prototipo.sql  (notas de audio, propuestas antiguas)
 --   2026-11-mesas.sql      (mesas del evento desde el panel)
+--   2026-11-mesas-familia.sql
+--   2026-11-acceso-movil.sql (código de 4 cifras para entrar desde el móvil)
 -- PIN inicial de la moderadora: 2026. Cambiarlo con:  select public.mod_set_pin('2026', 'NUEVO');
 
 create extension if not exists pgcrypto with schema extensions;

@@ -5,6 +5,7 @@ export const VIEWS = {
   EDIT: 'edit',           // pública: el participante modifica su propio perfil
   MOD_PANEL: 'mod-panel', // oculta: panel de moderadora
   PROJECTOR: 'projector', // oculta: pantalla grande
+  LOGIN: 'login',         // pública: entrar desde otro dispositivo con nombre + código (QR del proyector)
 }
 
 // Vistas que solo se abren con el PIN desbloqueado
@@ -12,6 +13,15 @@ export const MODERATOR_VIEWS = [VIEWS.MOD_PANEL, VIEWS.PROJECTOR]
 
 // Acceso oculto: enlace directo .../#moderadora o el candado discreto del pie
 export const MOD_HASH = '#moderadora'
+// El QR del proyector abre la app con este enlace: …/#entrar → pantalla de acceso
+export const JOIN_HASH = '#entrar'
+// Dirección que codifica el QR. Por defecto, la de la propia página; en pruebas en red local
+// conviene poner la IP del ordenador (p. ej. VITE_PUBLIC_URL=http://192.168.1.20:5173)
+// Si no se indica y la app está abierta en «localhost» (npm run dev), se usa sola la IP del ordenador.
+const LAN_IP = typeof __LAN_IP__ === 'string' ? __LAN_IP__ : ''
+const isLocalhost = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname)
+export const PUBLIC_URL = import.meta.env?.VITE_PUBLIC_URL
+  || (isLocalhost && LAN_IP ? `${window.location.protocol}//${LAN_IP}:${window.location.port}${window.location.pathname}` : '')
 // PIN configurable con VITE_MOD_PIN en un fichero .env
 export const MOD_PIN = import.meta.env?.VITE_MOD_PIN ?? '2026'
 

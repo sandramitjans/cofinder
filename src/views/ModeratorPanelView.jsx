@@ -9,6 +9,7 @@ import { PAUSE_AFTER_ROUND, PAUSE_MINUTES, TOPIC_FAMILIES, VIEWS } from '../cons
 import { planStats, tableRange } from '../lib/matching'
 import { MAX_CUSTOM_LENGTH, makeEventTopic, topicKey, topicsWithLevel } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
+import { useConnected } from '../lib/useConnected'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
@@ -24,6 +25,7 @@ export default function ModeratorPanelView() {
     eventTopics, addEventTopic, removeEventTopic,
   } = useApp()
   const { t, topic, country, superpower } = useI18n()
+  const isOn = useConnected() // quién tiene la app abierta en el móvil (null en modo local)
   const byId = useMemo(() => new Map(participants.map((p) => [p.id, p])), [participants])
   const hasDemo = participants.some((p) => p.demo)
   const hasPlan = event.rounds.length > 0
@@ -230,6 +232,12 @@ export default function ModeratorPanelView() {
                       </span>
                     ))}
                   </div>
+                  {p.accessCode && (
+                    <span title={t('login.panelCode')} className={`inline-flex shrink-0 items-center gap-1.5 self-start rounded-lg px-2 py-1 font-mono text-sm font-bold tracking-widest sm:self-auto ${isOn?.(p.id) ? 'bg-mint-soft text-mint-dark' : 'bg-slate-100 text-slate-700'}`}>
+                      {isOn && <span aria-hidden className={`h-2 w-2 rounded-full ${isOn(p.id) ? 'bg-mint-dark' : 'bg-slate-300'}`} />}
+                      {p.accessCode}
+                    </span>
+                  )}
                   <button
                     onClick={confirmThen(t('panel.confirmRemove', { name: p.name }), () => removeParticipant(p.id))}
                     className="self-end rounded-lg p-2 text-slate-400 hover:bg-accent-soft hover:text-accent-dark sm:self-auto"
@@ -245,6 +253,7 @@ export default function ModeratorPanelView() {
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-brand" /> {t('panel.legendOffer')}</span>
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-200" /> {t('panel.legendMid')}</span>
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-slate-300" /> {t('panel.legendNeed')}</span>
+            <span className="ml-auto">🔑 {t('login.panelHint')}{isOn && <> · {t('join.connected', { n: participants.filter((p) => isOn(p.id)).length, total: participants.length })}</>}</span>
           </p>
         </section>
       </main>

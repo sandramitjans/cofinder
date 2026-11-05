@@ -73,6 +73,38 @@ export const DICT = {
 
     match: { ready: 'Listo' },
 
+    // Acceso desde el móvil el día del evento (QR del proyector → nombre + código)
+    login: {
+      kicker: 'Día del evento',
+      title: 'Conecta tu móvil',
+      sub: 'Escribe tu nombre y tu código de 4 cifras. Tu móvil te irá mostrando tu mesa, tus compañeros y la cuenta atrás.',
+      name: 'Tu nombre', namePh: 'Ej. Lucía',
+      code: 'Tu código', submit: 'Entrar', busy: 'Entrando…',
+      where: 'Tu código está en tu perfil de Cofinder. Si no lo encuentras, pídeselo a la organización.',
+      notRegistered: '¿Aún no te has registrado? Hazlo aquí',
+      landingLink: '¿Ya te registraste? Conecta este dispositivo',
+      err: {
+        incomplete: 'Escribe tu nombre y las 4 cifras de tu código.',
+        invalid: 'El nombre o el código no coinciden. Revísalos e inténtalo otra vez.',
+        locked: 'Demasiados intentos. Espera unos minutos y vuelve a probar.',
+        network: 'No hay conexión. Revisa tu red y vuelve a intentarlo.',
+      },
+      codeTitle: 'Tu acceso para el día del evento',
+      codeHint: 'Escanea el QR de la pantalla y entra con tu nombre y este código.',
+      connected: 'Móvil conectado. Te avisaremos aquí cuando empiece la ronda.',
+      panelCode: 'Código',
+      panelHint: 'Cada persona entra en su móvil con su nombre y su código.',
+    },
+    join: {
+      title: 'Conecta tu móvil',
+      step1: 'Escanea el código QR',
+      step2: 'Escribe tu nombre y tu código de 4 cifras',
+      step3: 'Tu móvil te dirá tu mesa en cada ronda',
+      orGo: 'o entra en',
+      connected: '{n} de {total} conectados',
+      localNote: 'Modo de prueba local: los móviles no pueden conectarse a este ordenador.',
+    },
+
     waiting: {
       yourFile: 'Tu perfil',
       yourTables: 'Tus mesas',
@@ -357,6 +389,38 @@ export const DICT = {
     },
 
     match: { ready: 'Ready' },
+
+    // Joining from the phone on the day (projector QR → name + code)
+    login: {
+      kicker: 'Event day',
+      title: 'Connect your phone',
+      sub: 'Type your name and your 4-digit code. Your phone will show your table, your tablemates and the countdown.',
+      name: 'Your name', namePh: 'E.g. Lucía',
+      code: 'Your code', submit: 'Sign in', busy: 'Signing in…',
+      where: 'Your code is on your Cofinder profile. If you can’t find it, ask the organisers.',
+      notRegistered: 'Not registered yet? Do it here',
+      landingLink: 'Already registered? Connect this device',
+      err: {
+        incomplete: 'Type your name and the 4 digits of your code.',
+        invalid: 'Name and code don’t match. Check them and try again.',
+        locked: 'Too many attempts. Wait a few minutes and try again.',
+        network: 'No connection. Check your network and try again.',
+      },
+      codeTitle: 'Your access for the event day',
+      codeHint: 'Scan the QR on the screen and sign in with your name and this code.',
+      connected: 'Phone connected. We’ll let you know here when the round starts.',
+      panelCode: 'Code',
+      panelHint: 'Everyone signs in on their phone with their name and code.',
+    },
+    join: {
+      title: 'Connect your phone',
+      step1: 'Scan the QR code',
+      step2: 'Type your name and your 4-digit code',
+      step3: 'Your phone will show your table every round',
+      orGo: 'or go to',
+      connected: '{n} of {total} connected',
+      localNote: 'Local test mode: phones can’t connect to this computer.',
+    },
 
     waiting: {
       yourFile: 'Your profile',

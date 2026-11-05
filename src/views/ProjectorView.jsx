@@ -1,10 +1,12 @@
-import { useEffect } from 'react'
-import { ArrowLeft, ChevronLeft, ChevronRight, Coffee, Expand, MapPin, PartyPopper, TimerOff } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import QRCode from 'qrcode'
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, Coffee, Expand, MapPin, PartyPopper, Smartphone, TimerOff } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { PAUSE_AFTER_ROUND, PAUSE_MINUTES, ROUND_MINUTES, VIEWS } from '../constants'
+import { JOIN_HASH, PAUSE_AFTER_ROUND, PAUSE_MINUTES, PUBLIC_URL, ROUND_MINUTES, VIEWS } from '../constants'
 import { roleOf } from '../lib/matching'
 import { useCountdown } from '../lib/useCountdown'
+import { useConnected } from '../lib/useConnected'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
 import RoleBadge from '../components/ui/RoleBadge'
@@ -56,21 +58,7 @@ export default function ProjectorView() {
       </Center>
     )
   } else if (!currentRound) {
-    scene = (
-      <Center>
-        <h1 className="font-display text-6xl font-medium tracking-tight">{t('projector.welcome')} <span className="text-brand-dark">Cofinder</span></h1>
-        <p className="mt-4 text-2xl text-slate-500">{t('projector.soon')}</p>
-        <div className="mt-12 flex max-w-5xl flex-wrap justify-center gap-4">
-          {participants.map((p, i) => (
-            <div key={p.id} className="animate-pop-in flex w-28 flex-col items-center gap-2 text-center" style={{ animationDelay: `${i * 60}ms` }}>
-              <Avatar name={p.name} photo={p.photo} size="lg" />
-              <span className="text-sm font-semibold leading-tight">{p.name.split(' ')[0]}</span>
-              <span className="-mt-1 text-xs text-slate-400">{country(p.country)}</span>
-            </div>
-          ))}
-        </div>
-      </Center>
-    )
+    scene = <JoinScene participants={participants} />
   } else if (pausing) {
     scene = (
       <Center>
@@ -217,6 +205,70 @@ export default function ProjectorView() {
           <div className="h-full bg-brand transition-all duration-1000" style={{ width: `${timer.progress * 100}%` }} />
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * Antes de la ronda 1: QR para conectar el móvil (…/#entrar → nombre + código).
+ * Las fotos se encienden a medida que cada persona se conecta.
+ */
+function JoinScene({ participants }) {
+  const { t, country } = useI18n()
+  const isOn = useConnected()
+  const url = `${(PUBLIC_URL || window.location.origin + window.location.pathname).replace(/#.*$/, '')}${JOIN_HASH}`
+  const [qr, setQr] = useState(null)
+  useEffect(() => {
+    QRCode.toDataURL(url, { margin: 1, width: 640, errorCorrectionLevel: 'M', color: { dark: '#16161D', light: '#FFFFFF' } })
+      .then(setQr).catch(() => setQr(null))
+  }, [url])
+  const on = isOn ? participants.filter((p) => isOn(p.id)).length : 0
+  const steps = [t('join.step1'), t('join.step2'), t('join.step3')]
+
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-10 animate-view-in">
+      <div className="flex w-full max-w-6xl flex-col items-center gap-12 lg:flex-row lg:justify-center">
+        <div className="max-w-xl text-center lg:text-left">
+          <p className="text-xl font-semibold uppercase tracking-[0.3em] text-brand-dark">{t('projector.welcome')} Cofinder</p>
+          <h1 className="mt-3 font-display text-7xl font-medium leading-none tracking-tight">{t('join.title')}</h1>
+          <ol className="mt-10 space-y-5 text-left">
+            {steps.map((txt, i) => (
+              <li key={i} className="flex items-center gap-4 text-2xl text-slate-700">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand font-display text-2xl font-bold text-white">{i + 1}</span>
+                {txt}
+              </li>
+            ))}
+          </ol>
+          <p className="mt-8 text-lg text-slate-500">{t('join.orGo')} <span className="font-mono font-semibold text-ink">{url.replace(/^https?:\/\//, '')}</span></p>
+        </div>
+        <div className="shrink-0 rounded-3xl bg-white p-6 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200">
+          {qr ? <img src={qr} alt={url} className="h-[min(26rem,42vh)] w-[min(26rem,42vh)]" /> : <div className="h-[min(26rem,42vh)] w-[min(26rem,42vh)]" />}
+        </div>
+      </div>
+
+      {isOn ? (
+        <p className="flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-xl font-semibold ring-1 ring-slate-200">
+          <Smartphone className="h-5 w-5 text-mint-dark" /> {t('join.connected', { n: on, total: participants.length })}
+        </p>
+      ) : (
+        <p className="text-base text-slate-500">{t('join.localNote')}</p>
+      )}
+
+      <div className="flex max-w-6xl flex-wrap justify-center gap-4">
+        {participants.map((p) => {
+          const lit = !isOn || isOn(p.id)
+          return (
+            <div key={p.id} className={`relative flex w-24 flex-col items-center gap-1.5 text-center transition duration-500 ${lit ? '' : 'opacity-35 grayscale'}`}>
+              <Avatar name={p.name} photo={p.photo} size="lg" />
+              {isOn && lit && (
+                <span className="animate-pop-in absolute right-3 top-0 grid h-6 w-6 place-items-center rounded-full bg-mint-dark text-white ring-2 ring-paper"><Check className="h-4 w-4" /></span>
+              )}
+              <span className="text-sm font-semibold leading-tight">{p.name.split(' ')[0]}</span>
+              <span className="-mt-1 truncate text-xs text-slate-400">{country(p.country)}</span>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

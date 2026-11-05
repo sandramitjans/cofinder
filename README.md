@@ -147,3 +147,24 @@ El reparto en mesas usa solo las mesas añadidas.
 
 En modo local se guardan en el navegador. Con Supabase, ejecutar una vez `supabase/2026-11-mesas.sql`
 (tabla `mesa_topics` y funciones `list_mesa_topics`, `mod_add_mesa_topic`, `mod_remove_mesa_topic`) y después `supabase/2026-11-mesas-familia.sql` (familia de cada mesa, para los filtros del formulario).
+
+### Conectar los móviles el día del evento (noviembre 2026)
+
+Antes de la ronda 1, el proyector muestra un **QR** que abre la app en `…/#entrar`. Cada persona entra con
+**su nombre** (basta una parte, sin acentos ni mayúsculas) y **su código de 4 cifras**. El código lo ve
+cada uno en su perfil («Tu acceso para el día del evento») y la moderadora, el de todos, en la lista de
+participantes del panel. Quien ya está registrado en ese móvil entra directamente.
+
+Mientras el QR está en pantalla, las fotos se encienden a medida que cada móvil se conecta («12 de 20
+conectados»), y en el panel aparece un punto verde junto al código. Es la presencia de Supabase Realtime
+(el mismo websocket que ya cambia la mesa y la cuenta atrás en cada móvil): cada móvil se anuncia con una
+huella de su identificador, nunca con el identificador en sí. Al pulsar «Siguiente» empieza la ronda 1 y
+cada móvil pasa solo a su mesa, sus compañeros y la cuenta atrás.
+
+Con Supabase, ejecutar una vez `supabase/2026-11-acceso-movil.sql` (columna `access_code`, códigos para
+quien ya estaba registrado y función `participant_login`; 30 fallos en 10 minutos bloquean unos minutos).
+En modo local los códigos se guardan en el navegador.
+
+El QR apunta a la dirección de la página. Con `npm run dev` abierto en `localhost`, usa sola la IP del
+ordenador en la wifi; si sale una IP equivocada, fijarla con `VITE_PUBLIC_URL=http://192.168.1.20:5173`
+en el `.env`.

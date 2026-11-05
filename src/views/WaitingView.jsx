@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CalendarDays, CheckCircle2, MapPin, PencilLine } from 'lucide-react'
+import { CalendarDays, CheckCircle2, KeyRound, MapPin, PencilLine } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { EVENT_DATE, EVENT_PLACE, TOPIC_EMOJI, VIEWS } from '../constants'
@@ -75,6 +75,8 @@ export default function WaitingView() {
 
           <DateBlock />
 
+          {currentUser.accessCode && <AccessCode name={currentUser.name} code={currentUser.accessCode} />}
+
           <p className="mt-4 flex items-center gap-2 rounded-xl bg-mint-soft px-3.5 py-3 text-sm font-medium text-mint-dark">
             <CheckCircle2 className="h-4 w-4 shrink-0" /> {t('waiting.allSet')}
           </p>
@@ -123,6 +125,21 @@ function DateBlock() {
         <p className="font-display text-xl font-medium text-ink">{headline}</p>
         <p className="truncate text-sm text-slate-500">{EVENT_PLACE || t('register.placeTbc')}</p>
       </div>
+    </section>
+  )
+}
+
+/** Nombre + código de 4 cifras para conectar el móvil el día del evento (QR del proyector) */
+function AccessCode({ name, code }) {
+  const { t } = useI18n()
+  return (
+    <section className="mt-4 rounded-xl border border-dashed border-brand/40 bg-white p-4">
+      <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><KeyRound className="h-3.5 w-3.5" /> {t('login.codeTitle')}</p>
+      <div className="mt-2 flex items-baseline justify-between gap-3">
+        <p className="min-w-0 truncate text-[15px] font-semibold text-ink">{name.split(' ')[0]}</p>
+        <p className="font-mono text-3xl font-bold tracking-[0.3em] text-brand-dark">{code}</p>
+      </div>
+      <p className="mt-1.5 text-sm text-slate-500">{t('login.codeHint')}</p>
     </section>
   )
 }

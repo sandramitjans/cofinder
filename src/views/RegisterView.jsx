@@ -333,9 +333,21 @@ function Landing({ resume, onStart }) {
           {t(resume ? 'register.landingResume' : 'register.landingCta')}
         </Button>
         <p className="mt-3 text-center text-sm text-slate-500">{t(resume ? 'register.landingNote' : 'register.landingHow')}</p>
+        <LoginLink />
       </main>
 
       <PublicFooter />
     </div>
+  )
+}
+
+/** Quien ya se registró en otro dispositivo entra con su nombre y su código */
+function LoginLink() {
+  const { navigate } = useApp()
+  const { t } = useI18n()
+  return (
+    <button type="button" onClick={() => navigate(VIEWS.LOGIN)} className="mt-6 text-center text-sm font-semibold text-brand-dark underline-offset-4 hover:underline">
+      {t('login.landingLink')}
+    </button>
   )
 }
