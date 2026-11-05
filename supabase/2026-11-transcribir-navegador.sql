@@ -37,7 +37,8 @@ begin
   if v <> 'ok' then return jsonb_build_object('error', v); end if;
   return jsonb_build_object('notes', coalesce((
     select jsonb_agg(jsonb_build_object('id', participant_id, 'round', round, 'path', path) order by created_at)
-    from public.audio_notes where transcript is null and audio is not null), '[]'::jsonb));
+    from public.audio_notes n where transcript is null and audio is not null
+      and not exists (select 1 from public.participants p where p.id = n.participant_id and p.removed)), '[]'::jsonb));
 end $$;
 
 -- #resum: el audio de una nota (base64)

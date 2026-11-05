@@ -161,6 +161,10 @@ En el SQL Editor de Supabase, ejecutar en este orden (cada script se puede repet
 7. `supabase/2026-11-resumenes.sql`: página `#resum`
 8. `supabase/2026-11-transcribir-navegador.sql`: transcripción en el navegador
 
+Antes de abrir las inscripciones reales: `supabase/2026-11-limpiar-pruebas.sql` borra de verdad las
+inscripciones, las notas y el plan (conserva las mesas y el PIN). «Eliminar» desde el panel, en cambio,
+solo oculta a la persona (sus datos siguen en la base, marcados `removed`, y no salen en `#resum`).
+
 La clave secreta de Supabase (`service_role`) nunca va en la web ni en GitHub: solo la usaría el
 transcriptor de servidor, en su `.env`.
 
