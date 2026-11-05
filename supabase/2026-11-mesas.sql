@@ -18,6 +18,8 @@ alter table public.mesa_topics enable row level security;
 revoke all on public.mesa_topics from anon, authenticated;
 
 -- Lista pública: título, quién la propone y descripción (sin datos personales de participantes)
+-- (si ya se ejecutó 2026-11-mesas-familia.sql, la función devuelve una columna más: se recrea)
+drop function if exists public.list_mesa_topics();
 create or replace function public.list_mesa_topics()
 returns table (label text, proposer text, description text)
 language sql
