@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Download, FileText, KeyRound, Loader2, LogOut, RefreshCw, Search } from 'lucide-react'
+import { Cpu, Download, FileText, KeyRound, Loader2, LogOut, Pause, Play, RefreshCw, Search } from 'lucide-react'
 import * as api from '../lib/backend'
 import { MOD_PIN } from '../constants'
 import { topicKey } from '../lib/topics'
@@ -16,6 +16,9 @@ import LangSwitch from '../components/ui/LangSwitch'
  */
 const PIN_KEY = 'cofinder:resum-pin'
 const BY_KEY = 'cofinder:resum-by'
+const AUTO_KEY = 'cofinder:resum-transcribe' // '' = parado · 'small' | 'base' = transcribiendo con ese modelo
+const readLs = (k, d) => { try { return localStorage.getItem(k) ?? d } catch { return d } }
+const writeLs = (k, v) => { try { localStorage.setItem(k, v) } catch { /* noop */ } }
 const REFRESH_MS = 20_000
 
 const readPin = () => { try { return sessionStorage.getItem(PIN_KEY) } catch { return null } }
@@ -175,6 +178,7 @@ function Summaries({ pin, onLogout }) {
       </div>
 
       {!api.isRemote && <Notice>{t('resum.local')}</Notice>}
+      {api.isRemote && notes && <Transcriber pin={pin} pending={notes.filter((n) => !n.transcript).length} onSaved={load} />}
       {error && <Notice>{t(`resum.error.${error}`)}</Notice>}
 
       {notes?.length > 0 && (
@@ -235,6 +239,67 @@ function Summaries({ pin, onLogout }) {
         </section>
       ))}
     </main>
+  )
+}
+
+/**
+ * Whisper en este navegador: mientras esté en marcha, cada 20 s transcribe las notas pendientes.
+ * Queda recordado en este ordenador: al volver a abrir #resum, sigue solo.
+ */
+function Transcriber({ pin, pending, onSaved }) {
+  const { t } = useI18n()
+  const [model, setModel] = useState(() => readLs(AUTO_KEY, ''))
+  const [st, setSt] = useState(null)
+  const [pick, setPick] = useState('small')
+
+  useEffect(() => {
+    if (!model) { setSt(null); return }
+    let tr
+    import('../lib/browserTranscriber').then(({ createTranscriber }) => {
+      tr = createTranscriber({ pin, model, onStatus: (x) => { setSt(x); if (x.done) onSaved() } })
+      const go = () => tr.tick().then((n) => n && onSaved())
+      go()
+      tr.timer = setInterval(go, REFRESH_MS)
+    })
+    return () => { if (tr) { clearInterval(tr.timer); tr.stop() } }
+  }, [model, pin, onSaved])
+
+  const start = () => { writeLs(AUTO_KEY, pick); setModel(pick) }
+  const stop = () => { writeLs(AUTO_KEY, ''); setModel('') }
+
+  let line
+  if (!model) line = pending ? t('resum.tr.offPending', { n: pending }) : t('resum.tr.off')
+  else if (!st || st.phase === 'loading') line = t('resum.tr.loading', { p: Math.round((st?.progress ?? 0) * 100) })
+  else if (st.phase === 'error') line = t('resum.tr.error')
+  else if (st.phase === 'working') line = t('resum.tr.working', { n: st.left ?? pending })
+  else line = pending ? t('resum.tr.waiting', { n: pending }) : t('resum.tr.idle')
+
+  return (
+    <section className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${model && st?.phase !== 'error' ? 'bg-brand text-white' : 'bg-slate-100 text-slate-500'}`}>
+        {model && (st?.phase === 'loading' || st?.phase === 'working' || !st) ? <Loader2 className="h-5 w-5 animate-spin" /> : <Cpu className="h-5 w-5" />}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-bold">{t('resum.tr.title')}</p>
+        <p className="text-sm text-slate-600">{line}</p>
+        {model && st?.phase === 'loading' && (
+          <div className="mt-2 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-slate-100"><div className="h-full bg-brand transition-all" style={{ width: `${Math.round((st.progress ?? 0) * 100)}%` }} /></div>
+        )}
+        {st?.phase === 'error' && <p className="mt-1 break-words text-xs text-slate-400">{st.error}</p>}
+      </div>
+      {model ? (
+        <Button variant="outline" icon={Pause} onClick={stop} className="!px-3 !py-2">{t('resum.tr.stop')}</Button>
+      ) : (
+        <div className="flex items-center gap-2">
+          <select value={pick} onChange={(e) => setPick(e.target.value)} aria-label={t('resum.tr.model')}
+            className="rounded-xl border border-slate-200 bg-white px-2 py-2 text-sm">
+            <option value="small">{t('resum.tr.small')}</option>
+            <option value="base">{t('resum.tr.base')}</option>
+          </select>
+          <Button icon={Play} onClick={start} className="!px-3 !py-2">{t('resum.tr.start')}</Button>
+        </div>
+      )}
+    </section>
   )
 }
 

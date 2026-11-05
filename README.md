@@ -200,3 +200,12 @@ transcriptor de `transcriptor/` (faster-whisper, código abierto, en vuestro ser
 Las transcripciones se leen en **`…/#resum`** (pide el PIN de Admin): por ronda y mesa, con buscador,
 se actualiza sola cada 20 s y se descarga en .txt o .csv (Excel). Con Supabase, ejecutar antes
 `supabase/2026-11-resumenes.sql` (función `mod_get_notes`).
+
+**Transcripción sin servidor (recomendada):** en `#resum`, «Transcribir en este ordenador» carga Whisper
+(código abierto, con [Transformers.js](https://github.com/huggingface/transformers.js)) en el propio navegador
+y pasa a texto las notas pendientes cada 20 s, mientras la página esté abierta. Gratis, sin Python ni Docker,
+y los audios no salen a ningún servicio externo. El modelo se descarga de huggingface.co la primera vez
+(«Preciso» ≈ 250 MB, «Rápido» ≈ 80 MB) y queda en la caché del navegador; con WebGPU (Chrome/Edge) va
+mucho más rápido. Requiere `supabase/2026-11-transcribir-navegador.sql`: el móvil guarda también una copia
+del audio en `audio_notes.audio` (≈ 250 KB por minuto, grabado a 32 kbps) y #resum la lee con el PIN.
+El transcriptor de servidor (`transcriptor/`) sigue siendo una alternativa.

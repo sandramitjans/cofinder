@@ -94,8 +94,35 @@ export const setMyReady = (id, ready) => rpc('set_my_ready', { p_id: id, p_ready
 export const modResetReady = (pin) => rpc('mod_reset_ready', { p_pin: pin })
 
 /** Nota de audio validada (supabase/2026-11-notas-audio.sql): el audio ya está en Storage en `path` */
-export const submitAudioNote = ({ id, round, tableId, topic, path }) =>
-  rpc('submit_audio_note', { p_id: id, p_round: round, p_table: tableId ?? null, p_topic: topic ?? null, p_path: path })
+const toBase64 = (blob) => new Promise((resolve, reject) => {
+  const r = new FileReader()
+  r.onload = () => resolve(String(r.result).split(',')[1] ?? '')
+  r.onerror = () => reject(r.error)
+  r.readAsDataURL(blob)
+})
+/** Registra la nota. Con `blob`, guarda además una copia del audio para que #resum la transcriba en el
+ *  navegador (supabase/2026-11-transcribir-navegador.sql); sin ese SQL, se registra como antes. */
+export async function submitAudioNote({ id, round, tableId, topic, path, blob }) {
+  const args = { p_id: id, p_round: round, p_table: tableId ?? null, p_topic: topic ?? null, p_path: path }
+  if (blob) {
+    try {
+      return await rpc('submit_audio_note', { ...args, p_audio: await toBase64(blob), p_mime: (blob.type || 'audio/webm').split(';')[0] })
+    } catch (err) {
+      if (err.code !== 'PGRST202') throw err // PGRST202 = la función con audio aún no existe
+    }
+  }
+  return rpc('submit_audio_note', args)
+}
+
+/* ---------- Página #resum: transcripción en el navegador (con el PIN de Admin) ---------- */
+export const modPendingAudio = async (pin) => (await rpc('mod_pending_audio', { p_pin: pin }))?.notes ?? []
+export async function modGetAudio(pin, id, round) {
+  const { audio, mime, path } = await rpc('mod_get_audio', { p_pin: pin, p_id: id, p_round: round })
+  const bytes = Uint8Array.from(atob(audio), (c) => c.charCodeAt(0))
+  return { blob: new Blob([bytes], { type: mime || 'audio/webm' }), path }
+}
+export const modSaveTranscript = (pin, { id, round, path, text }) =>
+  rpc('mod_save_transcript', { p_pin: pin, p_id: id, p_round: round, p_path: path, p_text: text })
 export const modClearNotes = (pin) => rpc('mod_clear_notes', { p_pin: pin })
 /** Página #resum: transcripciones de todas las notas (con el PIN de Admin) */
 export const modGetNotes = async (pin) => (await rpc('mod_get_notes', { p_pin: pin }))?.notes ?? []

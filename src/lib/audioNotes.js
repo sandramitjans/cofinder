@@ -43,7 +43,7 @@ export async function saveNote({ userId, round, tableId, topic, blob }) {
   if (api.isRemote) {
     try {
       const path = await api.uploadAudioNote({ userId, round, tableId, blob })
-      await api.submitAudioNote({ id: userId, round, tableId, topic, path })
+      await api.submitAudioNote({ id: userId, round, tableId, topic, path, blob })
       note.uploaded = true
     } catch { /* sin red o sin el SQL de notas: queda en el dispositivo */ }
   }

@@ -384,7 +384,7 @@ function NoteRecorder({ table }) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const mime = recorderMime()
-      const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined)
+      const recorder = new MediaRecorder(stream, { ...(mime ? { mimeType: mime } : {}), audioBitsPerSecond: 32_000 }) // voz: ~250 KB por minuto
       const chunks = []
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data)
       recorder.onstop = () => {

@@ -7,6 +7,7 @@
 --   2026-11-preparados.sql   («Preparado» y mis mesas de todas las rondas)
 --   2026-11-notas-audio.sql  (notas de audio de cada ronda y su transcripción)
 --   2026-11-resumenes.sql    (página #resum con las transcripciones)
+--   2026-11-transcribir-navegador.sql (Whisper en el navegador desde #resum)
 -- PIN inicial de la moderadora: 2026. Cambiarlo con:  select public.mod_set_pin('2026', 'NUEVO');
 
 create extension if not exists pgcrypto with schema extensions;
