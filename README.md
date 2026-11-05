@@ -42,10 +42,11 @@ intercambiar o mover a alguien con dos clics, o regenerar una ronda.
 | Momento | Proyector | Móvil de cada participante |
 |---|---|---|
 | Llegada | Solo el **QR** | «Inicia sesión» (usuario = nombre, contraseña = código) → **«Estas son las mesas en las que participarás»** (mesa y tema de cada ronda) → botón **Preparado** → espera con frases que van cambiando |
-| Todos preparados | Empieza solo (o «Empezar la sesión» en el panel) | |
+| Todos preparados | Empieza solo (o «Empezar la sesión» en el panel) | Mientras, la espera muestra «14 de 20 personas preparadas» |
 | Encuentra tu mesa (2 min) | Todas las mesas con los nombres y la cuenta atrás | Círculo «Empezamos en», mesa + tema y compañeros |
 | Conversación (15 min) | Cronómetro grande | Tema, cronómetro, compañeros de mesa y **«Para romper el hielo»** (preguntas sobre el tema) |
 | Tiempo terminado | «On hold» con «X de Y notas enviadas» | Grabar una **nota de audio** (máx. 1 min: de qué se ha hablado, aprendizajes, highlight) → escuchar / volver a grabar → Continuar → espera |
+| Nota enviada | | Espera con «14 de 20 notas enviadas» y su próxima mesa: «Siguiente · Ronda 2 · Mesa 3 · Branding» |
 | Todas las notas enviadas | Pasa solo a la ronda siguiente (o a la pausa tras la ronda 3, o al final) | |
 | Final | Cierre | «Gracias por compartir»: cada ronda con su tema, compañeros y su nota |
 
@@ -160,6 +161,7 @@ En el SQL Editor de Supabase, ejecutar en este orden (cada script se puede repet
 6. `supabase/2026-11-notas-audio.sql`: notas de audio de cada ronda
 7. `supabase/2026-11-resumenes.sql`: página `#resum`
 8. `supabase/2026-11-transcribir-navegador.sql`: transcripción en el navegador
+9. `supabase/2026-11-esperas.sql`: «14 de 20 preparados / notas enviadas» en las esperas del móvil
 
 Antes de abrir las inscripciones reales: `supabase/2026-11-limpiar-pruebas.sql` borra de verdad las
 inscripciones, las notas y el plan (conserva las mesas y el PIN). «Eliminar» desde el panel, en cambio,

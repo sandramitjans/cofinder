@@ -29,7 +29,7 @@ const expertModeOf = (participants) => participants.some((p) => p.offers?.length
  *  - evento terminado → «Gracias por compartir»: tus conversaciones ronda a ronda
  */
 export default function RoundCardView() {
-  const { currentUser, currentRound, event, noteSent } = useApp()
+  const { currentUser, currentRound, event, noteSent, progress, myPlan } = useApp()
   const { t } = useI18n()
   const startedAt = event.finished ? null : currentRound?.startedAt
   const timer = useCountdown(startedAt)
@@ -43,7 +43,12 @@ export default function RoundCardView() {
   else if (!startedAt) { scene = <GoToTable table={table} />; key = `go-${event.round}` }
   else if (!findTimer.done) { scene = <FindTable table={table} findTimer={findTimer} />; key = `find-${event.round}` }
   else if (!timer.done) { scene = <ActiveRound table={table} timer={timer} />; key = `talk-${event.round}` }
-  else if (noteSent) { scene = <LobbyView embedded badge={t('note.sentBadge')} />; key = `hold-${event.round}` }
+  else if (noteSent) {
+    // Ya ha enviado su nota: cuántas faltan y su próxima mesa (para ir pensando y moverse antes)
+    const next = myPlan.find((x) => x.round === event.round + 1)
+    scene = <LobbyView embedded badge={t('note.sentBadge')} count={progress && { n: progress.noted, total: progress.notedTotal }} countKey="lobby.notedCount" next={next} />
+    key = `hold-${event.round}`
+  }
   else { scene = <TimeUp table={table} />; key = `up-${event.round}` }
 
   return (

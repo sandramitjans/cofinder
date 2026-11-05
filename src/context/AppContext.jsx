@@ -146,6 +146,19 @@ export function AppProvider({ children }) {
     return () => { off(); clearInterval(timer); document.removeEventListener('visibilitychange', onVisible) }
   }, [currentUserId, refreshMine])
 
+  // Esperas del móvil («14 de 20 preparados / notas enviadas»): cuando otro móvil avisa, se refresca
+  // (agrupando avisos: si pulsan 20 a la vez, una sola consulta)
+  useEffect(() => {
+    if (!REMOTE || !currentUserId) return
+    let t = null
+    const off = api.onPing((kind) => {
+      if (kind !== 'ready' && kind !== 'note') return
+      clearTimeout(t)
+      t = setTimeout(refreshMine, 1200 + Math.random() * 1500)
+    })
+    return () => { off(); clearTimeout(t) }
+  }, [currentUserId, refreshMine])
+
   // El móvil se anuncia como «conectado» (el proyector enciende su foto en la pantalla del QR)
   useEffect(() => {
     if (!REMOTE || !currentUserId) return
@@ -626,6 +639,10 @@ export function AppProvider({ children }) {
     ? (modState?.notes ?? []).filter((n) => n.round === event.round).map((n) => n.id)
     : participants.filter((p) => p.notedRounds?.includes(event.round)).map((p) => p.id))
   const notedCount = realRound.filter((p) => notedIds.has(p.id)).length
+  // Lo que ve el móvil en las esperas (solo números). Con Supabase lo calcula el servidor (get_my_table).
+  const progress = REMOTE
+    ? (myTable?.progress ?? null)
+    : { ready: readyCount, readyTotal: realPeople.length, noted: notedCount, notedTotal: realRound.length }
   const allNoted = modUnlocked && event.round > 0 && !currentRound?.pauseStartedAt && realRound.length > 0 && notedCount === realRound.length
   useEffect(() => { if (allNoted) advanceAfterNotes(event.round) }, [allNoted, advanceAfterNotes, event.round])
 
@@ -634,14 +651,14 @@ export function AppProvider({ children }) {
     view, navigate,
     participants, currentUser, event, currentRound, seatedEver,
     modLoading: REMOTE && modUnlocked && !modState,
-    register, login, joinedLive, myPlan, ready, setReady, readyCount, readyTotal: realPeople.length, startEvent, noteSent, submitNote, notedCount, notedTotal: realRound.length, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, joinedLive, myPlan, ready, setReady, progress, readyCount, readyTotal: realPeople.length, startEvent, noteSent, submitNote, notedCount, notedTotal: realRound.length, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     modUnlocked, gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
   }), [view, navigate, participants, currentUser, event, currentRound, seatedEver, modUnlocked, modState,
-    register, login, joinedLive, myPlan, ready, setReady, readyCount, realPeople.length, startEvent, noteSent, submitNote, notedCount, realRound.length, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, joinedLive, myPlan, ready, setReady, progress, readyCount, realPeople.length, startEvent, noteSent, submitNote, notedCount, realRound.length, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     gateOpen, openGate, closeGate, unlockModerator, lockModerator,

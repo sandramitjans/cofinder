@@ -100,6 +100,10 @@ export const DICT = {
     lobby: {
       connected: 'Estás conectado/a',
       ready: '¡Preparado/a!',
+      readyCount: '{n} de {total} personas preparadas',
+      notedCount: '{n} de {total} notas enviadas',
+      next: 'Siguiente · Ronda {n}',
+      table: 'Mesa {n}',
       seeTables: 'Ver mis mesas',
       backToWait: 'Volver a la espera',
       hello: '¡Hola, {name}!',
@@ -499,6 +503,10 @@ export const DICT = {
     lobby: {
       connected: 'You’re connected',
       ready: 'Ready!',
+      readyCount: '{n} of {total} people ready',
+      notedCount: '{n} of {total} notes sent',
+      next: 'Next · Round {n}',
+      table: 'Table {n}',
       seeTables: 'See my tables',
       backToWait: 'Back to waiting',
       hello: 'Hi, {name}!',

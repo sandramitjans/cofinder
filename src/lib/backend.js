@@ -86,6 +86,7 @@ export async function fetchMyTable(id) {
     notes: d.notes ?? [], // rondas en las que ya envió su nota de audio
     plan: d.plan ?? null, // [{ round, table, topic }] · null si falta 2026-11-preparados.sql
     people: (d.people ?? []).map(fromRow),
+    progress: d.progress ?? null, // { ready, readyTotal, noted, notedTotal } · null si falta 2026-11-esperas.sql
   }
 }
 
