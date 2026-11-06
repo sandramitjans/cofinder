@@ -5,18 +5,20 @@ import { useI18n } from '../context/I18nContext'
 import { EVENT_DATE, EVENT_PLACE, TOPIC_EMOJI, VIEWS } from '../constants'
 import { useTimeLeft } from '../lib/useTimeLeft'
 import { isCustom, topicsWithLevel } from '../lib/topics'
+import { familyIn, familyTone } from '../lib/familyColors'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
 import LangSwitch from '../components/ui/LangSwitch'
 import PublicFooter from '../components/layout/PublicFooter'
 import { SuperpowerChips } from '../components/ui/SuperpowerPicker'
+import Confetti from '../components/ui/Confetti'
 
 /**
  * Confirmación tras validar el perfil (pantalla 5 del prototipo): tarjeta roja con la persona,
  * sus mesas con su nivel, cuánto falta para la sesión y «Todo listo». Desde aquí se edita el perfil.
  */
 export default function WaitingView({ onLobby }) {
-  const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt } = useApp()
+  const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt, eventTopics } = useApp()
   const { t, topic, country } = useI18n()
   const [justUpdated, setJustUpdated] = useState(() => Date.now() - profileUpdatedAt < 3000)
   useEffect(() => {
@@ -30,6 +32,7 @@ export default function WaitingView({ onLobby }) {
 
   return (
     <div className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
+      <Confetti />
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
         <header className="flex items-center justify-between gap-4">
           <Logo />
@@ -51,14 +54,14 @@ export default function WaitingView({ onLobby }) {
           {/* Tarjeta destacada en el rojo de marca */}
           <section aria-label={t('waiting.yourFile')} className="animate-pop-in rounded-2xl bg-brand p-5 text-white shadow-lg shadow-brand/20">
             <div className="flex items-center gap-4">
-              <Avatar name={currentUser.name} photo={currentUser.photo} size="lg" tone="bg-white text-brand" className="!ring-white/40" />
+              <Avatar name={currentUser.name} photo={currentUser.photo} size="lg" tone="bg-white text-brand-dark" className="!ring-white/40" />
               <div className="min-w-0">
                 <p className="truncate font-display text-2xl font-medium leading-tight">{currentUser.name}</p>
                 <p className="truncate text-sm text-white/85">{currentUser.role}</p>
                 <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-white/85"><MapPin className="h-3.5 w-3.5" /> {country(currentUser.country)}</p>
               </div>
             </div>
-            <SuperpowerChips ids={currentUser.superpowers ?? []} size="sm" className="mt-4 [&>span]:bg-white/15 [&>span]:text-white [&>span]:ring-white/20" />
+            <SuperpowerChips ids={currentUser.superpowers ?? []} size="sm" className="mt-4 [&>span]:bg-white [&>span]:text-accent-dark [&>span]:ring-accent/30" />
           </section>
 
           <h2 className="mt-7 text-xs font-bold uppercase tracking-wider text-slate-500">{t('waiting.yourTables')}</h2>
@@ -66,9 +69,9 @@ export default function WaitingView({ onLobby }) {
             <ul className="mt-2.5 space-y-2">
               {tables.map(({ id, level }) => (
                 <li key={id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5">
-                  <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-lg">{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
+                  <span aria-hidden className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-lg ${familyTone(familyIn(id, eventTopics)).tile}`}>{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
                   <span className="min-w-0 flex-1 text-[15px] font-semibold leading-snug">{topic(id)}</span>
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${level === 'high' ? 'bg-brand-soft text-brand-dark' : level === 'medium' ? 'bg-amber-50 text-brand-dark ring-1 ring-brand/20' : 'bg-slate-100 text-slate-600'}`}>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${level === 'high' ? 'bg-brand-soft text-brand-dark' : level === 'medium' ? 'bg-accent-soft text-accent-dark' : 'bg-slate-100 text-slate-600'}`}>
                     {t(`register.level.${level}Badge`)}
                   </span>
                 </li>

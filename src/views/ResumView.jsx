@@ -58,10 +58,10 @@ function PinForm({ onOk }) {
         <input
           type="password" inputMode="numeric" autoComplete="off" maxLength={8} autoFocus
           value={value} onChange={(e) => { setValue(e.target.value); setError(null) }}
-          className={`mt-5 w-full rounded-xl border py-3 text-center font-mono text-2xl tracking-[0.5em] focus:outline-none focus:ring-4 ${error ? 'border-accent ring-4 ring-accent/20' : 'border-slate-200 focus:border-brand focus:ring-brand/25'}`}
+          className={`mt-5 w-full rounded-xl border py-3 text-center font-mono text-2xl tracking-[0.5em] focus:outline-none focus:ring-4 ${error ? 'border-brand ring-4 ring-brand/20' : 'border-slate-200 focus:border-brand focus:ring-brand/25'}`}
           aria-label={t('gate.pin')}
         />
-        <p role="alert" className={`mt-2 min-h-4 text-xs font-medium text-accent-dark ${error ? '' : 'invisible'}`}>{t(`gate.${error ?? 'wrong'}`)}</p>
+        <p role="alert" className={`mt-2 min-h-4 text-xs font-medium text-brand-dark ${error ? '' : 'invisible'}`}>{t(`gate.${error ?? 'wrong'}`)}</p>
         <Button type="submit" className="mt-3 w-full" disabled={!value || busy}>{busy ? t('gate.checking') : t('gate.enter')}</Button>
       </form>
     </main>

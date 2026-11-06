@@ -238,7 +238,7 @@ export default function ModeratorPanelView() {
                   </div>
                   <div className="flex flex-1 flex-wrap gap-1">
                     {topicsWithLevel(p).map(({ id: x, level }) => (
-                      <span key={x} className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${level === 'high' ? 'bg-brand-soft text-brand-dark' : level === 'medium' ? 'bg-amber-50 text-brand-dark ring-1 ring-brand/20' : 'bg-slate-100 text-slate-700'}`}>{topic(x)}</span>
+                      <span key={x} className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${level === 'high' ? 'bg-brand-soft text-brand-dark' : level === 'medium' ? 'bg-accent-soft text-accent-dark' : 'bg-slate-100 text-slate-700'}`}>{topic(x)}</span>
                     ))}
                     {(p.superpowers ?? []).map((x) => (
                       <span key={x} title={superpower(x)} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200">
@@ -490,7 +490,7 @@ function Quality({ ok, label, value }) {
   return (
     <li className="flex items-center justify-between">
       <span className="flex items-center gap-2">
-        {ok ? <CheckCircle2 className="h-4 w-4 text-mint-dark" /> : <AlertTriangle className="h-4 w-4 text-accent-dark" />} {label}
+        {ok ? <CheckCircle2 className="h-4 w-4 text-mint-dark" /> : <AlertTriangle className="h-4 w-4 text-brand-dark" />} {label}
       </span>
       <span className="font-semibold tabular-nums">{value}</span>
     </li>
@@ -499,8 +499,8 @@ function Quality({ ok, label, value }) {
 
 function Notice({ children }) {
   return (
-    <p className="mt-4 flex items-start gap-2 rounded-xl bg-accent-soft p-3 text-sm text-slate-700">
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-accent-dark" /> {children}
+    <p className="mt-4 flex items-start gap-2 rounded-xl bg-brand-soft p-3 text-sm text-slate-700">
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-brand-dark" /> {children}
     </p>
   )
 }

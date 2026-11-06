@@ -2,6 +2,8 @@ import { Check } from 'lucide-react'
 import { isCustom } from '../lib/topics'
 import { TOPIC_EMOJI } from '../constants'
 import { useI18n } from '../context/I18nContext'
+import { useApp } from '../context/AppContext'
+import { familyIn, familyTone } from '../lib/familyColors'
 
 /**
  * Paso 3, tras elegir las mesas: para cada mesa elegida, la persona indica su nivel: Alto, Medio o Bajo.
@@ -13,6 +15,7 @@ import { useI18n } from '../context/I18nContext'
 const OPTIONS = ['high', 'medium', 'low']
 export default function LevelPicker({ topics, levels, onChange, error }) {
   const { t, topic } = useI18n()
+  const { eventTopics } = useApp()
   if (!topics.length) return null
   const missing = topics.filter((id) => !levels[id]).length
   const choose = (id, level) => onChange({ levels: { ...levels, [id]: level } })
@@ -25,7 +28,7 @@ export default function LevelPicker({ topics, levels, onChange, error }) {
           return (
             <li key={id} className={`rounded-xl border bg-white p-3.5 transition-colors ${level ? 'border-brand/40' : 'border-slate-200'}`}>
               <p className="flex items-center gap-3">
-                <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-lg">{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
+                <span aria-hidden className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-lg ${familyTone(familyIn(id, eventTopics)).tile}`}>{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
                 <span className="min-w-0 flex-1 font-semibold leading-snug text-ink">{topic(id)}</span>
               </p>
               <div role="radiogroup" aria-label={topic(id)} className="mt-3 grid grid-cols-3 gap-2">
@@ -61,7 +64,7 @@ function LevelOption({ on, onClick, label, hint }) {
         {label}
       </span>
       <span className="mt-1 text-xs leading-tight text-slate-500">{hint}</span>
-      <span aria-hidden className={`absolute right-2.5 top-2.5 grid h-4 w-4 place-items-center rounded-full border ${on ? 'border-brand bg-brand text-white' : 'border-slate-300'}`}>
+      <span aria-hidden className={`absolute right-2.5 top-2.5 grid h-4 w-4 place-items-center rounded-full border ${on ? 'border-mint bg-mint text-white' : 'border-slate-300'}`}>
         {on && <Check className="h-3 w-3" strokeWidth={3} />}
       </span>
     </button>

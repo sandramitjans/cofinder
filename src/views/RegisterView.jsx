@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, ArrowRight, Briefcase, Building2, CalendarDays, Clock, MapPin, RotateCcw, User } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Briefcase, Building2, CalendarDays, CheckCircle2, Clock, MapPin, RotateCcw, User } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { COUNTRIES, TOPICS, EVENT_DATE, EVENT_PLACE, MAX_INTERESTS, MAX_SUPERPOWERS, ROUND_MINUTES, TOTAL_ROUNDS, VIEWS } from '../constants'
@@ -14,6 +14,7 @@ import PhotoPicker from '../components/ui/PhotoPicker'
 import LangSwitch from '../components/ui/LangSwitch'
 import PublicFooter from '../components/layout/PublicFooter'
 import { isCustom, topicsWithLevel } from '../lib/topics'
+import { CELEBRATE_KEY } from '../components/ui/Confetti'
 
 // `country` guarda «Filial / Departamento» (texto libre, con sugerencias de filiales)
 // `needs` guarda en el formulario las mesas elegidas; `levels` dice el nivel en cada una: 'high' | 'medium' | 'low'
@@ -164,9 +165,15 @@ export default function RegisterView({ mode = 'create' }) {
     setSaveError(false)
     setSaving(true)
     // Se guarda primero en la base de datos. Si falla la red, el borrador sigue intacto y se puede reintentar.
+    // Confeti en la pantalla siguiente: la marca se deja antes, porque al registrarse ya cambia la vista
+    if (!editing) try { sessionStorage.setItem(CELEBRATE_KEY, '1') } catch { /* noop */ }
     const ok = editing ? await updateProfile(data) : await register(data)
     setSaving(false)
-    if (!ok) { setSaveError(true); return }
+    if (!ok) {
+      try { sessionStorage.removeItem(CELEBRATE_KEY) } catch { /* noop */ }
+      setSaveError(true)
+      return
+    }
     if (!editing) try { localStorage.removeItem(DRAFT_KEY) } catch { /* noop */ }
   }
 
@@ -208,7 +215,9 @@ export default function RegisterView({ mode = 'create' }) {
 
         <form onSubmit={submit} noValidate className="mt-5 flex flex-1 flex-col">
           <header>
-            {editing && screen === 1 && <p className="mb-1 text-sm font-bold uppercase tracking-wider text-brand">{t('register.editKicker')}</p>}
+            {editing && screen === 1 && <p className="mb-1 text-sm font-bold uppercase tracking-wider text-brand-dark">{t('register.editKicker')}</p>}
+            {/* Ánimo según el paso */}
+            {!editing && <p key={screen} className="animate-pop-in mb-1.5 text-sm font-semibold text-brand-dark">{t(`register.cheer${screen}`)}</p>}
             <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink lg:text-4xl">{steps.title}</h1>
             <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600 lg:text-base">{steps.sub}</p>
           </header>
@@ -225,7 +234,7 @@ export default function RegisterView({ mode = 'create' }) {
           {/* 1 · Perfil */}
           {screen === 1 && (
             <div key="profile" className="animate-view-in mt-6 space-y-5">
-              <PhotoPicker value={form.photo} name={form.name} onChange={(v) => set('photo', v)} />
+              <GuestCard form={form} onPhoto={(v) => set('photo', v)} />
               <div data-field="name">
                 <Field label={t('register.name')} name="name" icon={User} placeholder={t('register.namePh')} autoComplete="name" value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} />
               </div>
@@ -303,6 +312,32 @@ export default function RegisterView({ mode = 'create' }) {
       </div>
       <PublicFooter className="!pt-2" />
     </section>
+  )
+}
+
+/**
+ * Paso 1: tarjeta de invitado/a que se va montando mientras se rellena (foto, nombre, cargo, país).
+ * Borde discontinuo mientras falta algo; cuando está completa, borde sólido y check verde.
+ */
+function GuestCard({ form, onPhoto }) {
+  const { t } = useI18n()
+  const name = form.name.trim()
+  const role = form.role.trim()
+  const place = form.country.trim()
+  const complete = !!(name && role && place)
+  return (
+    <div className={`flex items-center gap-4 rounded-2xl border-2 bg-white p-4 transition-all duration-300 ${complete ? 'border-brand/30 shadow-md shadow-brand/10' : 'border-dashed border-slate-300'}`}>
+      <div className="shrink-0">
+        <PhotoPicker compact value={form.photo} name={form.name} onChange={onPhoto} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-bold uppercase tracking-wider text-brand-dark">{t('register.guestCard')}</p>
+        <p className={`mt-0.5 truncate font-display text-xl font-medium leading-tight ${name ? 'text-ink' : 'text-slate-400'}`}>{name || t('register.guestName')}</p>
+        <p className={`truncate text-sm ${role ? 'text-slate-600' : 'text-slate-400'}`}>{role || t('register.guestRole')}</p>
+        {place && <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-slate-600"><MapPin className="h-3.5 w-3.5 shrink-0" /> {place}</p>}
+      </div>
+      {complete && <CheckCircle2 aria-hidden className="animate-pop-in h-6 w-6 shrink-0 self-start text-mint" />}
+    </div>
   )
 }
 

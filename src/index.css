@@ -1,62 +1,74 @@
 @import "tailwindcss";
 
-/* Sistema visual Cofinder (03/11/2026, alineado con el prototipo cfndr.lovable.app)
-   Un solo color de marca: el rojo #D7340F (acción, selección, énfasis y tarjetas destacadas),
-   sobre fondo claro cálido y tarjetas blancas con borde fino. El verde queda solo para
-   mensajes de «todo correcto». Contrastes (WCAG): blanco sobre brand 4,8:1 ·
-   brand-dark sobre blanco 6,4:1 · slate-500 sobre blanco 5,3:1. */
+/* Sistema visual Cofinder «alegre» (06/11/2026)
+   Base cálida y tinta berenjena. Un solo color de acción (coral tostado, siempre con texto blanco).
+   La alegría la ponen los pasteles de cada familia de temas, siempre con su texto oscuro.
+   Violeta (lila) = arma secreta y nivel medio. Verde = solo checks.
+   Contrastes WCAG AA: blanco sobre coral 4,8:1 · texto suave 5,1:1 · cada pastel con su tinta > 5,5:1. */
 @theme {
-  /* Rojo Cofinder: acción principal, selección, énfasis y avisos */
-  --color-brand: #D7340F;
-  --color-brand-dark: #B42A0B;
-  --color-brand-soft: #FDECE6;
-  /* «accent» es el mismo rojo (antes coral): así no queda ningún segundo color de marca */
-  --color-accent: #D7340F;
-  --color-accent-dark: #B42A0B;
-  --color-accent-soft: #FDECE6;
-  /* Verde: solo confirmaciones */
-  --color-mint: #1F9D63;
-  --color-mint-dark: #157A4B;
-  --color-mint-soft: #E6F6EE;
+  /* Coral tostado: acción principal, selección, énfasis y errores */
+  --color-brand: #C9442A;
+  --color-brand-hover: #B03A22;
+  --color-brand-dark: #A8381F;
+  --color-brand-soft: #FBE6DF;
+  /* Lila: acento secundario (arma secreta, nivel medio, pausas) */
+  --color-accent: #6D4AE0;
+  --color-accent-dark: #5B3BB8;
+  --color-accent-soft: #ECE4FF;
+  /* Verde: solo checks y confirmaciones */
+  --color-mint: #1F8A5B;
+  --color-mint-dark: #17704A;
+  --color-mint-soft: #E0F3E9;
   /* Neutros cálidos */
-  --color-ink: #1C1C1F;
-  --color-paper: #FAF7F5;
-  --color-cloud: #F3EEEA;
+  --color-ink: #2B2130;
+  --color-paper: #F7F3EE;
+  --color-cloud: #EFE8E0;
 
-  /* Escala slate de Tailwind reasignada a los neutros cálidos */
-  --color-slate-50: #FAF7F5;
-  --color-slate-100: #F3EFEC;
-  --color-slate-200: #E7E1DC;
-  --color-slate-300: #D3CBC5;
-  --color-slate-400: #A39B95;
-  --color-slate-500: #6B6B76;
-  --color-slate-600: #595963;
-  --color-slate-700: #45454F;
-  --color-slate-800: #2E2E35;
-  --color-slate-900: #1C1C1F;
-  --color-slate-950: #121214;
+  /* Pasteles por familia de temas (fondo + su texto) */
+  --color-fam-acquisition: #FFE3D3;
+  --color-fam-acquisition-ink: #9A3B12;
+  --color-fam-brand: #ECE4FF;
+  --color-fam-brand-ink: #5B3BB8;
+  --color-fam-customer: #D9F3E6;
+  --color-fam-customer-ink: #1C6B47;
+  --color-fam-data: #DCEBFF;
+  --color-fam-data-ink: #1F5AA6;
+  --color-fam-business: #FFF0C2;
+  --color-fam-business-ink: #7A5A00;
 
-  /* emerald → verde de confirmación, amber → rojo de marca */
-  --color-emerald-50: #E6F6EE;
-  --color-emerald-100: #CDEDDD;
-  --color-emerald-200: #A3DDC0;
-  --color-emerald-300: #6FC99E;
-  --color-emerald-400: #3DB27D;
-  --color-emerald-500: #1F9D63;
-  --color-emerald-600: #198553;
-  --color-emerald-700: #157A4B;
-  --color-emerald-800: #105C39;
-  --color-emerald-900: #0B432A;
-  --color-amber-50: #FEF5F2;
-  --color-amber-100: #FDECE6;
-  --color-amber-200: #F9CDBF;
-  --color-amber-300: #F2A28A;
-  --color-amber-400: #E86A47;
-  --color-amber-500: #D7340F;
-  --color-amber-600: #C42F0D;
-  --color-amber-700: #B42A0B;
-  --color-amber-800: #8C2109;
-  --color-amber-900: #661807;
+  --color-slate-50: #FBF8F5;
+  --color-slate-100: #F3EEE8;
+  --color-slate-200: #E9E1D8;
+  --color-slate-300: #D6CCC3;
+  --color-slate-400: #A79DA6;
+  --color-slate-500: #6E6470;
+  --color-slate-600: #5C525E;
+  --color-slate-700: #4A404D;
+  --color-slate-800: #372D3B;
+  --color-slate-900: #2B2130;
+  --color-slate-950: #1C151F;
+
+  /* emerald → verde de checks, amber → amarillo sol (avisos suaves) */
+  --color-emerald-50: #E0F3E9;
+  --color-emerald-100: #C3E8D4;
+  --color-emerald-200: #93D3B2;
+  --color-emerald-300: #5DBB8B;
+  --color-emerald-400: #34A16E;
+  --color-emerald-500: #1F8A5B;
+  --color-emerald-600: #1B7D52;
+  --color-emerald-700: #17704A;
+  --color-emerald-800: #115437;
+  --color-emerald-900: #0B3D28;
+  --color-amber-50: #FFF8E1;
+  --color-amber-100: #FFF0C2;
+  --color-amber-200: #FFE08A;
+  --color-amber-300: #F8CC52;
+  --color-amber-400: #F2B705;
+  --color-amber-500: #D69E00;
+  --color-amber-600: #A87C00;
+  --color-amber-700: #7A5A00;
+  --color-amber-800: #5C4400;
+  --color-amber-900: #4A3700;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Bricolage Grotesque", "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -70,17 +82,15 @@
   }
 }
 
-/* Sobre el rojo, el texto siempre en blanco (4,8:1). Fuera de @layer para ganar a text-ink */
-.bg-brand, .bg-accent { color: #fff; }
+/* Sobre coral, violeta y verde, el texto siempre en blanco (AA). Fuera de @layer para ganar a text-ink */
+.bg-brand, .bg-accent, .bg-mint { color: #fff; }
 
-/* Fondo suave: rejilla tenue y brillo cálido abajo, como en el prototipo */
+/* Fondo suave: brillo melocotón arriba a la derecha y lila abajo a la izquierda */
 .vip-glow {
   background-image:
-    radial-gradient(70rem 30rem at 50% 118%, rgb(215 52 15 / 0.10), transparent 70%),
-    radial-gradient(40rem 22rem at 100% -10%, rgb(232 106 71 / 0.10), transparent 65%),
-    linear-gradient(rgb(28 28 31 / 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(28 28 31 / 0.04) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 96px 96px, 96px 96px;
+    radial-gradient(40rem 22rem at 100% -10%, rgb(255 227 211 / 0.9), transparent 60%),
+    radial-gradient(40rem 22rem at -10% 110%, rgb(236 228 255 / 0.8), transparent 60%);
+  background-size: 100% 100%, 100% 100%;
   background-attachment: fixed;
 }
 
@@ -203,3 +213,12 @@
     transition-duration: 1ms !important;
   }
 }
+
+/* Confeti al terminar el registro */
+@keyframes confetti-fall {
+  0%   { transform: translate3d(0, -4vh, 0) rotate(0deg); opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translate3d(var(--dx), 105vh, 0) rotate(var(--rot)); opacity: 0; }
+}
+.confetti-piece { position: absolute; top: 0; animation: confetti-fall 2s cubic-bezier(.25,.6,.45,1) both; }
+@media (prefers-reduced-motion: reduce) { .confetti { display: none; } }
