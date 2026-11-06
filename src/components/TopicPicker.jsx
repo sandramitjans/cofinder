@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Check } from 'lucide-react'
 import { MAX_TAGS, TOPICS, TOPIC_EMOJI, TOPIC_FAMILIES } from '../constants'
+import { familyOfTopic, familyTone } from '../lib/familyColors'
 import { useI18n } from '../context/I18nContext'
 import { isCustom, seededOrder, topicOrderSeed } from '../lib/topics'
 
-const FAMILY_OF = Object.fromEntries(TOPIC_FAMILIES.flatMap((g) => g.topics.map((id) => [id, g.id])))
 
 /**
  * «Apúntate a las mesas»: cada tema es una mesa de conversación y se eligen hasta `max`.
@@ -47,7 +47,7 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
     [eventMode, topics, seed],
   )
   // Familia de cada mesa: la de la lista por defecto o la que eligió la moderadora al añadirla
-  const familyOf = (x) => x.family || FAMILY_OF[x.id] || ''
+  const familyOf = (x) => familyOfTopic(x.id, x.family)
   const present = new Set(ordered.map(familyOf))
   const families = TOPIC_FAMILIES.filter((g) => present.has(g.id))
   const filters = families.length < 2 ? [] : [
@@ -72,12 +72,12 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
           aria-pressed={selected}
           aria-disabled={full || undefined}
           className={`flex w-full items-start gap-3 rounded-xl border p-3.5 text-left transition-all duration-150 active:scale-[0.99] lg:p-4 ${
-            selected ? 'border-brand bg-brand-soft/60 shadow-sm'
+            selected ? 'border-brand bg-white shadow-md shadow-brand/10 ring-1 ring-brand'
               : full ? 'border-slate-200 bg-white opacity-60'
               : 'border-slate-200 bg-white hover:border-brand/50'
           }`}
         >
-          <span aria-hidden className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg text-xl ${selected ? 'bg-white' : 'bg-brand-soft'}`}>
+          <span aria-hidden className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl ${familyTone(family).tile}`}>
             {custom ? '💬' : TOPIC_EMOJI[id]}
           </span>
           <span className="min-w-0 flex-1">
@@ -89,7 +89,7 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
               </span>
             )}
             {family && (
-              <span className="mt-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <span className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${familyTone(family).chip}`}>
                 {t(`register.families.${family}`)}
               </span>
             )}
@@ -114,7 +114,7 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
               onClick={() => setFilter(f.id)}
               aria-pressed={filter === f.id}
               className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
-                filter === f.id ? 'bg-brand text-white' : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:ring-slate-300'
+                filter === f.id ? 'bg-ink text-white' : f.id === 'all' ? 'bg-white text-slate-700 ring-1 ring-slate-200 hover:ring-slate-300' : `${familyTone(f.id).chip} hover:brightness-95`
               }`}
             >
               {f.label}

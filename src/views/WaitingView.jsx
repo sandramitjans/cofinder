@@ -5,6 +5,7 @@ import { useI18n } from '../context/I18nContext'
 import { EVENT_DATE, EVENT_PLACE, TOPIC_EMOJI, VIEWS } from '../constants'
 import { useTimeLeft } from '../lib/useTimeLeft'
 import { isCustom, topicsWithLevel } from '../lib/topics'
+import { familyIn, familyTone } from '../lib/familyColors'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
 import LangSwitch from '../components/ui/LangSwitch'
@@ -16,7 +17,7 @@ import { SuperpowerChips } from '../components/ui/SuperpowerPicker'
  * sus mesas con su nivel, cuánto falta para la sesión y «Todo listo». Desde aquí se edita el perfil.
  */
 export default function WaitingView({ onLobby }) {
-  const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt } = useApp()
+  const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt, eventTopics } = useApp()
   const { t, topic, country } = useI18n()
   const [justUpdated, setJustUpdated] = useState(() => Date.now() - profileUpdatedAt < 3000)
   useEffect(() => {
@@ -66,7 +67,7 @@ export default function WaitingView({ onLobby }) {
             <ul className="mt-2.5 space-y-2">
               {tables.map(({ id, level }) => (
                 <li key={id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5">
-                  <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-lg">{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
+                  <span aria-hidden className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-lg ${familyTone(familyIn(id, eventTopics)).tile}`}>{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
                   <span className="min-w-0 flex-1 text-[15px] font-semibold leading-snug">{topic(id)}</span>
                   <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${level === 'high' ? 'bg-brand-soft text-brand-dark' : level === 'medium' ? 'bg-accent-soft text-accent-dark' : 'bg-slate-100 text-slate-600'}`}>
                     {t(`register.level.${level}Badge`)}

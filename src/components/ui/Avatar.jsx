@@ -3,10 +3,11 @@ export const initialsOf = (name = '') =>
   name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?'
 
 const VARIANTS = [
-  'bg-brand text-white',
-  'bg-ink text-white',
-  'bg-brand-soft text-brand-dark',
-  'bg-slate-200 text-slate-800',
+  'bg-fam-acquisition text-fam-acquisition-ink',
+  'bg-fam-brand text-fam-brand-ink',
+  'bg-fam-customer text-fam-customer-ink',
+  'bg-fam-data text-fam-data-ink',
+  'bg-fam-business text-fam-business-ink',
 ]
 
 const variantFor = (seed = '') =>
