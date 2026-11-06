@@ -1,63 +1,61 @@
 @import "tailwindcss";
 
-/* Sistema visual Cofinder «Conexión cálida» (06/11/2026)
-   Coral = color que destaca (acción principal, selección, énfasis, errores).
-   Violeta = acento secundario (niveles medios, pausas, «arma secreta», avisos informativos).
-   Verde menta = solo checks y confirmaciones.
-   Los tres colores vivos son luminosos: encima siempre texto tinta (coral 5,4:1 · violeta 5,4:1 ·
-   menta 7,6:1). Para texto de color sobre fondo claro se usa la variante -dark (AA). */
+/* Sistema visual Cofinder «Coral sobrio» (06/11/2026)
+   Fondo gris claro con tarjetas blancas. Coral = acción y lo destacado; violeta = lo secundario
+   (niveles, arma secreta, pausas); verde = solo checks. Todos los rellenos llevan texto blanco y
+   cumplen WCAG AA: coral 4,7:1 · violeta 5,7:1 · verde 4,8:1. Texto gris 5,5:1 sobre el fondo. */
 @theme {
-  /* Coral vivo: acción principal, selección y énfasis */
-  --color-brand: #FF6238;
-  --color-brand-hover: #F24F24;
-  --color-brand-dark: #C2380F;
-  --color-brand-soft: #FFEAE3;
-  /* Violeta eléctrico: acento secundario */
-  --color-accent: #A680FC;
-  --color-accent-dark: #6B3BD6;
-  --color-accent-soft: #F1EBFF;
-  /* Verde menta: solo checks y confirmaciones */
-  --color-mint: #35C98B;
-  --color-mint-dark: #0F7A51;
-  --color-mint-soft: #E3F7EE;
-  /* Neutros fríos de la guía */
-  --color-ink: #20202E;
-  --color-paper: #F8F8FB;
-  --color-cloud: #EDEDF3;
+  /* Coral: acción principal, selección, énfasis y errores */
+  --color-brand: #D0432A;
+  --color-brand-hover: #B83A22;
+  --color-brand-dark: #B23A20;
+  --color-brand-soft: #FCE9E4;
+  /* Violeta: acento secundario */
+  --color-accent: #6D4AE0;
+  --color-accent-dark: #5A36CC;
+  --color-accent-soft: #EFEBFD;
+  /* Verde: solo checks y confirmaciones */
+  --color-mint: #16834F;
+  --color-mint-dark: #116B41;
+  --color-mint-soft: #E3F3EA;
+  /* Neutros: fondo gris claro, tarjetas blancas */
+  --color-ink: #1F2430;
+  --color-paper: #EEF0F4;
+  --color-cloud: #E4E7ED;
 
-  --color-slate-50: #F8F8FB;
-  --color-slate-100: #EDEDF3;
-  --color-slate-200: #DFDFE8;
-  --color-slate-300: #C8C8D4;
-  --color-slate-400: #9A9AAA;
-  --color-slate-500: #686878;
-  --color-slate-600: #575767;
-  --color-slate-700: #434352;
-  --color-slate-800: #2F2F3D;
-  --color-slate-900: #20202E;
-  --color-slate-950: #15151F;
+  --color-slate-50: #F6F7FA;
+  --color-slate-100: #EEF0F4;
+  --color-slate-200: #DDE1E8;
+  --color-slate-300: #C5CAD4;
+  --color-slate-400: #8E95A3;
+  --color-slate-500: #5A6070;
+  --color-slate-600: #4A505E;
+  --color-slate-700: #3A3F4B;
+  --color-slate-800: #2A2E39;
+  --color-slate-900: #1F2430;
+  --color-slate-950: #151820;
 
-  /* emerald → menta, amber → violeta */
-  --color-emerald-50: #E3F7EE;
-  --color-emerald-100: #C8EFDD;
-  --color-emerald-200: #9DE2C3;
-  --color-emerald-300: #6BD5A6;
-  --color-emerald-400: #35C98B;
-  --color-emerald-500: #22A872;
-  --color-emerald-600: #178C5E;
-  --color-emerald-700: #0F7A51;
-  --color-emerald-800: #0B5C3D;
-  --color-emerald-900: #08432C;
-  --color-amber-50: #F7F3FF;
-  --color-amber-100: #F1EBFF;
-  --color-amber-200: #DDCCFE;
-  --color-amber-300: #C4A9FD;
-  --color-amber-400: #A680FC;
-  --color-amber-500: #8C5CF2;
-  --color-amber-600: #7A48E4;
-  --color-amber-700: #6B3BD6;
-  --color-amber-800: #522CA8;
-  --color-amber-900: #3B1F7A;
+  /* emerald → verde de checks, amber → violeta */
+  --color-emerald-50: #E3F3EA;
+  --color-emerald-100: #C6E7D4;
+  --color-emerald-200: #96D2B0;
+  --color-emerald-300: #5DB886;
+  --color-emerald-400: #2F9E66;
+  --color-emerald-500: #16834F;
+  --color-emerald-600: #137748;
+  --color-emerald-700: #116B41;
+  --color-emerald-800: #0C5233;
+  --color-emerald-900: #083B25;
+  --color-amber-50: #F6F3FE;
+  --color-amber-100: #EFEBFD;
+  --color-amber-200: #D9CFFA;
+  --color-amber-300: #B9A6F3;
+  --color-amber-400: #8F72EA;
+  --color-amber-500: #6D4AE0;
+  --color-amber-600: #6340D6;
+  --color-amber-700: #5A36CC;
+  --color-amber-800: #452A9E;
+  --color-amber-900: #311E72;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Bricolage Grotesque", "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -71,19 +69,16 @@
   }
 }
 
-/* Sobre coral y violeta, el texto siempre en tinta (5,4:1). Fuera de @layer para ganar a las utilidades.
-   (Vista previa: también reescribe el texto blanco que haya dentro de un relleno coral.) */
-.bg-brand, .bg-accent, .bg-mint { color: var(--color-ink); }
-.bg-brand .text-white, .bg-brand .text-on-color { color: var(--color-ink); }
-.bg-brand [class*="text-white/"] { color: rgb(32 32 46 / 0.78); }
+/* Sobre coral, violeta y verde, el texto siempre en blanco (AA). Fuera de @layer para ganar a text-ink */
+.bg-brand, .bg-accent, .bg-mint { color: #fff; }
 
 /* Fondo suave: rejilla tenue y brillo cálido abajo, como en el prototipo */
 .vip-glow {
   background-image:
-    radial-gradient(70rem 30rem at 50% 118%, rgb(255 98 56 / 0.10), transparent 70%),
-    radial-gradient(40rem 22rem at 100% -10%, rgb(166 128 252 / 0.12), transparent 65%),
-    linear-gradient(rgb(32 32 46 / 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(32 32 46 / 0.04) 1px, transparent 1px);
+    radial-gradient(70rem 30rem at 50% 118%, rgb(208 67 42 / 0.07), transparent 70%),
+    radial-gradient(40rem 22rem at 100% -10%, rgb(109 74 224 / 0.07), transparent 65%),
+    linear-gradient(rgb(31 36 48 / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(31 36 48 / 0.035) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 96px 96px, 96px 96px;
   background-attachment: fixed;
 }

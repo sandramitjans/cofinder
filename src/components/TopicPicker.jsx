@@ -94,7 +94,7 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
               </span>
             )}
           </span>
-          <span aria-hidden className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 ${selected ? 'border-mint bg-mint text-ink' : 'border-slate-300'}`}>
+          <span aria-hidden className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 ${selected ? 'border-mint bg-mint text-white' : 'border-slate-300'}`}>
             {selected && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
           </span>
         </button>

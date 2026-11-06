@@ -61,7 +61,7 @@ function LevelOption({ on, onClick, label, hint }) {
         {label}
       </span>
       <span className="mt-1 text-xs leading-tight text-slate-500">{hint}</span>
-      <span aria-hidden className={`absolute right-2.5 top-2.5 grid h-4 w-4 place-items-center rounded-full border ${on ? 'border-mint bg-mint text-ink' : 'border-slate-300'}`}>
+      <span aria-hidden className={`absolute right-2.5 top-2.5 grid h-4 w-4 place-items-center rounded-full border ${on ? 'border-mint bg-mint text-white' : 'border-slate-300'}`}>
         {on && <Check className="h-3 w-3" strokeWidth={3} />}
       </span>
     </button>

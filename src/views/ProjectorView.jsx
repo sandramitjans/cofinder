@@ -100,7 +100,7 @@ export default function ProjectorView() {
         <div className={`mx-auto grid w-full content-start gap-5 md:grid-cols-2 ${GRID[Math.min(n, 5)]}`}>
           {currentRound.tables.map((tb, i) => (
             <article key={tb.id} className="animate-pop-in overflow-hidden rounded-xl bg-white shadow-lg shadow-slate-900/5 ring-1 ring-slate-200" style={{ animationDelay: `${i * 100}ms` }}>
-              <div className="bg-brand px-5 py-4 text-white">
+              <div className="bg-ink px-5 py-4 text-white">
                 <p className="text-sm font-semibold uppercase tracking-widest text-white/70">{t('round.table', { n: tb.id })}</p>
                 <h2 className="mt-1 font-display text-2xl font-medium leading-tight tracking-tight xl:text-3xl">{topic(tb.topic)}</h2>
               </div>
