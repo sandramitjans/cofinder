@@ -11,6 +11,7 @@ import Avatar from '../components/ui/Avatar'
 import LangSwitch from '../components/ui/LangSwitch'
 import PublicFooter from '../components/layout/PublicFooter'
 import { SuperpowerChips } from '../components/ui/SuperpowerPicker'
+import Confetti from '../components/ui/Confetti'
 
 /**
  * Confirmación tras validar el perfil (pantalla 5 del prototipo): tarjeta roja con la persona,
@@ -31,6 +32,7 @@ export default function WaitingView({ onLobby }) {
 
   return (
     <div className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
+      <Confetti />
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
         <header className="flex items-center justify-between gap-4">
           <Logo />
