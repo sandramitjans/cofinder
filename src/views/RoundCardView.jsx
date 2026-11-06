@@ -114,7 +114,7 @@ function GoToTable({ table, findTimer }) {
       {findTimer && (
         <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
           <p className="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><Timer className="h-3.5 w-3.5" /> {t('find.left')}</p>
-          <p className="font-display text-6xl font-medium tabular-nums tracking-tight text-brand">{findTimer.label}</p>
+          <p className="font-display text-6xl font-medium tabular-nums tracking-tight text-brand-dark">{findTimer.label}</p>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
             <div className="h-full rounded-full bg-brand transition-[width] duration-1000" style={{ width: `${(1 - findTimer.progress) * 100}%` }} />
           </div>
@@ -151,7 +151,7 @@ function ActiveRound({ table, timer }) {
         <MyRole table={table} />
 
         <p className="mt-6 flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><Timer className="h-3.5 w-3.5" /> {t('round.timeLeft')}</p>
-        <p className={`text-center font-display text-7xl font-medium tabular-nums tracking-tight ${timer.remaining <= 60_000 ? 'text-brand' : 'text-ink'}`} aria-live="off">{timer.label}</p>
+        <p className={`text-center font-display text-7xl font-medium tabular-nums tracking-tight ${timer.remaining <= 60_000 ? 'text-brand-dark' : 'text-ink'}`} aria-live="off">{timer.label}</p>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
           <div className="h-full rounded-full bg-brand transition-[width] duration-1000" style={{ width: `${(1 - timer.progress) * 100}%` }} />
         </div>

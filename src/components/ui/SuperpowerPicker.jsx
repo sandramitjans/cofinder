@@ -21,20 +21,20 @@ export default function SuperpowerPicker({ value, onChange, labelledBy }) {
               aria-pressed={selected}
               className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-[15px] font-medium lg:px-4 lg:py-3.5 lg:text-base transition-all duration-150 active:scale-[0.98] ${
                 selected
-                  ? 'border-brand bg-brand-soft text-ink shadow-sm'
-                  : 'border-slate-200 bg-white text-slate-800 hover:border-brand'
+                  ? 'border-accent bg-accent-soft text-ink shadow-sm'
+                  : 'border-slate-200 bg-white text-slate-800 hover:border-accent'
               }`}
             >
               <span
                 aria-hidden
                 className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-lg transition-transform lg:h-11 lg:w-11 lg:text-xl ${
-                  selected ? 'scale-110 bg-brand' : 'bg-brand-soft group-hover:rotate-6'
+                  selected ? 'scale-110 bg-accent' : 'bg-accent-soft group-hover:rotate-6'
                 }`}
               >
                 {emoji}
               </span>
               <span className="flex-1 leading-snug">{superpower(id)}</span>
-              {selected && <Check className="h-4 w-4 shrink-0 text-brand-dark" />}
+              {selected && <Check className="h-4 w-4 shrink-0 text-mint-dark" />}
             </button>
           )
         })}
@@ -53,7 +53,7 @@ export function SuperpowerChips({ ids = [], size = 'md', className = '' }) {
       {ids.map((id) => {
         const sp = SUPERPOWERS.find((s) => s.id === id)
         return sp ? (
-          <span key={id} className={`inline-flex items-center gap-1 rounded-full bg-slate-100 font-medium text-slate-800 ring-1 ring-slate-200 ${cls}`}>
+          <span key={id} className={`inline-flex items-center gap-1 rounded-full bg-accent-soft font-medium text-accent-dark ring-1 ring-accent/30 ${cls}`}>
             <span aria-hidden>{sp.emoji}</span> {superpower(id)}
           </span>
         ) : null

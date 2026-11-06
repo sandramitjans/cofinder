@@ -208,7 +208,7 @@ export default function RegisterView({ mode = 'create' }) {
 
         <form onSubmit={submit} noValidate className="mt-5 flex flex-1 flex-col">
           <header>
-            {editing && screen === 1 && <p className="mb-1 text-sm font-bold uppercase tracking-wider text-brand">{t('register.editKicker')}</p>}
+            {editing && screen === 1 && <p className="mb-1 text-sm font-bold uppercase tracking-wider text-brand-dark">{t('register.editKicker')}</p>}
             <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink lg:text-4xl">{steps.title}</h1>
             <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600 lg:text-base">{steps.sub}</p>
           </header>

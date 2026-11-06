@@ -1,62 +1,63 @@
 @import "tailwindcss";
 
-/* Sistema visual Cofinder (03/11/2026, alineado con el prototipo cfndr.lovable.app)
-   Un solo color de marca: el rojo #D7340F (acción, selección, énfasis y tarjetas destacadas),
-   sobre fondo claro cálido y tarjetas blancas con borde fino. El verde queda solo para
-   mensajes de «todo correcto». Contrastes (WCAG): blanco sobre brand 4,8:1 ·
-   brand-dark sobre blanco 6,4:1 · slate-500 sobre blanco 5,3:1. */
+/* Sistema visual Cofinder «Conexión cálida» (06/11/2026)
+   Coral = color que destaca (acción principal, selección, énfasis, errores).
+   Violeta = acento secundario (niveles medios, pausas, «arma secreta», avisos informativos).
+   Verde menta = solo checks y confirmaciones.
+   Los tres colores vivos son luminosos: encima siempre texto tinta (coral 5,4:1 · violeta 5,4:1 ·
+   menta 7,6:1). Para texto de color sobre fondo claro se usa la variante -dark (AA). */
 @theme {
-  /* Rojo Cofinder: acción principal, selección, énfasis y avisos */
-  --color-brand: #D7340F;
-  --color-brand-dark: #B42A0B;
-  --color-brand-soft: #FDECE6;
-  /* «accent» es el mismo rojo (antes coral): así no queda ningún segundo color de marca */
-  --color-accent: #D7340F;
-  --color-accent-dark: #B42A0B;
-  --color-accent-soft: #FDECE6;
-  /* Verde: solo confirmaciones */
-  --color-mint: #1F9D63;
-  --color-mint-dark: #157A4B;
-  --color-mint-soft: #E6F6EE;
-  /* Neutros cálidos */
-  --color-ink: #1C1C1F;
-  --color-paper: #FAF7F5;
-  --color-cloud: #F3EEEA;
+  /* Coral vivo: acción principal, selección y énfasis */
+  --color-brand: #FF6238;
+  --color-brand-hover: #F24F24;
+  --color-brand-dark: #C2380F;
+  --color-brand-soft: #FFEAE3;
+  /* Violeta eléctrico: acento secundario */
+  --color-accent: #A680FC;
+  --color-accent-dark: #6B3BD6;
+  --color-accent-soft: #F1EBFF;
+  /* Verde menta: solo checks y confirmaciones */
+  --color-mint: #35C98B;
+  --color-mint-dark: #0F7A51;
+  --color-mint-soft: #E3F7EE;
+  /* Neutros fríos de la guía */
+  --color-ink: #20202E;
+  --color-paper: #F8F8FB;
+  --color-cloud: #EDEDF3;
 
-  /* Escala slate de Tailwind reasignada a los neutros cálidos */
-  --color-slate-50: #FAF7F5;
-  --color-slate-100: #F3EFEC;
-  --color-slate-200: #E7E1DC;
-  --color-slate-300: #D3CBC5;
-  --color-slate-400: #A39B95;
-  --color-slate-500: #6B6B76;
-  --color-slate-600: #595963;
-  --color-slate-700: #45454F;
-  --color-slate-800: #2E2E35;
-  --color-slate-900: #1C1C1F;
-  --color-slate-950: #121214;
+  --color-slate-50: #F8F8FB;
+  --color-slate-100: #EDEDF3;
+  --color-slate-200: #DFDFE8;
+  --color-slate-300: #C8C8D4;
+  --color-slate-400: #9A9AAA;
+  --color-slate-500: #686878;
+  --color-slate-600: #575767;
+  --color-slate-700: #434352;
+  --color-slate-800: #2F2F3D;
+  --color-slate-900: #20202E;
+  --color-slate-950: #15151F;
 
-  /* emerald → verde de confirmación, amber → rojo de marca */
-  --color-emerald-50: #E6F6EE;
-  --color-emerald-100: #CDEDDD;
-  --color-emerald-200: #A3DDC0;
-  --color-emerald-300: #6FC99E;
-  --color-emerald-400: #3DB27D;
-  --color-emerald-500: #1F9D63;
-  --color-emerald-600: #198553;
-  --color-emerald-700: #157A4B;
-  --color-emerald-800: #105C39;
-  --color-emerald-900: #0B432A;
-  --color-amber-50: #FEF5F2;
-  --color-amber-100: #FDECE6;
-  --color-amber-200: #F9CDBF;
-  --color-amber-300: #F2A28A;
-  --color-amber-400: #E86A47;
-  --color-amber-500: #D7340F;
-  --color-amber-600: #C42F0D;
-  --color-amber-700: #B42A0B;
-  --color-amber-800: #8C2109;
-  --color-amber-900: #661807;
+  /* emerald → menta, amber → violeta */
+  --color-emerald-50: #E3F7EE;
+  --color-emerald-100: #C8EFDD;
+  --color-emerald-200: #9DE2C3;
+  --color-emerald-300: #6BD5A6;
+  --color-emerald-400: #35C98B;
+  --color-emerald-500: #22A872;
+  --color-emerald-600: #178C5E;
+  --color-emerald-700: #0F7A51;
+  --color-emerald-800: #0B5C3D;
+  --color-emerald-900: #08432C;
+  --color-amber-50: #F7F3FF;
+  --color-amber-100: #F1EBFF;
+  --color-amber-200: #DDCCFE;
+  --color-amber-300: #C4A9FD;
+  --color-amber-400: #A680FC;
+  --color-amber-500: #8C5CF2;
+  --color-amber-600: #7A48E4;
+  --color-amber-700: #6B3BD6;
+  --color-amber-800: #522CA8;
+  --color-amber-900: #3B1F7A;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Bricolage Grotesque", "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -70,16 +71,19 @@
   }
 }
 
-/* Sobre el rojo, el texto siempre en blanco (4,8:1). Fuera de @layer para ganar a text-ink */
-.bg-brand, .bg-accent { color: #fff; }
+/* Sobre coral y violeta, el texto siempre en tinta (5,4:1). Fuera de @layer para ganar a las utilidades.
+   (Vista previa: también reescribe el texto blanco que haya dentro de un relleno coral.) */
+.bg-brand, .bg-accent, .bg-mint { color: var(--color-ink); }
+.bg-brand .text-white, .bg-brand .text-on-color { color: var(--color-ink); }
+.bg-brand [class*="text-white/"] { color: rgb(32 32 46 / 0.78); }
 
 /* Fondo suave: rejilla tenue y brillo cálido abajo, como en el prototipo */
 .vip-glow {
   background-image:
-    radial-gradient(70rem 30rem at 50% 118%, rgb(215 52 15 / 0.10), transparent 70%),
-    radial-gradient(40rem 22rem at 100% -10%, rgb(232 106 71 / 0.10), transparent 65%),
-    linear-gradient(rgb(28 28 31 / 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(28 28 31 / 0.04) 1px, transparent 1px);
+    radial-gradient(70rem 30rem at 50% 118%, rgb(255 98 56 / 0.10), transparent 70%),
+    radial-gradient(40rem 22rem at 100% -10%, rgb(166 128 252 / 0.12), transparent 65%),
+    linear-gradient(rgb(32 32 46 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(32 32 46 / 0.04) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 96px 96px, 96px 96px;
   background-attachment: fixed;
 }

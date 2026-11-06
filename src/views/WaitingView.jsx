@@ -51,14 +51,14 @@ export default function WaitingView({ onLobby }) {
           {/* Tarjeta destacada en el rojo de marca */}
           <section aria-label={t('waiting.yourFile')} className="animate-pop-in rounded-2xl bg-brand p-5 text-white shadow-lg shadow-brand/20">
             <div className="flex items-center gap-4">
-              <Avatar name={currentUser.name} photo={currentUser.photo} size="lg" tone="bg-white text-brand" className="!ring-white/40" />
+              <Avatar name={currentUser.name} photo={currentUser.photo} size="lg" tone="bg-white text-brand-dark" className="!ring-white/40" />
               <div className="min-w-0">
                 <p className="truncate font-display text-2xl font-medium leading-tight">{currentUser.name}</p>
                 <p className="truncate text-sm text-white/85">{currentUser.role}</p>
                 <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-white/85"><MapPin className="h-3.5 w-3.5" /> {country(currentUser.country)}</p>
               </div>
             </div>
-            <SuperpowerChips ids={currentUser.superpowers ?? []} size="sm" className="mt-4 [&>span]:bg-white/15 [&>span]:text-white [&>span]:ring-white/20" />
+            <SuperpowerChips ids={currentUser.superpowers ?? []} size="sm" className="mt-4 [&>span]:bg-white [&>span]:text-accent-dark [&>span]:ring-accent/30" />
           </section>
 
           <h2 className="mt-7 text-xs font-bold uppercase tracking-wider text-slate-500">{t('waiting.yourTables')}</h2>
@@ -68,7 +68,7 @@ export default function WaitingView({ onLobby }) {
                 <li key={id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5">
                   <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-lg">{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
                   <span className="min-w-0 flex-1 text-[15px] font-semibold leading-snug">{topic(id)}</span>
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${level === 'high' ? 'bg-brand-soft text-brand-dark' : level === 'medium' ? 'bg-amber-50 text-brand-dark ring-1 ring-brand/20' : 'bg-slate-100 text-slate-600'}`}>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${level === 'high' ? 'bg-brand-soft text-brand-dark' : level === 'medium' ? 'bg-accent-soft text-accent-dark' : 'bg-slate-100 text-slate-600'}`}>
                     {t(`register.level.${level}Badge`)}
                   </span>
                 </li>
