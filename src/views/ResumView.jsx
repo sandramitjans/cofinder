@@ -150,7 +150,7 @@ function Summaries({ pin, onLogout }) {
       type = 'text/plain'
     }
     const url = URL.createObjectURL(new Blob([body], { type: `${type};charset=utf-8` }))
-    const a = Object.assign(document.createElement('a'), { href: url, download: `cofinder-resumenes.${kind}` })
+    const a = Object.assign(document.createElement('a'), { href: url, download: `${t('resum.fileName')}.${kind}` })
     a.click()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }

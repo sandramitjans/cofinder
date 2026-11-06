@@ -97,7 +97,9 @@ export const SUPERPOWERS = [
 ]
 export const MAX_SUPERPOWERS = 1
 
-export const COUNTRIES = ['fr', 'es', 'pt', 'it', 'de', 'uk', 'mx', 'co', 'ar', 'cl', 'br', 'us']
+// Filiales que se sugieren en el formulario (países del grupo Cofidis). Los textos están en lib/i18n.js,
+// que guarda también otros países por si algún perfil antiguo los tiene.
+export const COUNTRIES = ['fr', 'be', 'es', 'pt', 'it', 'cz', 'sk', 'hu', 'pl']
 
-export const LANGS = ['es', 'en']
-export const DEFAULT_LANG = 'es'
+export const LANGS = ['fr', 'en']
+export const DEFAULT_LANG = 'fr'

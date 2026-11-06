@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { VIEWS, MODERATOR_VIEWS, isModHash, JOIN_HASH, MOD_PIN, PAUSE_AFTER_ROUND, FIND_MINUTES, ROUND_MINUTES } from '../constants'
 import { demoParticipants } from '../lib/demo'
 import * as api from '../lib/backend'
+import { translate } from '../lib/i18n'
 import { clearNotes, saveNote } from '../lib/audioNotes'
 
 /**
@@ -40,7 +41,7 @@ const read = (storage, key, fallback) => {
 const write = (storage, key, value) => {
   try { value == null ? storage.removeItem(key) : storage.setItem(key, JSON.stringify(value)) } catch { /* sin almacenamiento */ }
 }
-const currentLang = () => { try { return localStorage.getItem('cofinder:lang') === 'en' ? 'en' : 'es' } catch { return 'es' } }
+const currentLang = () => { try { return localStorage.getItem('cofinder:lang') === 'en' ? 'en' : 'fr' } catch { return 'fr' } }
 // Código de acceso de 4 cifras (modo local; en Supabase lo pone el servidor)
 const newCode = (taken) => {
   let c
@@ -406,7 +407,7 @@ export function AppProvider({ children }) {
   const modAction = useCallback(async (fn) => {
     try { await fn(modPin) } catch (err) {
       if (err.code === 'invalid_pin') return lockModerator()
-      window.alert(err.code === 'locked' ? 'PIN: trop d’essais / too many attempts' : 'Erreur de connexion / connection error')
+      window.alert(translate(currentLang(), err.code === 'locked' ? 'gate.locked' : 'gate.network'))
     }
     await refreshMod()
   }, [modPin, refreshMod, lockModerator])
