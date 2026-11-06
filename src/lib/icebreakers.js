@@ -1,110 +1,110 @@
 import { isCustom, customLabel } from './topics'
 
 /**
- * «Para romper el hielo»: contexto, 3 preguntas y una pista para cada tema de la lista.
- * Textos redactados con IA (de ahí la etiqueta «Propuestas por la IA» en el móvil).
+ * «Pour briser la glace» / «Icebreakers»: contexto, 3 preguntas y una pista para cada tema de la lista.
+ * Textos redactados con IA (de ahí la etiqueta «Suggestions de l’IA» en el móvil).
  * Para las mesas que añade el admin desde el panel se usan preguntas generales con su título.
  */
-const ES = {
+const FR = {
   ai_guru: {
-    intro: 'La IA ya escribe anuncios, segmenta audiencias y responde a clientes, pero cada equipo la está adoptando a un ritmo muy distinto.',
-    q: ['¿Qué tarea de tu equipo ha cambiado más gracias a la IA?', '¿Qué no dejarías nunca en manos de una IA?', '¿Cómo medís si un caso de uso de IA merece la pena?'],
-    tip: 'Pista: compartid un ejemplo concreto que haya funcionado y otro que no.',
+    intro: 'L’IA rédige déjà des annonces, segmente les audiences et répond aux clients, mais chaque équipe l’adopte à un rythme très différent.',
+    q: ['Quelle tâche de votre équipe l’IA a-t-elle le plus transformée\u00A0?', 'Que ne confieriez-vous jamais à une IA\u00A0?', 'Comment savez-vous si un cas d’usage de l’IA en vaut la peine\u00A0?'],
+    tip: 'Astuce\u00A0: partagez un exemple concret qui a fonctionné, et un autre qui n’a pas marché.',
   },
   paid_performance: {
-    intro: 'Los costes de los medios digitales suben y la medición es cada vez más difícil sin cookies de terceros.',
-    q: ['¿Qué canal de pago os da hoy más retorno?', '¿Cómo repartís el presupuesto entre captación y marca?', '¿Qué métrica habéis dejado de mirar y por qué?'],
-    tip: 'Pista: comparad cómo cada uno decide cortar una campaña que no funciona.',
+    intro: 'Les coûts des médias digitaux augmentent et la mesure se complique sans cookies tiers.',
+    q: ['Quel canal payant vous rapporte le plus aujourd’hui\u00A0?', 'Comment répartissez-vous le budget entre acquisition et marque\u00A0?', 'Quel indicateur avez-vous cessé de suivre, et pourquoi\u00A0?'],
+    tip: 'Astuce\u00A0: comparez comment chacun décide d’arrêter une campagne qui ne fonctionne pas.',
   },
   social_strategy: {
-    intro: 'Las redes premian lo auténtico y lo rápido, algo difícil de encajar en una marca financiera.',
-    q: ['¿Qué red social os funciona mejor y cuál os sobra?', '¿Quién aprueba un post en tu empresa y cuánto tarda?', '¿Habéis trabajado con creadores de contenido? ¿Qué tal?'],
-    tip: 'Pista: enseñaos en el móvil un post propio del que estéis orgullosos.',
+    intro: 'Les réseaux sociaux récompensent l’authenticité et la rapidité, deux qualités difficiles à concilier avec une marque financière.',
+    q: ['Quel réseau fonctionne le mieux pour vous, et lequel pourriez-vous abandonner\u00A0?', 'Qui valide un post chez vous, et en combien de temps\u00A0?', 'Avez-vous travaillé avec des créateurs de contenu\u00A0? Quel bilan\u00A0?'],
+    tip: 'Astuce\u00A0: montrez-vous sur votre téléphone l’un de vos posts préférés.',
   },
   affiliates: {
-    intro: 'Los afiliados pueden traer mucho volumen, pero la calidad del tráfico y el control de la marca son el gran reto.',
-    q: ['¿Qué peso tienen los afiliados en vuestra captación?', '¿Cómo detectáis tráfico de mala calidad?', '¿Pagáis por clic, por lead o por venta? ¿Por qué?'],
-    tip: 'Pista: compartid la peor sorpresa que os habéis llevado con un afiliado.',
+    intro: 'L’affiliation peut apporter beaucoup de volume, mais la qualité du trafic et le contrôle de la marque restent le grand défi.',
+    q: ['Quelle part de votre acquisition vient de l’affiliation\u00A0?', 'Comment repérez-vous le trafic de mauvaise qualité\u00A0?', 'Payez-vous au clic, au lead ou à la vente\u00A0? Pourquoi\u00A0?'],
+    tip: 'Astuce\u00A0: racontez la pire surprise que vous ait réservée un affilié.',
   },
   emailing_loyalty: {
-    intro: 'El email sigue siendo de los canales más rentables, siempre que no acabe en la carpeta de spam.',
-    q: ['¿Qué email vuestro tiene la mejor tasa de apertura?', '¿Cómo evitáis cansar a los clientes con demasiados envíos?', '¿Qué hacéis para recuperar a un cliente inactivo?'],
-    tip: 'Pista: ¿cuál es el último email de marca que abristeis por gusto?',
+    intro: 'L’email reste l’un des canaux les plus rentables, à condition de ne pas finir dans les spams.',
+    q: ['Lequel de vos emails a le meilleur taux d’ouverture\u00A0?', 'Comment évitez-vous de lasser vos clients avec trop d’envois\u00A0?', 'Que faites-vous pour réactiver un client inactif\u00A0?'],
+    tip: 'Astuce\u00A0: quel est le dernier email de marque que vous avez ouvert par simple envie\u00A0?',
   },
   geo: {
-    intro: 'Cada vez más gente pregunta a asistentes de IA en lugar de buscar en Google. ¿Aparece tu marca en esas respuestas?',
-    q: ['¿Habéis preguntado a una IA por vuestra marca? ¿Qué dijo?', '¿Estáis cambiando vuestros contenidos por la búsqueda con IA?', '¿Cómo se mide la visibilidad en un asistente de IA?'],
-    tip: 'Pista: haced la prueba juntos en el móvil con una pregunta sobre vuestro sector.',
+    intro: 'De plus en plus de gens interrogent des assistants IA au lieu de chercher sur Google. Votre marque apparaît-elle dans leurs réponses\u00A0?',
+    q: ['Avez-vous déjà interrogé une IA sur votre marque\u00A0? Qu’a-t-elle répondu\u00A0?', 'Faites-vous évoluer vos contenus à cause de la recherche par IA\u00A0?', 'Comment mesurer la visibilité dans un assistant IA\u00A0?'],
+    tip: 'Astuce\u00A0: faites le test ensemble sur votre téléphone avec une question sur votre secteur.',
   },
   b2b: {
-    intro: 'En B2B las decisiones son lentas, las toman varias personas y la relación pesa tanto como el producto.',
-    q: ['¿Cuánto dura vuestro ciclo de venta medio?', '¿Qué contenido os ayuda más a convencer a un cliente empresa?', '¿Cómo trabajan juntos marketing y ventas en tu casa?'],
-    tip: 'Pista: compartid cómo conseguisteis vuestro mejor cliente empresa.',
+    intro: 'En B2B, les décisions sont lentes, impliquent plusieurs personnes, et la relation compte autant que le produit.',
+    q: ['Quelle est la durée moyenne de votre cycle de vente\u00A0?', 'Quel contenu vous aide le plus à convaincre un client entreprise\u00A0?', 'Comment le marketing et les ventes travaillent-ils ensemble chez vous\u00A0?'],
+    tip: 'Astuce\u00A0: racontez comment vous avez gagné votre meilleur client entreprise.',
   },
   analytics: {
-    intro: 'Hay más datos que nunca, pero convertirlos en decisiones sigue siendo lo difícil.',
-    q: ['¿Qué dato te ha sorprendido más por su poder para predecir?', '¿Qué decisión tomasteis gracias a un análisis?', '¿Quién tiene la última palabra cuando los datos y la intuición chocan?'],
-    tip: 'Pista: comparad cuál es el panel de control que miráis cada lunes.',
+    intro: 'Les données n’ont jamais été aussi nombreuses, mais les transformer en décisions reste le plus difficile.',
+    q: ['Quelle donnée s’est révélée étonnamment prédictive chez vous\u00A0?', 'Quelle décision avez-vous prise grâce à une analyse\u00A0?', 'Qui a le dernier mot quand les données et l’intuition ne sont pas d’accord\u00A0?'],
+    tip: 'Astuce\u00A0: comparez le tableau de bord que vous consultez chaque lundi.',
   },
   customer_success: {
-    intro: 'Retener a un cliente cuesta mucho menos que conseguir uno nuevo, pero no siempre recibe la misma atención.',
-    q: ['¿Cómo detectáis que un cliente está a punto de irse?', '¿Qué gesto sencillo ha mejorado la satisfacción de vuestros clientes?', '¿Quién es responsable de la experiencia del cliente en tu empresa?'],
-    tip: 'Pista: compartid una queja de cliente que acabó siendo una buena idea.',
+    intro: 'Fidéliser un client coûte bien moins cher qu’en conquérir un nouveau, mais cela ne reçoit pas toujours la même attention.',
+    q: ['Comment repérez-vous un client sur le point de partir\u00A0?', 'Quel geste simple a amélioré la satisfaction de vos clients\u00A0?', 'Qui est responsable de l’expérience client dans votre entreprise\u00A0?'],
+    tip: 'Astuce\u00A0: partagez une réclamation client qui s’est transformée en bonne idée.',
   },
   branding: {
-    intro: 'Una marca fuerte hace que todo lo demás cueste menos, pero sus resultados se ven a largo plazo.',
-    q: ['¿Cómo describirías vuestra marca en tres palabras?', '¿Cómo defendéis la inversión en marca ante dirección?', '¿Qué marca, de cualquier sector, os gustaría ser?'],
-    tip: 'Pista: probad a adivinar las tres palabras de la marca de los demás.',
+    intro: 'Une marque forte rend tout le reste moins coûteux, mais ses résultats se voient sur le long terme.',
+    q: ['Comment décririez-vous votre marque en trois mots\u00A0?', 'Comment défendez-vous l’investissement en marque auprès de la direction\u00A0?', 'Quelle marque, tous secteurs confondus, aimeriez-vous être\u00A0?'],
+    tip: 'Astuce\u00A0: essayez de deviner les trois mots de la marque des autres.',
   },
   mass_media: {
-    intro: 'Televisión, radio y exterior siguen llegando a millones de personas, aunque cada vez es más difícil medir su efecto.',
-    q: ['¿Seguís invirtiendo en televisión? ¿Por qué sí o por qué no?', '¿Cómo medís el impacto de una campaña en medios masivos?', '¿Qué anuncio de la competencia os habría gustado firmar?'],
-    tip: 'Pista: compartid el anuncio que recordáis de vuestra infancia.',
+    intro: 'La télévision, la radio et l’affichage touchent encore des millions de personnes, même si leur effet est de plus en plus difficile à mesurer.',
+    q: ['Investissez-vous encore en télévision\u00A0? Pourquoi\u00A0?', 'Comment mesurez-vous l’impact d’une campagne dans les médias de masse\u00A0?', 'Quelle publicité d’un concurrent auriez-vous aimé signer\u00A0?'],
+    tip: 'Astuce\u00A0: partagez la publicité qui a marqué votre enfance.',
   },
   public_relations: {
-    intro: 'Una buena noticia en prensa da credibilidad, y una mala puede costar años de reputación.',
-    q: ['¿Cuál ha sido vuestra mejor aparición en prensa?', '¿Tenéis un plan preparado por si llega una crisis?', '¿Qué papel tienen los portavoces y la dirección en vuestra comunicación?'],
-    tip: 'Pista: compartid cómo resolvisteis una noticia incómoda.',
+    intro: 'Un bon article de presse apporte de la crédibilité, un mauvais peut coûter des années de réputation.',
+    q: ['Quelle a été votre plus belle retombée presse\u00A0?', 'Avez-vous un plan prêt en cas de crise\u00A0?', 'Quel rôle jouent les porte-parole et la direction dans votre communication\u00A0?'],
+    tip: 'Astuce\u00A0: racontez comment vous avez géré une actualité embarrassante.',
   },
   guerrilla: {
-    intro: 'Con poco presupuesto y mucha creatividad se pueden lograr campañas memorables, si la marca se atreve.',
-    q: ['¿Cuál es la acción más atrevida que habéis hecho?', '¿Qué os frena a la hora de arriesgar en una campaña?', '¿Qué acción de guerrilla de otra marca os encantó?'],
-    tip: 'Pista: inventad entre todos una acción loca para la marca de alguien de la mesa.',
+    intro: 'Avec peu de budget et beaucoup de créativité, on peut signer des campagnes mémorables, si la marque ose.',
+    q: ['Quelle est l’action la plus audacieuse que vous ayez menée\u00A0?', 'Qu’est-ce qui vous freine au moment de prendre des risques dans une campagne\u00A0?', 'Quelle action de guérilla d’une autre marque vous a fait envie\u00A0?'],
+    tip: 'Astuce\u00A0: inventez ensemble une action folle pour la marque de l’un d’entre vous.',
   },
   product_management: {
-    intro: 'Marketing y producto trabajan mejor juntos, pero no siempre comparten prioridades ni calendario.',
-    q: ['¿Participa marketing en el diseño de nuevos productos?', '¿Cómo decidís qué mejora va primero?', '¿Qué producto lanzasteis que no funcionó y qué aprendisteis?'],
-    tip: 'Pista: compartid cómo recogéis la opinión de los clientes antes de lanzar algo.',
+    intro: 'Le marketing et le produit fonctionnent mieux ensemble, mais ne partagent pas toujours les mêmes priorités ni le même calendrier.',
+    q: ['Le marketing participe-t-il à la conception des nouveaux produits\u00A0?', 'Comment décidez-vous quelle amélioration passe en premier\u00A0?', 'Quel lancement n’a pas fonctionné, et qu’en avez-vous appris\u00A0?'],
+    tip: 'Astuce\u00A0: expliquez comment vous recueillez l’avis des clients avant un lancement.',
   },
   pnl: {
-    intro: 'Marketing tiene que demostrar su impacto en la cuenta de resultados, no solo en clics y alcance.',
-    q: ['¿Cómo demostráis a finanzas que marketing aporta beneficio?', '¿Qué gasto habéis recortado sin perder resultados?', '¿Qué indicador comparte marketing con dirección financiera?'],
-    tip: 'Pista: compartid la frase que mejor os funciona para defender un presupuesto.',
+    intro: 'Le marketing doit prouver son impact sur le compte de résultat, pas seulement sur les clics et la portée.',
+    q: ['Comment prouvez-vous à la finance que le marketing crée de la valeur\u00A0?', 'Quelle dépense avez-vous réduite sans perdre en résultats\u00A0?', 'Quel indicateur le marketing partage-t-il avec la direction financière\u00A0?'],
+    tip: 'Astuce\u00A0: partagez la phrase qui marche le mieux pour défendre un budget.',
   },
   customer_journey: {
-    intro: 'El cliente salta entre web, app, teléfono y oficina, y espera que todo encaje como una sola experiencia.',
-    q: ['¿En qué paso del recorrido perdéis más clientes?', '¿Habéis probado vuestro propio proceso como si fuerais clientes?', '¿Qué canal os gustaría mejorar primero?'],
-    tip: 'Pista: contad el último paso absurdo que encontrasteis en vuestro propio proceso.',
+    intro: 'Le client passe du site à l’appli, au téléphone ou à l’agence, et attend que tout s’enchaîne comme une seule expérience.',
+    q: ['À quelle étape du parcours perdez-vous le plus de clients\u00A0?', 'Avez-vous testé votre propre parcours en vous mettant à la place du client\u00A0?', 'Quel canal amélioreriez-vous en premier\u00A0?'],
+    tip: 'Astuce\u00A0: racontez la dernière étape absurde que vous avez découverte dans votre propre parcours.',
   },
   operational_efficiency: {
-    intro: 'Hacer más con los mismos recursos obliga a revisar procesos, herramientas y prioridades.',
-    q: ['¿Qué tarea repetitiva habéis automatizado este año?', '¿Qué reunión eliminaríais mañana mismo?', '¿Cómo decidís qué proyectos se dejan de hacer?'],
-    tip: 'Pista: compartid una herramienta que os ahorre al menos una hora a la semana.',
+    intro: 'Faire plus avec les mêmes ressources oblige à revoir les process, les outils et les priorités.',
+    q: ['Quelle tâche répétitive avez-vous automatisée cette année\u00A0?', 'Quelle réunion supprimeriez-vous dès demain\u00A0?', 'Comment décidez-vous des projets à arrêter\u00A0?'],
+    tip: 'Astuce\u00A0: partagez un outil qui vous fait gagner au moins une heure par semaine.',
   },
   risk_management: {
-    intro: 'Cada campaña tiene riesgos: legales, de reputación o de crédito. Gestionarlos sin frenar la creatividad es todo un arte.',
-    q: ['¿Qué riesgo os preocupa más en vuestras campañas?', '¿Cómo trabajáis con el equipo de riesgos sin que todo se retrase?', '¿Alguna campaña se tuvo que parar a última hora?'],
-    tip: 'Pista: compartid cómo convencisteis a riesgos de aprobar una idea difícil.',
+    intro: 'Chaque campagne comporte des risques\u00A0: juridiques, d’image ou de crédit. Les maîtriser sans brider la créativité est tout un art.',
+    q: ['Quel risque vous inquiète le plus dans vos campagnes\u00A0?', 'Comment travaillez-vous avec l’équipe risques sans que tout prenne du retard\u00A0?', 'Une campagne a-t-elle déjà dû être stoppée à la dernière minute\u00A0?'],
+    tip: 'Astuce\u00A0: racontez comment vous avez convaincu les risques de valider une idée difficile.',
   },
   compliance: {
-    intro: 'Las normas de publicidad financiera y de protección de datos cambian a menudo y afectan a cada mensaje.',
-    q: ['¿Qué norma os ha obligado a cambiar más vuestra comunicación?', '¿Cómo validáis un mensaje con legal y cumplimiento?', '¿Dónde ponéis el límite entre útil e intrusivo con los datos?'],
-    tip: 'Pista: comparad cuánto tarda en cada empresa aprobar un anuncio.',
+    intro: 'Les règles sur la publicité financière et la protection des données évoluent souvent et touchent chaque message.',
+    q: ['Quelle règle a le plus fait évoluer votre communication\u00A0?', 'Comment faites-vous valider un message par le juridique et la conformité\u00A0?', 'Où placez-vous la limite entre utile et intrusif avec les données\u00A0?'],
+    tip: 'Astuce\u00A0: comparez le temps qu’il faut dans chaque entreprise pour valider une publicité.',
   },
   cofidis_ninja: {
-    intro: 'Sacar adelante un proyecto entre países, filiales y departamentos exige mano izquierda y buenos aliados.',
-    q: ['¿Cuál es el proyecto entre países del que estáis más orgullosos?', '¿Qué truco usáis para alinear a equipos de distintos países?', '¿Qué proyecto de otra filial os gustaría copiar?'],
-    tip: 'Pista: intercambiad el contacto de alguien clave en vuestra filial.',
+    intro: 'Faire aboutir un projet entre pays, filiales et départements demande du doigté et de bons alliés.',
+    q: ['Quel est votre plus beau projet entre pays\u00A0?', 'Quelle astuce utilisez-vous pour aligner des équipes de pays différents\u00A0?', 'Quel projet d’une autre filiale aimeriez-vous reproduire\u00A0?'],
+    tip: 'Astuce\u00A0: échangez le contact d’une personne clé dans votre filiale.',
   },
 }
 
@@ -122,7 +122,7 @@ const EN = {
   social_strategy: {
     intro: 'Social media rewards what is authentic and fast, which is hard to fit into a financial brand.',
     q: ['Which network works best for you, and which one could you drop?', 'Who approves a post at your company, and how long does it take?', 'Have you worked with content creators? How did it go?'],
-    tip: 'Tip: show each other a post of yours you’re proud of.',
+    tip: 'Tip: show each other one of your favourite posts on your phone.',
   },
   affiliates: {
     intro: 'Affiliates can bring lots of volume, but traffic quality and brand control are the big challenge.',
@@ -146,8 +146,8 @@ const EN = {
   },
   analytics: {
     intro: 'There is more data than ever, but turning it into decisions is still the hard part.',
-    q: ['Which data point surprised you most with its predictive power?', 'Which decision did you make thanks to an analysis?', 'Who has the final say when data and gut feeling disagree?'],
-    tip: 'Tip: compare which dashboard you check every Monday.',
+    q: ['Which data point turned out to be surprisingly predictive?', 'Which decision did you make thanks to an analysis?', 'Who has the final say when data and gut feeling disagree?'],
+    tip: 'Tip: compare the dashboards you each check every Monday.',
   },
   customer_success: {
     intro: 'Keeping a customer costs much less than winning a new one, but it doesn’t always get the same attention.',
@@ -171,7 +171,7 @@ const EN = {
   },
   guerrilla: {
     intro: 'With little budget and lots of creativity you can create memorable campaigns, if the brand dares.',
-    q: ['What’s the boldest action you’ve ever done?', 'What holds you back from taking risks in a campaign?', 'Which guerrilla action by another brand did you love?'],
+    q: ['What’s the boldest stunt you’ve ever pulled off?', 'What holds you back from taking risks in a campaign?', 'Which guerrilla action by another brand did you love?'],
     tip: 'Tip: invent a crazy stunt together for someone’s brand at the table.',
   },
   product_management: {
@@ -186,8 +186,8 @@ const EN = {
   },
   customer_journey: {
     intro: 'Customers jump between website, app, phone and branch, and expect it all to feel like one experience.',
-    q: ['At which step of the journey do you lose the most customers?', 'Have you gone through your own process as if you were a customer?', 'Which channel would you improve first?'],
-    tip: 'Tip: tell the last absurd step you found in your own process.',
+    q: ['At which step of the journey do you lose the most customers?', 'Have you gone through your own journey as if you were a customer?', 'Which channel would you improve first?'],
+    tip: 'Tip: share the last absurd step you found in your own journey.',
   },
   operational_efficiency: {
     intro: 'Doing more with the same resources means rethinking processes, tools and priorities.',
@@ -201,22 +201,22 @@ const EN = {
   },
   compliance: {
     intro: 'Rules on financial advertising and data protection change often and affect every message.',
-    q: ['Which rule forced you to change your communication the most?', 'How do you get a message approved by legal and compliance?', 'Where do you draw the line between useful and intrusive with data?'],
+    q: ['Which rule has changed your communication the most?', 'How do you get a message approved by legal and compliance?', 'Where do you draw the line between useful and intrusive with data?'],
     tip: 'Tip: compare how long it takes to approve an ad at each company.',
   },
   cofidis_ninja: {
     intro: 'Pushing a project through countries, subsidiaries and departments takes tact and good allies.',
     q: ['Which cross-country project are you proudest of?', 'What trick do you use to align teams from different countries?', 'Which project from another subsidiary would you like to copy?'],
-    tip: 'Tip: swap the contact of a key person in your subsidiary.',
+    tip: 'Tip: swap the contact details of a key person in your subsidiaries.',
   },
 }
 
 // Para las mesas que añade el admin: preguntas generales con el título de la mesa
 const GENERIC = {
-  es: (name, desc) => ({
-    intro: desc || `Hoy toca hablar de «${name}». Cada persona de la mesa lo vive desde un sitio distinto.`,
-    q: [`¿Qué es lo que más te preocupa hoy de «${name}»?`, '¿Qué ha funcionado en tu equipo y qué no?', '¿Qué harías distinto si empezaras de cero mañana?'],
-    tip: 'Pista: que cada persona cuente un ejemplo real en un minuto.',
+  fr: (name, desc) => ({
+    intro: desc || `Aujourd’hui, on parle de «\u00A0${name}\u00A0». Chacun à la table le vit sous un angle différent.`,
+    q: [`Qu’est-ce qui vous préoccupe le plus aujourd’hui avec «\u00A0${name}\u00A0»\u00A0?`, 'Qu’est-ce qui a fonctionné dans votre équipe, et qu’est-ce qui n’a pas marché\u00A0?', 'Que feriez-vous différemment si vous repartiez de zéro demain\u00A0?'],
+    tip: 'Astuce\u00A0: chaque personne partage un exemple réel en une minute.',
   }),
   en: (name, desc) => ({
     intro: desc || `Today’s topic is “${name}”. Everyone at the table sees it from a different angle.`,
@@ -227,8 +227,8 @@ const GENERIC = {
 
 /** Contexto, preguntas y pista para un tema. `desc` = descripción de la mesa, si la tiene */
 export function icebreakerFor(topicId, lang, desc = '') {
-  const dict = lang === 'en' ? EN : ES
+  const dict = lang === 'en' ? EN : FR
   if (!isCustom(topicId) && dict[topicId]) return dict[topicId]
   const name = isCustom(topicId) ? customLabel(topicId) : String(topicId)
-  return GENERIC[lang === 'en' ? 'en' : 'es'](name, desc)
+  return GENERIC[lang === 'en' ? 'en' : 'fr'](name, desc)
 }

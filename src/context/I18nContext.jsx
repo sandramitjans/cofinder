@@ -11,7 +11,7 @@ const initialLang = () => {
     const saved = localStorage.getItem(LANG_KEY)
     if (LANGS.includes(saved)) return saved
   } catch { /* sin almacenamiento */ }
-  return DEFAULT_LANG // español por defecto, sin depender del navegador
+  return DEFAULT_LANG // francés por defecto, sin depender del navegador
 }
 
 export function I18nProvider({ children }) {
@@ -30,7 +30,7 @@ export function I18nProvider({ children }) {
   const superpower = useCallback((id) => translate(lang, `superpowers.${id}`), [lang])
   const formatDate = useCallback(
     (ts, opts = { day: 'numeric', month: 'long', year: 'numeric' }) =>
-      new Intl.DateTimeFormat(lang === 'es' ? 'es-ES' : 'en-GB', { timeZone: 'Europe/Paris', ...opts }).format(ts),
+      new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : 'fr-FR', { timeZone: 'Europe/Paris', ...opts }).format(ts),
     [lang],
   )
 

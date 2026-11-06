@@ -6,7 +6,7 @@ se apuntan a las mesas (temas) que les interesan, y Cofinder decide con quién s
 participante van sincronizados en directo, y al final de cada ronda cada persona graba una nota de audio
 con lo que se lleva. Esas notas se transcriben con Whisper (código abierto) y se leen por tema de mesa.
 
-Español por defecto e inglés (selector ES / EN en todas las pantallas). React 18 + Vite + Tailwind 4,
+Francés por defecto e inglés (selector FR / EN en todas las pantallas); la app no tiene versión en español. React 18 + Vite + Tailwind 4,
 con Supabase (base de datos, tiempo real y almacenamiento) o en modo local sin servidor.
 
 ## Las cuatro partes de la app
@@ -177,8 +177,8 @@ src/
 │   ├── matching.js · planner.worker.js   # Plan de las 5 rondas
 │   ├── audioNotes.js           # Grabar / guardar notas (también en el dispositivo)
 │   ├── browserTranscriber.js · whisper.worker.js   # Whisper en el navegador (#resum)
-│   ├── icebreakers.js          # «Para romper el hielo» por tema (ES / EN)
-│   ├── i18n.js                 # Todos los textos ES / EN
+│   ├── icebreakers.js          # «Pour briser la glace» por tema (FR / EN)
+│   ├── i18n.js                 # Todos los textos FR / EN
 │   └── topics.js · demo.js · useCountdown.js · useTimeLeft.js · useConnected.js · image.js
 ├── components/                 # ModeratorGate (PIN), TopicPicker, LevelPicker, ui/ (Logo, Button, Avatar…)
 └── views/

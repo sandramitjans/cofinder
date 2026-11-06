@@ -292,7 +292,7 @@ function ConversationCard({ round, entry, userId, open, onToggle }) {
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {t(copied ? 'round.copied' : 'round.copy')}
             </button>
             {note && url ? (
-              <a href={url} download={`cofinder-ronda-${round}.${extensionOf(note.mime)}`} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              <a href={url} download={`${t('round.fileName', { n: round })}.${extensionOf(note.mime)}`} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                 <Download className="h-4 w-4" /> {t('round.download')}
               </a>
             ) : (

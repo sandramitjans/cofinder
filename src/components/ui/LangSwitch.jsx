@@ -2,7 +2,7 @@ import { Languages } from 'lucide-react'
 import { useI18n } from '../../context/I18nContext'
 import { LANGS } from '../../constants'
 
-/** Selector ES / EN segmentado, accesible por teclado */
+/** Selector FR / EN segmentado, accesible por teclado */
 export default function LangSwitch({ dark = false, className = '' }) {
   const { lang, setLang, t } = useI18n()
   return (
