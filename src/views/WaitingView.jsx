@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CalendarDays, CalendarPlus, Check, CheckCircle2, KeyRound, Lock, Mail, MapPin, PencilLine } from 'lucide-react'
+import { CalendarDays, CalendarPlus, Check, CheckCircle2, Copy, KeyRound, Lock, Mail, MapPin, PencilLine } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { EVENT_DATE, EVENT_PLACE, TOPIC_EMOJI, VIEWS } from '../constants'
@@ -189,6 +189,30 @@ function AccessCode({ name, code }) {
     t('waiting.mailBody', { date, place, name: firstName, code, url }),
   )}`
 
+  // Copiar el código (con plan B para navegadores sin API de portapapeles, p. ej. en http local)
+  const [copied, setCopied] = useState(false)
+  useEffect(() => {
+    if (!copied) return
+    const timer = setTimeout(() => setCopied(false), 2500)
+    return () => clearTimeout(timer)
+  }, [copied])
+  const copyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(code)
+    } catch {
+      const area = document.createElement('textarea')
+      area.value = code
+      area.setAttribute('readonly', '')
+      area.style.position = 'fixed'
+      area.style.opacity = '0'
+      document.body.appendChild(area)
+      area.select()
+      try { document.execCommand('copy') } catch { /* noop */ }
+      area.remove()
+    }
+    setCopied(true)
+  }
+
   const downloadIcs = () => {
     const blob = new Blob([icsFor({ title: t('waiting.calTitle'), place, body: t('waiting.calBody', { name: firstName, code }), url })], { type: 'text/calendar;charset=utf-8' })
     const link = document.createElement('a')
@@ -212,6 +236,16 @@ function AccessCode({ name, code }) {
           <div className="text-right">
             <p className="text-xs text-slate-500">{t('waiting.code')}</p>
             <p className="font-mono text-4xl font-bold tracking-[0.25em] text-brand-dark">{code}</p>
+            <button
+              type="button"
+              onClick={copyCode}
+              className={`mt-1.5 inline-flex min-h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition ${
+                copied ? 'border-mint bg-mint-soft text-mint-dark' : 'border-slate-400 bg-white text-ink hover:border-brand hover:text-brand-dark'
+              }`}
+            >
+              {copied ? <Check className="h-4 w-4" strokeWidth={3} /> : <Copy className="h-4 w-4" />}
+              <span aria-live="polite">{copied ? t('waiting.copied') : t('waiting.copy')}</span>
+            </button>
           </div>
         </div>
         <p className="mt-3 text-[15px] leading-snug text-slate-500">{t('login.codeHint')}</p>
