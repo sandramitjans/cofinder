@@ -108,7 +108,7 @@ Configuración en un fichero `.env` (ver `.env.example`):
 VITE_SUPABASE_URL=…                            # sin estas dos → modo local
 VITE_SUPABASE_ANON_KEY=…                       # clave publicable (pensada para el navegador)
 VITE_MOD_PIN=2026                              # solo modo local; con Supabase el PIN está en la base de datos
-VITE_EVENT_DATE=2026-11-25T00:00:00+01:00      # fin de la cuenta atrás
+VITE_EVENT_DATE=2026-11-24T00:00:00+01:00      # fin de la cuenta atrás
 VITE_PUBLIC_URL=http://192.168.1.20:5173       # opcional: dirección que codifica el QR
 ```
 

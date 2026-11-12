@@ -37,7 +37,7 @@ Créalo en VS Code (`New File` → `.env.cloud`) y pega esto:
 ```
 VITE_SUPABASE_URL=https://dixhoqdykarenflooirp.supabase.co
 VITE_SUPABASE_ANON_KEY=sb_publishable_K-q_0QnQV6QYNjCKp4mJOQ_L4xWylDp
-VITE_EVENT_DATE=2026-11-25T00:00:00+01:00
+VITE_EVENT_DATE=2026-11-24T00:00:00+01:00
 ```
 
 Son las mismas claves que ya están en `netlify.toml`. El `.gitignore` ignora `.env.*`,
