@@ -4,6 +4,7 @@ import { demoParticipants } from '../lib/demo'
 import * as api from '../lib/backend'
 import { translate } from '../lib/i18n'
 import { clearNotes, saveNote } from '../lib/audioNotes'
+import { reporterState } from '../lib/reporter'
 
 /**
  * Estado global de Cofinder. Dos modos con la misma interfaz para las vistas:
@@ -32,6 +33,7 @@ const EMPTY_EVENT = { round: 0, rounds: [], finished: false }
 const MOD_POLL_MS = 15000
 const historyKey = (id) => `cofinder:history:${id}`
 const TABLE_POLL_MS = 30000
+const REPORTER_POLL_MS = 4000 // mientras la mesa decide quién graba (por si el websocket se corta)
 const FIND_MS = FIND_MINUTES * 60_000
 const ROUND_MS = ROUND_MINUTES * 60_000
 
@@ -291,6 +293,67 @@ export function AppProvider({ children }) {
     }
     return res
   }, [currentUserId, refreshMine])
+
+  /* ---------- Un solo resumen de audio por mesa: quién lo graba ----------
+     Al acabar la ronda, cada móvil de la mesa elige «Je fais le résumé audio» o «Pas moi».
+     Remoto: el servidor decide (supabase/2026-11-un-resumen-por-mesa.sql). Local: misma regla aquí. */
+  const [remoteReporter, setRemoteReporter] = useState(null) // { round, members, reporter, forced, sent }
+  const reporterRound = event.round
+  const reporterTableId = myTableNow?.id ?? null
+  const refreshReporter = useCallback(async () => {
+    if (!REMOTE || !currentUserId || !reporterRound || reporterTableId == null) return
+    try {
+      const st = await api.fetchReporter(currentUserId, reporterRound)
+      setRemoteReporter({ ...st, round: reporterRound })
+    } catch { /* sin red o sin el SQL: se mantiene lo último conocido */ }
+  }, [currentUserId, reporterRound, reporterTableId])
+  // La pantalla «Temps écoulé» lo activa mientras está a la vista
+  const watchReporter = useCallback(() => {
+    if (!REMOTE) return () => {}
+    refreshReporter()
+    const off = api.onPing((kind) => (kind === 'reporter' || kind === 'note') && refreshReporter())
+    const timer = setInterval(refreshReporter, REPORTER_POLL_MS)
+    return () => { off(); clearInterval(timer) }
+  }, [refreshReporter])
+
+  let tableReporter = null
+  if (REMOTE) {
+    tableReporter = remoteReporter?.round === reporterRound ? remoteReporter : null
+  } else if (myTableNow && reporterRound) {
+    const real = myTableNow.members.filter((id) => participants.some((p) => p.id === id && !p.demo))
+    const choices = Object.fromEntries(participants.filter((p) => p.reporterChoices?.[reporterRound]).map((p) => [p.id, p.reporterChoices[reporterRound]]))
+    const sentIds = new Set(participants.filter((p) => p.notedRounds?.includes(reporterRound)).map((p) => p.id))
+    tableReporter = reporterState(real, choices, sentIds)
+  }
+
+  /** choice: 'me' · 'pass' · 'relay'. Devuelve { lost } (true = otra persona se apuntó antes) */
+  const chooseReporter = useCallback(async (choice) => {
+    if (!currentUserId || !reporterRound) return { lost: false }
+    if (REMOTE) {
+      try {
+        const st = await api.chooseReporter(currentUserId, reporterRound, choice)
+        setRemoteReporter({ ...st, round: reporterRound })
+        api.ping('reporter')
+        return { lost: st.lost }
+      } catch (err) {
+        if (err.code === 'must_record') refreshReporter()
+        return { lost: false, error: err.code ?? 'network' }
+      }
+    }
+    const st = tableReporter
+    if (!st) return { lost: false }
+    if (choice === 'me' && st.reporter && st.reporter !== currentUserId) return { lost: true }
+    if (choice === 'pass' && (st.reporter === currentUserId || st.forced === currentUserId)) return { lost: false, error: 'must_record' }
+    const table = new Set(st.members.map((m) => m.id))
+    setLocalParticipants((prev) => prev.map((p) => {
+      let c = p.reporterChoices?.[reporterRound]
+      if (p.id === currentUserId) c = choice === 'pass' ? 'pass' : 'me'
+      else if (choice === 'relay' && table.has(p.id) && c === 'me') c = 'pass'
+      else return p
+      return { ...p, reporterChoices: { ...(p.reporterChoices ?? {}), [reporterRound]: c } }
+    }))
+    return { lost: false }
+  }, [currentUserId, reporterRound, tableReporter, refreshReporter])
 
   /* ---------- Navegación ---------- */
   const navigate = useCallback((next) => {
@@ -601,7 +664,7 @@ export function AppProvider({ children }) {
   // Todos vuelven a «no preparados» (al reiniciar o borrar el plan)
   const resetReady = useCallback(() => {
     if (REMOTE) return modAction(async (pin) => { await api.modResetReady(pin); await api.modClearNotes(pin).catch(() => {}) })
-    setLocalParticipants((prev) => prev.map((p) => (p.readyAt || p.notedRounds ? { ...p, readyAt: null, notedRounds: [] } : p)))
+    setLocalParticipants((prev) => prev.map((p) => (p.readyAt || p.notedRounds || p.reporterChoices ? { ...p, readyAt: null, notedRounds: [], reporterChoices: {} } : p)))
   }, [modAction])
   const resetEvent = useCallback(() => {
     resetReady()
@@ -619,15 +682,17 @@ export function AppProvider({ children }) {
   const allReady = modUnlocked && !event.round && !event.finished && realPeople.length > 0 && readyCount === realPeople.length
   useEffect(() => { if (allReady) startEvent() }, [allReady, startEvent])
 
-  // Notas de audio de la ronda en pantalla: cuando las han enviado todas las personas reales
-  // sentadas en ella, se pasa solo a la siguiente (pausa tras la ronda 3, o el final)
-  const roundPeople = currentRound && !event.finished ? currentRound.tables.flatMap((t) => t.members) : []
-  const realRound = participants.filter((p) => !p.demo && roundPeople.includes(p.id))
+  // Resúmenes de audio de la ronda en pantalla: uno por mesa. Cuando todas las mesas con alguna persona
+  // real tienen el suyo, se pasa solo a la siguiente (pausa tras la ronda 3, o el final)
+  const realIds = new Set(participants.filter((p) => !p.demo).map((p) => p.id))
+  const realTables = currentRound && !event.finished
+    ? currentRound.tables.map((t) => t.members.filter((id) => realIds.has(id))).filter((m) => m.length)
+    : []
   const notedIds = new Set(REMOTE
     ? (modState?.notes ?? []).filter((n) => n.round === event.round).map((n) => n.id)
     : participants.filter((p) => p.notedRounds?.includes(event.round)).map((p) => p.id))
-  const notedCount = realRound.filter((p) => notedIds.has(p.id)).length
-  const allNoted = modUnlocked && event.round > 0 && !currentRound?.pauseStartedAt && realRound.length > 0 && notedCount === realRound.length
+  const notedCount = realTables.filter((m) => m.some((id) => notedIds.has(id))).length
+  const allNoted = modUnlocked && event.round > 0 && !currentRound?.pauseStartedAt && realTables.length > 0 && notedCount === realTables.length
   useEffect(() => { if (allNoted) advanceAfterNotes(event.round) }, [allNoted, advanceAfterNotes, event.round])
 
   const value = useMemo(() => ({
@@ -635,14 +700,14 @@ export function AppProvider({ children }) {
     view, navigate,
     participants, currentUser, event, currentRound, seatedEver,
     modLoading: REMOTE && modUnlocked && !modState,
-    register, login, joinedLive, myPlan, ready, setReady, readyCount, readyTotal: realPeople.length, startEvent, noteSent, submitNote, notedCount, notedTotal: realRound.length, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, joinedLive, myPlan, ready, setReady, readyCount, readyTotal: realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, notedTotal: realTables.length, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     modUnlocked, gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
   }), [view, navigate, participants, currentUser, event, currentRound, seatedEver, modUnlocked, modState,
-    register, login, joinedLive, myPlan, ready, setReady, readyCount, realPeople.length, startEvent, noteSent, submitNote, notedCount, realRound.length, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, joinedLive, myPlan, ready, setReady, readyCount, realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, realTables.length, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     gateOpen, openGate, closeGate, unlockModerator, lockModerator,
