@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, ArrowRight, Briefcase, CalendarDays, CheckCircle2, Clock, Info, MapPin, RotateCcw, User } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { COUNTRIES, MANDATORY_TOPICS, TOPICS, TOPIC_EMOJI, EVENT_DATE, EVENT_PLACE, MAX_INTERESTS, MAX_SUPERPOWERS, ROUND_MINUTES, TOTAL_ROUNDS, VIEWS } from '../constants'
+import { COUNTRIES, EVENT_DATE, EVENT_PLACE, MAX_INTERESTS, MAX_SUPERPOWERS, ROUND_MINUTES, TOTAL_ROUNDS, VIEWS } from '../constants'
 import { DICT } from '../lib/i18n'
 import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
@@ -13,7 +13,7 @@ import SuperpowerPicker from '../components/ui/SuperpowerPicker'
 import PhotoPicker from '../components/ui/PhotoPicker'
 import LangSwitch from '../components/ui/LangSwitch'
 import PublicFooter from '../components/layout/PublicFooter'
-import { chosenTopics, isCustom, isMandatory } from '../lib/topics'
+import { chosenTopics, isCustom, isMandatory, mandatoryTopics, optionalTopics, topicEmoji } from '../lib/topics'
 import { familyOfTopic, familyTone } from '../lib/familyColors'
 import { CELEBRATE_KEY } from '../components/ui/Confetti'
 
@@ -89,7 +89,7 @@ export default function RegisterView({ mode = 'create' }) {
   // Si la moderadora ha quitado una mesa que estaba elegida, deja de contar como elegida
   useEffect(() => {
     if (!eventTopicsLoaded) return
-    const valid = new Set(eventTopics.length ? eventTopics.map((x) => x.id) : TOPICS)
+    const valid = new Set(optionalTopics())
     setForm((f) => {
       const needs = f.needs.filter((id) => valid.has(id) && !isMandatory(id))
       return needs.length === f.needs.length ? f : { ...f, needs }
@@ -121,6 +121,8 @@ export default function RegisterView({ mode = 'create' }) {
   }, [form, saving, editing])
 
   const goTo = (n) => {
+    // Sin temas obligatorios (el Admin no ha marcado ninguno), la pantalla 2 se salta
+    if (n === 2 && !mandatoryTopics().length) n = screen > 2 ? 1 : 3
     setScreen(n)
     window.scrollTo({ top: 0 })
   }
@@ -179,8 +181,8 @@ export default function RegisterView({ mode = 'create' }) {
 
   const steps = {
     1: { title: t('register.step1'), sub: t('register.step1Sub') },
-    2: { title: t('register.mandatoryTitle', { n: MANDATORY_TOPICS.length }), sub: t('register.mandatorySub', { n: MANDATORY_TOPICS.length }) },
-    3: { title: t('register.interestsTitle', { max: MAX_INTERESTS }), sub: t('register.interestsSub', { max: MAX_INTERESTS, n: MANDATORY_TOPICS.length }) },
+    2: { title: t('register.mandatoryTitle', { n: mandatoryTopics().length }), sub: t('register.mandatorySub', { n: mandatoryTopics().length }) },
+    3: { title: t('register.interestsTitle', { max: MAX_INTERESTS }), sub: t('register.interestsSub', { max: MAX_INTERESTS, n: mandatoryTopics().length }) },
     4: { title: t('register.step3'), sub: t('register.step3Sub') },
   }[screen]
 
@@ -325,6 +327,7 @@ function GuestCard({ form, onPhoto }) {
 /** Paso 2: los temas obligatorios, como lista de lectura (sin check ni tarjetas pulsables). Solo para informar. */
 function MandatoryTopics() {
   const { t, topic } = useI18n()
+  const { eventTopics } = useApp()
   return (
     <div key="mandatory" className="animate-view-in mt-6">
       {/* Un solo bloque de lectura (no tarjetas sueltas): no hay nada que pulsar */}
@@ -333,12 +336,13 @@ function MandatoryTopics() {
           <CalendarDays aria-hidden className="h-4 w-4" /> {t('register.mandatoryList')}
         </p>
         <ol className="divide-y divide-slate-200/80">
-          {MANDATORY_TOPICS.map((id) => {
-            const family = familyOfTopic(id)
-            const description = isCustom(id) ? '' : t(`topicDesc.${id}`)
+          {mandatoryTopics().map((id) => {
+            const fromPanel = eventTopics.find((x) => x.id === id)
+            const family = familyOfTopic(id, fromPanel?.family)
+            const description = isCustom(id) ? fromPanel?.desc ?? '' : t(`topicDesc.${id}`)
             return (
               <li key={id} className="flex items-start gap-3.5 px-4 py-3.5 lg:px-5">
-                <span aria-hidden className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-lg ${familyTone(family).tile}`}>{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
+                <span aria-hidden className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-lg ${familyTone(family).tile}`}>{topicEmoji(id)}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold leading-snug text-ink">{topic(id)}</span>
                   {description && <span className="mt-0.5 block text-sm leading-snug text-slate-500">{description}</span>}

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Check } from 'lucide-react'
-import { MAX_TAGS, TOPICS, TOPIC_EMOJI, TOPIC_FAMILIES } from '../constants'
+import { MAX_TAGS, TOPICS, TOPIC_FAMILIES } from '../constants'
 import { familyOfTopic, familyTone } from '../lib/familyColors'
 import { useI18n } from '../context/I18nContext'
-import { isCustom, seededOrder, topicOrderSeed } from '../lib/topics'
+import { isCustom, seededOrder, topicOrderSeed, topicEmoji } from '../lib/topics'
 
 
 /**
@@ -78,7 +78,7 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
           }`}
         >
           <span aria-hidden className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl ${familyTone(family).tile}`}>
-            {custom ? '💬' : TOPIC_EMOJI[id]}
+            {topicEmoji(id)}
           </span>
           <span className="min-w-0 flex-1">
             <span className="block font-semibold leading-snug text-ink">{topic(id)}</span>

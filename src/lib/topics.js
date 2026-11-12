@@ -1,4 +1,4 @@
-import { MANDATORY_TOPICS, MAX_INTERESTS, TOPICS } from '../constants'
+import { FAMILY_EMOJI, MANDATORY_TOPICS, MAX_INTERESTS, TOPICS, TOPIC_EMOJI } from '../constants'
 
 /**
  * Temas: los de la lista (`TOPICS`, identificadores estables) más los temas propios
@@ -26,10 +26,11 @@ export const topicKey = (id) => (isCustom(id) ? CUSTOM_PREFIX + normalizeText(cu
 
 /* ---------- Mesas del evento (las añade la moderadora desde el panel) ----------
    Cada mesa: { id: 'custom:<título>', by: 'Quien la propone', desc: 'descripción opcional',
-   family: 'acquisition' | 'brand' | 'customer' | 'data' | 'business' | '' }.
-   Mientras la moderadora no haya añadido ninguna, el formulario muestra los 20 temas de la lista. */
-export const makeEventTopic = ({ label, by = '', desc = '', family = '' }) => ({
+   family: 'acquisition' | 'brand' | 'customer' | 'data' | 'business' | '', mandatory: true | false }.
+   Mientras no haya ninguno, el formulario muestra los temas provisionales de constants. */
+export const makeEventTopic = ({ label, by = '', desc = '', family = '', mandatory = false }) => ({
   family,
+  mandatory: !!mandatory,
   id: makeCustom(label),
   by: String(by).trim().replace(/\s+/g, ' '),
   desc: String(desc).trim().replace(/\s+/g, ' '),
@@ -61,10 +62,34 @@ export function seededOrder(items, seed, keyOf = (x) => x) {
     .map(({ x }) => x)
 }
 
-/* ---------- Temas de una persona: 4 obligatorios + los que ha elegido ----------
-   Los obligatorios (MANDATORY_TOPICS) no se guardan en el perfil: cuentan para todo el mundo.
+/* ---------- Lista de temas del evento ----------
+   Si el Admin ha añadido temas en el panel, mandan esos: los marcados como obligatorios y los «au choix».
+   Si no hay ninguno, se usan los provisionales de constants (MANDATORY_TOPICS y TOPICS).
+   AppContext (y el worker del plan) llaman a `configureEventTopics` con la lista del panel. */
+let EVENT = { mandatory: MANDATORY_TOPICS, optional: TOPICS, family: {}, panel: false }
+export function configureEventTopics(list = []) {
+  EVENT = list.length
+    ? {
+        mandatory: list.filter((x) => x.mandatory).map((x) => x.id),
+        optional: list.filter((x) => !x.mandatory).map((x) => x.id),
+        family: Object.fromEntries(list.map((x) => [topicKey(x.id), x.family || ''])),
+        panel: true,
+      }
+    : { mandatory: MANDATORY_TOPICS, optional: TOPICS, family: {}, panel: false }
+}
+/** Temas obligatorios del evento (ids) */
+export const mandatoryTopics = () => EVENT.mandatory
+/** Temas «au choix» del evento (ids) */
+export const optionalTopics = () => EVENT.optional
+/** Familia de un tema del panel ('' si no tiene o no es del panel) */
+export const eventFamilyOf = (id) => EVENT.family[topicKey(id)] ?? ''
+/** Icono de un tema: el suyo si es de la lista; si es del panel, el de su familia */
+export const topicEmoji = (id) => TOPIC_EMOJI[id] ?? FAMILY_EMOJI[eventFamilyOf(id)] ?? '💬'
+
+/* ---------- Temas de una persona: los obligatorios + los que ha elegido ----------
+   Los obligatorios no se guardan en el perfil: cuentan para todo el mundo.
    Los elegidos están en `needs` (perfiles antiguos: también en `offers`). Ya no hay nivel. */
-export const isMandatory = (id) => MANDATORY_TOPICS.some((m) => topicKey(m) === topicKey(id))
+export const isMandatory = (id) => EVENT.mandatory.some((m) => topicKey(m) === topicKey(id))
 /**
  * Temas elegidos por la persona: como mucho MAX_INTERESTS, sin los obligatorios, sin repetir y sin
  * temas que ya no están en la lista. Los perfiles de antes del cambio (hasta 5 temas, con nivel)
@@ -72,14 +97,17 @@ export const isMandatory = (id) => MANDATORY_TOPICS.some((m) => topicKey(m) === 
  */
 export const chosenTopics = (person) => {
   const seen = new Set()
+  const allowed = new Set(EVENT.optional.map(topicKey))
   return [...(person?.offers ?? []), ...(person?.needs ?? [])].filter((id) => {
     const key = topicKey(id)
-    if (isMandatory(id) || seen.has(key) || (!isCustom(id) && !TOPICS.includes(id))) return false
+    if (isMandatory(id) || seen.has(key)) return false
+    // Con temas del panel, solo cuentan los del panel; sin ellos, los de la lista y los propios
+    if (EVENT.panel ? !allowed.has(key) : (!isCustom(id) && !allowed.has(key))) return false
     seen.add(key)
     return true
   }).slice(0, MAX_INTERESTS)
 }
 /** Todos los temas de la persona: primero los obligatorios, después los elegidos */
-export const myTopics = (person) => [...MANDATORY_TOPICS, ...chosenTopics(person)]
+export const myTopics = (person) => [...EVENT.mandatory, ...chosenTopics(person)]
 /** ¿La persona tiene este tema (obligatorio o elegido)? */
 export const hasTopic = (person, id) => isMandatory(id) || chosenTopics(person).some((x) => topicKey(x) === topicKey(id))

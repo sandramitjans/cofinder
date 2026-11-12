@@ -77,6 +77,9 @@ export const TOPIC_FAMILIES = [
   { id: 'business', topics: ['pnl', 'operational_efficiency', 'risk_management', 'compliance', 'cofidis_ninja'] },
 ]
 
+// Icono de cada familia: lo usan los temas añadidos desde el panel (Admin)
+export const FAMILY_EMOJI = { acquisition: '🎯', brand: '📣', customer: '🤝', data: '📊', business: '💼' }
+
 // Emoji de cada tema en el formulario (los temas propios usan ✨)
 export const TOPIC_EMOJI = {
   paid_performance: '🎯', affiliates: '🤝', geo: '🔎', social_strategy: '📱', b2b: '🏢',

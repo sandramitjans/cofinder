@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { CalendarDays, CalendarPlus, Check, CheckCircle2, Copy, KeyRound, Lock, Mail, MapPin, PencilLine } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { EVENT_DATE, EVENT_PLACE, TOPIC_EMOJI, VIEWS } from '../constants'
+import { EVENT_DATE, EVENT_PLACE, VIEWS } from '../constants'
 import { useTimeLeft } from '../lib/useTimeLeft'
-import { isCustom, isMandatory, myTopics } from '../lib/topics'
+import { isMandatory, myTopics, topicEmoji } from '../lib/topics'
 import { familyIn, familyTone } from '../lib/familyColors'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
@@ -103,7 +103,7 @@ export default function WaitingView({ onLobby }) {
                   <div className="mt-2 flex flex-wrap gap-2">
                     {chosen.map((id) => (
                       <span key={id} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[15px] font-semibold ${familyTone(familyIn(id, eventTopics)).chip}`}>
-                        <span aria-hidden>{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span> {topic(id)}
+                        <span aria-hidden>{topicEmoji(id)}</span> {topic(id)}
                       </span>
                     ))}
                   </div>
@@ -118,7 +118,7 @@ export default function WaitingView({ onLobby }) {
                   <div className="mt-2 flex flex-wrap gap-2">
                     {mandatory.map((id) => (
                       <span key={id} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-ink">
-                        <span aria-hidden>{TOPIC_EMOJI[id]}</span> {topic(id)}
+                        <span aria-hidden>{topicEmoji(id)}</span> {topic(id)}
                       </span>
                     ))}
                   </div>
