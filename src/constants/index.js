@@ -29,14 +29,14 @@ export const PUBLIC_URL = import.meta.env?.VITE_PUBLIC_URL
 // PIN configurable con VITE_MOD_PIN en un fichero .env
 export const MOD_PIN = import.meta.env?.VITE_MOD_PIN || '2026'
 
-// Día del evento: la cuenta atrás termina a las 00:00 (hora de Madrid/París) del 25/11/2026.
-// Para contar hasta la hora de inicio, cambia la hora, p. ej. '2026-11-25T09:30:00+01:00'.
+// Día del evento: la cuenta atrás termina a las 00:00 (hora de Madrid/París) del 24/11/2026.
+// Para contar hasta la hora de inicio, cambia la hora, p. ej. '2026-11-24T09:30:00+01:00'.
 // Una variable vacía (p. ej. un secreto de GitHub sin rellenar) cuenta como no indicada
-const EVENT_DATE_RAW = new Date(import.meta.env?.VITE_EVENT_DATE || '2026-11-25T00:00:00+01:00').getTime()
-export const EVENT_DATE = Number.isNaN(EVENT_DATE_RAW) ? new Date('2026-11-25T00:00:00+01:00').getTime() : EVENT_DATE_RAW
+const EVENT_DATE_RAW = new Date(import.meta.env?.VITE_EVENT_DATE || '2026-11-24T00:00:00+01:00').getTime()
+export const EVENT_DATE = Number.isNaN(EVENT_DATE_RAW) ? new Date('2026-11-24T00:00:00+01:00').getTime() : EVENT_DATE_RAW
 
-// Lugar del evento (VITE_EVENT_PLACE en el .env); vacío = «Lugar por confirmar»
-export const EVENT_PLACE = import.meta.env?.VITE_EVENT_PLACE ?? ''
+// Lugar del evento (VITE_EVENT_PLACE en el .env); vacío = Cofidis España
+export const EVENT_PLACE = import.meta.env?.VITE_EVENT_PLACE || 'Cofidis España'
 
 // Sesión: 4 rondas de 15 minutos, mesas de 3 a 4 personas y como mucho 5 mesas por ronda.
 // Un mismo tema puede estar en 2 mesas de la misma ronda (sobre todo los obligatorios).

@@ -40,7 +40,7 @@ export default function PhotoPicker({ value, name, onChange, compact = false }) 
         className={`group relative mx-auto block focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/40 ${compact ? 'h-20 w-20 rounded-2xl' : 'h-28 w-28 rounded-full lg:h-36 lg:w-36'}`}
         aria-label={value ? t('register.photoChange') : t('register.photoAdd')}
       >
-        <span className={`absolute inset-0 grid place-items-center overflow-hidden border-2 transition group-hover:border-brand ${compact ? `rounded-2xl ${name?.trim() && !value ? 'border-transparent bg-fam-acquisition' : 'border-dashed border-slate-300 bg-white'}` : 'rounded-full border-dashed border-slate-300 bg-white'}`}>
+        <span className={`absolute inset-0 grid place-items-center overflow-hidden border-2 transition group-hover:border-brand ${compact ? `rounded-2xl ${name?.trim() && !value ? 'border-transparent bg-fam-acquisition' : 'border-dashed border-slate-400 bg-white'}` : 'rounded-full border-dashed border-slate-400 bg-white'}`}>
           {value ? (
             <img src={value} alt="" className="h-full w-full object-cover" />
           ) : busy ? (
