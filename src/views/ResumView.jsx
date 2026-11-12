@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Cpu, Download, FileText, KeyRound, Loader2, LogOut, Pause, Play, RefreshCw, Search } from 'lucide-react'
+import { ChevronDown, Cpu, Download, FileText, KeyRound, Mail, Loader2, LogOut, Pause, Play, RefreshCw, Search } from 'lucide-react'
 import * as api from '../lib/backend'
-import { MOD_PIN } from '../constants'
+import { MOD_PIN, REPORT_LANGS } from '../constants'
 import { topicKey } from '../lib/topics'
 import { useI18n } from '../context/I18nContext'
 import Logo from '../components/ui/Logo'
@@ -180,6 +180,7 @@ function Summaries({ pin, onLogout }) {
       {!api.isRemote && <Notice>{t('resum.local')}</Notice>}
       {api.isRemote && notes && <Transcriber pin={pin} pending={notes.filter((n) => !n.transcript).length} onSaved={load} />}
       {error && <Notice>{t(`resum.error.${error}`)}</Notice>}
+      <ReportEmails pin={pin} />
 
       {notes?.length > 0 && (
         <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -239,6 +240,95 @@ function Summaries({ pin, onLogout }) {
         </section>
       ))}
     </main>
+  )
+}
+
+/**
+ * E-mail e idioma del informe ejecutivo de cada participante (lo dejan en el móvil tras la última
+ * ronda, supabase/2026-11-informe.sql). Con las transcripciones de arriba, la moderadora prepara el
+ * informe a mano y lo envía: aquí no se genera ni se envía nada.
+ */
+const LOCAL_EVENT_KEY = 'cofinder:event:v4'
+const csvCell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+
+function ReportEmails({ pin }) {
+  const { t, formatDate } = useI18n()
+  const [people, setPeople] = useState(null)
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    const load = async () => {
+      let list = []
+      if (api.isRemote) {
+        try { list = (await api.modGetState(pin)).participants } catch { return }
+      } else {
+        try { list = JSON.parse(localStorage.getItem(LOCAL_EVENT_KEY))?.participants ?? [] } catch { list = [] }
+      }
+      if (alive) setPeople(list.filter((p) => !p.demo && !p.removed))
+    }
+    load()
+    const id = setInterval(load, REFRESH_MS)
+    return () => { alive = false; clearInterval(id) }
+  }, [pin])
+
+  if (!people?.length) return null
+  const nameOf = (id) => REPORT_LANGS.find((l) => l.id === id)?.name ?? id ?? ''
+  const replied = people.filter((p) => p.reportEmail)
+  const sorted = [...people].sort((a, b) => (!!b.reportEmail - !!a.reportEmail) || a.name.localeCompare(b.name))
+  const byLang = REPORT_LANGS.map((l) => [l, replied.filter((p) => p.reportLang === l.id).length]).filter(([, n]) => n)
+
+  const download = () => {
+    const head = [t('report.list.name'), t('resum.role'), t('report.list.email'), t('report.list.lang'), t('report.list.at')]
+    const rows = replied.map((p) => [p.name, p.role, p.reportEmail, nameOf(p.reportLang), p.reportAt ? new Date(p.reportAt).toISOString() : ''])
+    const body = '\ufeff' + [head, ...rows].map((r) => r.map(csvCell).join(';')).join('\r\n')
+    const url = URL.createObjectURL(new Blob([body], { type: 'text/csv;charset=utf-8' }))
+    Object.assign(document.createElement('a'), { href: url, download: `${t('report.list.fileName')}.csv` }).click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+
+  return (
+    <section className="mt-5 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 font-bold"><Mail className="h-4 w-4 text-brand" />{t('report.list.title')}
+          <span className="rounded-full bg-mint-soft px-2.5 py-0.5 text-xs font-bold text-mint-dark">{t('report.list.count', { n: replied.length, total: people.length })}</span>
+        </h2>
+        <div className="flex gap-2">
+          <Button variant="outline" icon={ChevronDown} onClick={() => setOpen((o) => !o)} aria-expanded={open} className={`!px-3 !py-2 [&>svg]:transition ${open ? '[&>svg]:rotate-180' : ''}`}>{t('report.list.show')}</Button>
+          <Button variant="outline" icon={Download} onClick={download} disabled={!replied.length} className="!px-3 !py-2">{t('report.list.download')}</Button>
+        </div>
+      </div>
+      <p className="mt-1 text-sm text-slate-500">{t('report.list.hint')}</p>
+      {byLang.length > 0 && (
+        <p className="mt-3 flex flex-wrap gap-1.5 text-sm">
+          <span className="text-slate-500">{t('report.list.byLang')}</span>
+          {byLang.map(([l, n]) => <span key={l.id} className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-700">{l.name} · {n}</span>)}
+        </p>
+      )}
+      {open && (
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs uppercase tracking-wider text-slate-500">
+              <tr><th className="pb-2 pr-3">{t('report.list.name')}</th><th className="pb-2 pr-3">{t('report.list.email')}</th><th className="pb-2 pr-3">{t('report.list.lang')}</th><th className="pb-2">{t('report.list.at')}</th></tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {sorted.map((p) => (
+                <tr key={p.id}>
+                  <td className="py-2 pr-3 font-semibold">{p.name}</td>
+                  {p.reportEmail ? (
+                    <>
+                      <td className="py-2 pr-3 break-all">{p.reportEmail}</td>
+                      <td className="py-2 pr-3">{nameOf(p.reportLang)}</td>
+                      <td className="py-2 text-slate-500">{p.reportAt ? formatDate(p.reportAt, { hour: '2-digit', minute: '2-digit' }) : ''}</td>
+                    </>
+                  ) : <td colSpan={3} className="py-2 text-slate-400">— {t('report.list.waiting')}</td>}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   )
 }
 

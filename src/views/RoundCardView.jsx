@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, ChevronDown, Copy, Download, Handshake, Hourglass, Lightbulb, Loader2, MapPin, Mic, RotateCcw, Send, Sparkles, Square, Timer, TimerOff, Users, Zap } from 'lucide-react'
+import { Check, ChevronDown, ChevronLeft, Copy, Download, Handshake, Hourglass, Lightbulb, Loader2, MapPin, Mic, RotateCcw, Send, Sparkles, Square, Timer, TimerOff, Users, Zap } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { FIND_MINUTES, TOPIC_EMOJI, TOTAL_ROUNDS } from '../constants'
+import { FIND_MINUTES, REPORT_LANGS, REPORT_LANG_BY_COUNTRY, TOPIC_EMOJI, TOTAL_ROUNDS } from '../constants'
 import { roleOf } from '../lib/matching'
 import { isCustom, topicKey } from '../lib/topics'
 import { icebreakerFor } from '../lib/icebreakers'
@@ -10,6 +10,7 @@ import { useCountdown } from '../lib/useCountdown'
 import { MAX_NOTE_SECONDS, canRecord, extensionOf, getNote, recorderMime } from '../lib/audioNotes'
 import * as api from '../lib/backend'
 import { reporterRole } from '../lib/reporter'
+import { familyTone } from '../lib/familyColors'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
@@ -28,7 +29,8 @@ const expertModeOf = (participants) => participants.some((p) => p.offers?.length
  *  - chrono en marcha → ronda activa: cronómetro grande, barra roja, tema y tu mesa
  *  - tiempo terminado → una sola persona por mesa graba el resumen (máx. 1 min): cada móvil elige
  *    «Je fais le résumé audio» o «Pas moi»; si todos menos uno pasan, le toca al último
- *  - evento terminado → «Gracias por compartir»: tus conversaciones ronda a ronda
+ *  - evento terminado → «Merci pour vos échanges»: e-mail e idioma del informe ejecutivo → «Tout est prêt !»
+ *    (desde ahí, sus conversaciones ronda a ronda)
  */
 export default function RoundCardView() {
   const { currentUser, currentRound, event, noteSent, tableReporter } = useApp()
@@ -366,8 +368,112 @@ function WhoRecords({ table }) {
   )
 }
 
-/** «Gracias por compartir»: cada ronda con su tema, compañeros y la nota de audio */
+/** Tras la última ronda: e-mail e idioma del informe ejecutivo → «Tout est prêt !».
+ *  Desde la confirmación se puede cambiar lo elegido o volver a ver las conversaciones del día. */
 function Closing() {
+  const { currentUser } = useApp()
+  const [mode, setMode] = useState(null) // null · 'edit' · 'history'
+  if (mode === 'history') return <History onBack={() => setMode(null)} />
+  if (!currentUser?.reportLang || mode === 'edit') {
+    return <ReportForm editing={mode === 'edit'} onDone={() => setMode(null)} />
+  }
+  return <ReportDone onEdit={() => setMode('edit')} onHistory={() => setMode('history')} />
+}
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+// «texto **negrita** texto» → nodos con <strong>
+const withBold = (text) => text.split('**').map((part, i) => (i % 2 ? <strong key={i} className="font-semibold text-ink">{part}</strong> : part))
+
+function ReportForm({ editing, onDone }) {
+  const { currentUser, saveReport } = useApp()
+  const { t, lang: appLang } = useI18n()
+  const [email, setEmail] = useState(currentUser?.reportEmail ?? '')
+  const [lang, setLang] = useState(() => currentUser?.reportLang ?? REPORT_LANG_BY_COUNTRY[currentUser?.country] ?? appLang ?? 'fr')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const valid = EMAIL_RE.test(email.trim())
+
+  const submit = async (e) => {
+    e.preventDefault()
+    if (!valid || busy) return
+    setBusy(true)
+    const err = await saveReport(email, lang)
+    setBusy(false)
+    if (err) setError(err)
+    else onDone()
+  }
+
+  return (
+    <form onSubmit={submit} className="flex flex-1 flex-col">
+      <div className="text-center">
+        <span aria-hidden className="text-4xl">🙌</span>
+        <h1 className="mt-2 font-display text-[32px] font-medium leading-tight tracking-tight">{t('report.title')}</h1>
+        <p className="mx-auto mt-2 max-w-sm text-[16px] leading-snug text-slate-600">{withBold(t('report.text'))}</p>
+      </div>
+
+      <label htmlFor="report-email" className="mt-7 block text-xs font-bold uppercase tracking-wider text-slate-500">{t('report.email')}</label>
+      <input
+        id="report-email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false}
+        value={email} onChange={(e) => { setEmail(e.target.value); setError(null) }}
+        placeholder={t('report.emailPlaceholder')}
+        className={`mt-2 w-full rounded-xl border-2 bg-white px-4 py-3.5 text-[16px] placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-brand/20 ${valid ? 'border-brand' : 'border-slate-200 focus:border-brand'}`}
+      />
+
+      <fieldset className="mt-6">
+        <legend className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('report.lang')}</legend>
+        <div className="mt-2.5 grid grid-cols-2 gap-2">
+          {REPORT_LANGS.map(({ id, name, fam }) => {
+            const on = lang === id
+            return (
+              <label key={id} className={`relative flex min-h-[52px] cursor-pointer items-center gap-2.5 rounded-xl border-2 px-3 py-2 transition ${on ? 'border-brand bg-brand-soft' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+                <input type="radio" name="report-lang" value={id} checked={on} onChange={() => setLang(id)} className="sr-only" />
+                <span aria-hidden className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-bold uppercase ${familyTone(fam).chip}`}>{id}</span>
+                <span lang={id} className="min-w-0 flex-1 leading-tight">
+                  <span className="block truncate text-[15px] font-semibold text-ink">{name}</span>
+                  {name !== t(`report.langs.${id}`) && <span className="block truncate text-xs text-slate-500">{t(`report.langs.${id}`)}</span>}
+                </span>
+                {on && <span aria-hidden className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-brand text-white ring-2 ring-white"><Check className="h-3 w-3" strokeWidth={3} /></span>}
+              </label>
+            )
+          })}
+        </div>
+      </fieldset>
+
+      <div className="mt-auto pt-6">
+        {error && <p role="alert" className="mb-2 text-center text-sm font-medium text-brand-dark">{t(`report.error.${error}`)}</p>}
+        <Button type="submit" disabled={!valid || busy} icon={busy ? Loader2 : undefined} className="w-full py-4 text-base">{t('report.submit')}</Button>
+        {!valid && <p className="mt-2 text-center text-xs text-slate-500">{t('report.needEmail')}</p>}
+        {editing && <button type="button" onClick={onDone} className="mt-3 w-full text-center text-sm font-semibold text-slate-500 underline">{t('report.cancel')}</button>}
+      </div>
+    </form>
+  )
+}
+
+function ReportDone({ onEdit, onHistory }) {
+  const { currentUser, history } = useApp()
+  const { t } = useI18n()
+  const langName = REPORT_LANGS.find((l) => l.id === currentUser.reportLang)?.name ?? currentUser.reportLang
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center text-center">
+      <div className="grid h-24 w-24 place-items-center rounded-full bg-mint-soft ring-[10px] ring-mint-soft/50">
+        <Check className="h-12 w-12 text-mint" strokeWidth={3} />
+      </div>
+      <h1 className="mt-6 font-display text-4xl font-medium tracking-tight">{t('report.doneTitle')}</h1>
+      <p className="mt-2 max-w-xs whitespace-pre-line text-[16px] leading-snug text-slate-600">{t('report.doneText')}</p>
+      <div className="mt-6 w-full rounded-2xl border border-slate-200 bg-white p-4 text-left text-[15px]">
+        <div className="flex justify-between gap-3"><span className="text-slate-500">{t('report.doneEmail')}</span><span className="min-w-0 truncate font-semibold">{currentUser.reportEmail}</span></div>
+        <div className="mt-2 flex justify-between gap-3"><span className="text-slate-500">{t('report.doneLang')}</span><span className="font-semibold">{langName}</span></div>
+        <button type="button" onClick={onEdit} className="mt-3 text-sm font-semibold text-brand-dark underline">{t('report.edit')}</button>
+      </div>
+      {Object.keys(history).length > 0 && (
+        <button type="button" onClick={onHistory} className="mt-5 text-sm font-semibold text-slate-500 underline">{t('report.history')}</button>
+      )}
+    </div>
+  )
+}
+
+/** «Merci pour vos échanges»: cada ronda con su tema, compañeros y la nota de audio */
+function History({ onBack }) {
   const { history, currentUser } = useApp()
   const { t } = useI18n()
   const rounds = Object.keys(history).map(Number).sort((a, b) => a - b)
@@ -376,6 +482,9 @@ function Closing() {
 
   return (
     <>
+      <button type="button" onClick={onBack} className="mb-4 inline-flex items-center gap-1 self-start text-sm font-semibold text-slate-500 hover:text-ink">
+        <ChevronLeft className="h-4 w-4" /> {t('report.back')}
+      </button>
       <h1 className="text-center font-display text-4xl font-medium tracking-tight">{t('round.finishedTitle')}</h1>
       <p className="mt-1 text-center text-slate-600">{t('round.finishedText')}</p>
       {rounds.length ? (

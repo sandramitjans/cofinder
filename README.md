@@ -163,6 +163,7 @@ En el SQL Editor de Supabase, ejecutar en este orden (cada script se puede repet
 7. `supabase/2026-11-resumenes.sql`: página `#resum`
 8. `supabase/2026-11-transcribir-navegador.sql`: transcripción en el navegador
 9. `supabase/2026-11-un-resumen-por-mesa.sql`: una sola persona por mesa graba el resumen de audio
+10. `supabase/2026-11-informe.sql`: pantalla final, e-mail e idioma del informe ejecutivo (lista en `#resum`)
 
 La clave secreta de Supabase (`service_role`) nunca va en la web ni en GitHub: solo la usaría el
 transcriptor de servidor, en su `.env`.
