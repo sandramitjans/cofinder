@@ -1,5 +1,5 @@
-import { TOPICS, TOTAL_ROUNDS, MIN_TABLE_SIZE, MAX_TABLE_SIZE, MAX_TABLES } from '../constants'
-import { isCustom, topicKey } from './topics'
+import { MANDATORY_TOPICS, TOPICS, TOTAL_ROUNDS, MIN_TABLE_SIZE, MAX_TABLE_SIZE, MAX_TABLES, MAX_TABLES_PER_TOPIC } from '../constants'
+import { chosenTopics, hasTopic, isCustom, topicKey } from './topics'
 
 /**
  * Algoritmo de multi-match de Cofinder.
@@ -7,10 +7,11 @@ import { isCustom, topicKey } from './topics'
  * La semana anterior al evento se genera de una vez el PLAN de los 8 tours (`generatePlan`), que
  * la moderadora revisa, retoca y publica. Cada tour se calcula con `generateRound` teniendo en
  * cuenta los tours ya planificados:
- *  1. Elige entre MIN y MAX_TABLES temas entre los 20 de la lista y los temas propios («Autre»)
- *     que al menos 2 personas han escrito de forma parecida. Prioriza los más pedidos y evita
- *     temas de tours anteriores.
- *  2. Reparte a TODAS las personas en mesas de 2 a 5 minimizando un coste:
+ *  1. Elige entre MIN y MAX_TABLES temas: los 4 obligatorios (que cuentan como elegidos por todo
+ *     el mundo), los de la lista y los temas propios («Autre») que al menos 2 personas han escrito
+ *     de forma parecida. Un mismo tema puede ocupar hasta MAX_TABLES_PER_TOPIC mesas del tour.
+ *     Prioriza los más pedidos y evita temas de tours anteriores.
+ *  2. Reparte a TODAS las personas en mesas de 3 a 4 minimizando un coste:
  *       - la persona no ha elegido el tema de su mesa                (+8)
  *       - la persona ya trató ese tema en otro tour                  (+60)
  *       - dos personas ya coincidieron una vez                       (+4 por pareja)
@@ -72,8 +73,9 @@ const prepare = (people) =>
   new Map(people.map((p) => [p.id, {
     id: p.id,
     country: p.country,
-    offers: new Set((p.offers ?? []).map(topicKey)),
-    needs: new Set((p.needs ?? []).map(topicKey)),
+    // Sin niveles: todos los temas de la persona (obligatorios + elegidos) cuentan como «needs»
+    offers: new Set(),
+    needs: new Set([...MANDATORY_TOPICS, ...chosenTopics(p)].map(topicKey)),
   }]))
 
 /**
@@ -81,11 +83,12 @@ const prepare = (people) =>
  * Si no: los 20 de la lista + temas propios compartidos por ≥ 2 personas.
  */
 function candidateTopics(people, topics = []) {
-  if (topics.length) return topics.map((id) => ({ id, key: topicKey(id) }))
-  const list = TOPICS.map((id) => ({ id, key: id }))
+  const mandatory = MANDATORY_TOPICS.map((id) => ({ id, key: topicKey(id) }))
+  if (topics.length) return [...mandatory, ...topics.filter((id) => !mandatory.some((m) => m.key === topicKey(id))).map((id) => ({ id, key: topicKey(id) }))]
+  const list = [...mandatory, ...TOPICS.map((id) => ({ id, key: id }))]
   const custom = new Map() // clave → { id original, personas }
   for (const p of people) {
-    const mine = new Set([...(p.offers ?? []), ...(p.needs ?? [])].filter(isCustom))
+    const mine = new Set(chosenTopics(p).filter(isCustom))
     const seen = new Set()
     for (const id of mine) {
       const key = topicKey(id)
@@ -120,8 +123,10 @@ function scoreTopics(candidates, prepared, history) {
   })
 }
 
+/** k temas para las mesas del tour; un tema muy pedido puede salir en hasta MAX_TABLES_PER_TOPIC mesas */
 const pickTopics = (scored, k) =>
-  scored.map((c) => ({ ...c, s: c.score + Math.random() * 3 })).sort((a, b) => b.s - a.s).slice(0, k)
+  scored.flatMap((c) => Array.from({ length: MAX_TABLES_PER_TOPIC }, (_, copy) => ({ ...c, s: c.score / (copy + 1) - copy * 2 + Math.random() * 3 })))
+    .sort((a, b) => b.s - a.s).slice(0, k)
 
 function tableCost(key, members, byId, history, expertMode) {
   let cost = 0
@@ -152,7 +157,7 @@ function tableCost(key, members, byId, history, expertMode) {
 const snapshot = (tables, cost) => ({ cost, tables: tables.map((t) => ({ topic: t.topic, key: t.key, members: [...t.members] })) })
 
 /**
- * Un tour: todas las personas sentadas en mesas de 2 a 5 (como mucho MAX_TABLES mesas).
+ * Un tour: todas las personas sentadas en mesas de 3 a 4 (como mucho MAX_TABLES mesas).
  * `previousRounds` = los demás tours del plan, para no repetir temas ni parejas.
  */
 export function generateRound(people, previousRounds = [], { attempts = 24, iterations = 4000, topics = [] } = {}) {
@@ -199,9 +204,10 @@ export function generateRound(people, previousRounds = [], { attempts = 24, iter
       const move = Math.random()
 
       if (move < 0.08) {
-        // Cambiar el tema de la mesa A por otro candidato que no esté en este tour
-        const inUse = new Set(tables.map((t) => t.key))
-        const free = scored.filter((c) => !inUse.has(c.key))
+        // Cambiar el tema de la mesa A por otro candidato con sitio en este tour
+        const inUse = new Map()
+        tables.forEach((t) => inUse.set(t.key, (inUse.get(t.key) ?? 0) + 1))
+        const free = scored.filter((c) => c.key !== A.key && (inUse.get(c.key) ?? 0) < MAX_TABLES_PER_TOPIC)
         if (!free.length) continue
         const c = free[Math.floor(Math.random() * free.length)]
         const prev = { topic: A.topic, key: A.key }
@@ -279,7 +285,7 @@ export function planStats(rounds, byId) {
         const p = byId.get(id)
         if (!p) return
         seats++
-        if ([...(p.offers ?? []), ...(p.needs ?? [])].some((x) => topicKey(x) === key)) chosen++
+        if (hasTopic(p, key)) chosen++
         if (!seen.has(id)) seen.set(id, new Set())
         if (seen.get(id).has(key)) repeatedTopics++
         seen.get(id).add(key)

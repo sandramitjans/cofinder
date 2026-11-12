@@ -1,5 +1,7 @@
+import { MANDATORY_TOPICS, MAX_INTERESTS, TOPICS } from '../constants'
+
 /**
- * Temas: los 20 de la lista (`TOPICS`, identificadores estables) más los temas propios
+ * Temas: los de la lista (`TOPICS`, identificadores estables) más los temas propios
  * que cada persona puede añadir con «Autre». Un tema propio se guarda como
  * `custom:<texto tal como lo escribió>`.
  */
@@ -59,17 +61,25 @@ export function seededOrder(items, seed, keyOf = (x) => x) {
     .map(({ x }) => x)
 }
 
-/* ---------- Nivel en cada mesa: Alto / Medio / Bajo ----------
-   Se guarda con las mismas dos listas de siempre, para que el reparto no cambie de lógica:
-   Alto → solo en `offers` (puede compartir) · Bajo → solo en `needs` (viene a aprender) ·
-   Medio → en las dos (comparte y aprende). */
-export const LEVELS = ['high', 'medium', 'low']
-export const levelOfTopic = (person, id) => {
-  const key = topicKey(id)
-  const o = (person?.offers ?? []).some((x) => topicKey(x) === key)
-  const n = (person?.needs ?? []).some((x) => topicKey(x) === key)
-  return o && n ? 'medium' : o ? 'high' : n ? 'low' : null
+/* ---------- Temas de una persona: 4 obligatorios + los que ha elegido ----------
+   Los obligatorios (MANDATORY_TOPICS) no se guardan en el perfil: cuentan para todo el mundo.
+   Los elegidos están en `needs` (perfiles antiguos: también en `offers`). Ya no hay nivel. */
+export const isMandatory = (id) => MANDATORY_TOPICS.some((m) => topicKey(m) === topicKey(id))
+/**
+ * Temas elegidos por la persona: como mucho MAX_INTERESTS, sin los obligatorios, sin repetir y sin
+ * temas que ya no están en la lista. Los perfiles de antes del cambio (hasta 5 temas, con nivel)
+ * se recortan aquí al leerlos, sin tocar la base de datos: primero los que marcó con nivel alto/medio.
+ */
+export const chosenTopics = (person) => {
+  const seen = new Set()
+  return [...(person?.offers ?? []), ...(person?.needs ?? [])].filter((id) => {
+    const key = topicKey(id)
+    if (isMandatory(id) || seen.has(key) || (!isCustom(id) && !TOPICS.includes(id))) return false
+    seen.add(key)
+    return true
+  }).slice(0, MAX_INTERESTS)
 }
-/** Mesas de una persona, sin repetir, con su nivel */
-export const topicsWithLevel = (person) =>
-  [...new Set([...(person?.offers ?? []), ...(person?.needs ?? [])])].map((id) => ({ id, level: levelOfTopic(person, id) }))
+/** Todos los temas de la persona: primero los obligatorios, después los elegidos */
+export const myTopics = (person) => [...MANDATORY_TOPICS, ...chosenTopics(person)]
+/** ¿La persona tiene este tema (obligatorio o elegido)? */
+export const hasTopic = (person, id) => isMandatory(id) || chosenTopics(person).some((x) => topicKey(x) === topicKey(id))

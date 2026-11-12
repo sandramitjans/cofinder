@@ -1,6 +1,9 @@
+import { MAX_INTERESTS, TOPICS } from '../constants'
+import { isMandatory } from './topics'
+
 // 12 directores ficticios (de las filiales del grupo, cargos en FR/EN) para ensayar la dinámica desde el panel de moderadora.
-// Como en el formulario, cada uno elige 8 temas; los 3 primeros los marca «Expérimenté·e» (`offers`)
-// y el resto «Curieux·se» (`needs`).
+// Como en el formulario, cada uno elige 2 temas (además de los obligatorios, que cuentan para todos):
+// los 2 primeros de su lista que no sean obligatorios y sigan en la lista de temas.
 const DEMO = [
   ['Laura Martín', 'Marketing Director', 'es', ['analytics', 'customer_journey', 'ai_guru', 'geo', 'social_strategy', 'b2b', 'pnl', 'branding'], ['shortcuts', 'outlook']],
   ['João Ferreira', 'Head of Marketing', 'pt', ['paid_performance', 'affiliates', 'branding', 'b2b', 'geo', 'emailing_loyalty', 'guerrilla', 'cofidis_ninja'], ['punchlines']],
@@ -16,15 +19,16 @@ const DEMO = [
   ['Carmen Ruiz', 'Head of CRM', 'es', ['analytics', 'paid_performance', 'public_relations', 'cofidis_ninja', 'ai_guru', 'b2b', 'risk_management', 'compliance'], ['shortcuts', 'generations']],
 ]
 
-// `eventTopics` = mesas añadidas desde el panel: si hay, cada perfil de prueba elige 5 al azar entre ellas
+// `eventTopics` = mesas añadidas desde el panel: si hay, cada perfil de prueba elige 2 al azar entre ellas
 export const demoParticipants = (eventTopics = []) =>
   DEMO.map(([name, role, country, topics, superpowers]) => {
-    const mine = eventTopics.length
-      ? [...eventTopics].sort(() => Math.random() - 0.5).slice(0, 5)
-      : topics
+    const pool = eventTopics.filter((id) => !isMandatory(id))
+    const mine = pool.length
+      ? [...pool].sort(() => Math.random() - 0.5).slice(0, MAX_INTERESTS)
+      : topics.filter((id) => TOPICS.includes(id)).slice(0, MAX_INTERESTS)
     return {
       id: crypto.randomUUID(), createdAt: Date.now(), demo: true, name, role, country,
-      offers: mine.slice(0, eventTopics.length ? 2 : 3), needs: mine.slice(eventTopics.length ? 2 : 3),
-      customTopics: eventTopics.length ? mine : [], superpowers: superpowers.slice(0, 1),
+      offers: [], needs: mine,
+      customTopics: pool.length ? mine : [], superpowers: superpowers.slice(0, 1),
     }
   })
