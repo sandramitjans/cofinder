@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, ChevronDown, Copy, Download, Hourglass, Lightbulb, MapPin, Mic, RotateCcw, Send, Sparkles, Square, Timer, TimerOff, Users } from 'lucide-react'
+import { Check, ChevronDown, Copy, Download, Handshake, Hourglass, Lightbulb, Loader2, MapPin, Mic, RotateCcw, Send, Sparkles, Square, Timer, TimerOff, Users, Zap } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { FIND_MINUTES, TOPIC_EMOJI, TOTAL_ROUNDS } from '../constants'
@@ -9,6 +9,7 @@ import { icebreakerFor } from '../lib/icebreakers'
 import { useCountdown } from '../lib/useCountdown'
 import { MAX_NOTE_SECONDS, canRecord, extensionOf, getNote, recorderMime } from '../lib/audioNotes'
 import * as api from '../lib/backend'
+import { reporterRole } from '../lib/reporter'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
@@ -25,11 +26,12 @@ const expertModeOf = (participants) => participants.some((p) => p.offers?.length
  *  - mesa aún sin anunciar → sala de espera
  *  - mesa anunciada, sin chrono → «Ronda n · Ve a la mesa X» con tema y compañeros
  *  - chrono en marcha → ronda activa: cronómetro grande, barra roja, tema y tu mesa
- *  - tiempo terminado → grabar una nota de audio (máx. 1 min) con lo que te llevas
+ *  - tiempo terminado → una sola persona por mesa graba el resumen (máx. 1 min): cada móvil elige
+ *    «Je fais le résumé audio» o «Pas moi»; si todos menos uno pasan, le toca al último
  *  - evento terminado → «Gracias por compartir»: tus conversaciones ronda a ronda
  */
 export default function RoundCardView() {
-  const { currentUser, currentRound, event, noteSent } = useApp()
+  const { currentUser, currentRound, event, noteSent, tableReporter } = useApp()
   const { t } = useI18n()
   const startedAt = event.finished ? null : currentRound?.startedAt
   const timer = useCountdown(startedAt)
@@ -43,7 +45,7 @@ export default function RoundCardView() {
   else if (!startedAt) { scene = <GoToTable table={table} />; key = `go-${event.round}` }
   else if (!findTimer.done) { scene = <FindTable table={table} findTimer={findTimer} />; key = `find-${event.round}` }
   else if (!timer.done) { scene = <ActiveRound table={table} timer={timer} />; key = `talk-${event.round}` }
-  else if (noteSent) { scene = <LobbyView embedded badge={t('note.sentBadge')} />; key = `hold-${event.round}` }
+  else if (noteSent || tableReporter?.sent) { scene = <LobbyView embedded badge={t('note.sentBadge')} />; key = `hold-${event.round}` }
   else { scene = <TimeUp table={table} />; key = `up-${event.round}` }
 
   return (
@@ -222,8 +224,144 @@ function TimeUp({ table }) {
     <div className="flex flex-1 flex-col">
       <span className="self-start rounded-full bg-ink px-3 py-1 text-xs font-bold text-white">{t('round.roundTable', { n: event.round, k: table.id })}</span>
       <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <NoteRecorder table={table} />
+        <WhoRecords table={table} />
       </div>
+    </div>
+  )
+}
+
+/**
+ * Un solo resumen por mesa: «Je fais le résumé audio» / «Pas moi».
+ * Gana quien se apunta primero; si todos menos uno pasan, al último le toca (sin botón para pasar).
+ * Los demás ven quién graba y pueden tomar el relevo (móvil sin batería, sin red…).
+ */
+function WhoRecords({ table }) {
+  const { currentUser, participants, tableReporter: st, watchReporter, chooseReporter, remote } = useApp()
+  const { t } = useI18n()
+  useEffect(() => watchReporter(), [watchReporter])
+  const [busy, setBusy] = useState(null) // la elección que se está enviando
+  const [lostTo, setLostTo] = useState(null) // otra persona se apuntó antes
+  const [error, setError] = useState(false)
+  const [solo, setSolo] = useState(false) // sin el SQL de un resumen por mesa: cada persona graba la suya, como antes
+  const [confirmRelay, setConfirmRelay] = useState(false)
+
+  const firstName = (id) => participants.find((p) => p.id === id)?.name.split(' ')[0] ?? t('reporter.someone')
+  const choose = async (choice) => {
+    setBusy(choice); setError(false); setConfirmRelay(false)
+    const res = await chooseReporter(choice)
+    setBusy(null)
+    if (res.lost) setLostTo(true)
+    else if (res.error === 'PGRST202' || res.error === '42883') setSolo(true)
+    else if (res.error && res.error !== 'must_record') setError(true)
+  }
+
+  if (solo) return <NoteRecorder table={table} />
+
+  const role = reporterRole(st, currentUser.id)
+  const errorLine = error && <p role="alert" className="mt-3 text-sm font-semibold text-brand-dark">{t('reporter.error')}</p>
+
+  if (lostTo && st?.reporter && st.reporter !== currentUser.id) {
+    const name = firstName(st.reporter)
+    return (
+      <div className="flex w-full flex-col items-center">
+        <span className="grid h-16 w-16 place-items-center rounded-full bg-accent-soft text-accent"><Zap className="h-8 w-8" /></span>
+        <h1 className="mt-4 font-display text-3xl font-medium tracking-tight">{t('reporter.lostTitle', { name })}</h1>
+        <p className="mt-2 max-w-xs text-slate-600">{t('reporter.lostText', { name })}</p>
+        <Button type="button" variant="outline" onClick={() => setLostTo(null)} className="mt-8 w-full py-3.5 text-base">{t('reporter.ok')}</Button>
+      </div>
+    )
+  }
+
+  if (role === 'record' || role === 'forced') {
+    const forced = role === 'forced' && (st?.members.length ?? 0) > 1 // sola en la mesa: sin «vos collègues…»
+    return (
+      <NoteRecorder table={table} intro={(
+        <>
+          <span className="grid h-20 w-20 place-items-center rounded-full bg-brand text-white"><Mic className="h-9 w-9" /></span>
+          {forced && <p className="mt-5 text-xs font-bold uppercase tracking-wider text-brand-dark">{t('reporter.forcedTag')}</p>}
+          <h1 className={`${forced ? 'mt-2' : 'mt-5'} font-display text-4xl font-medium tracking-tight`}>{t(forced ? 'reporter.forcedTitle' : 'reporter.recordTitle')}</h1>
+          <p className="mt-2 max-w-sm text-slate-600">{t(forced ? 'reporter.forcedText' : 'reporter.recordText')}</p>
+        </>
+      )} footer={(st?.members.length ?? 0) > 1 && (
+        <p className="mt-4 flex w-full gap-2 rounded-xl bg-accent-soft px-3.5 py-3 text-left text-sm font-semibold text-accent-dark">
+          <Lightbulb className="mt-0.5 h-4 w-4 shrink-0" /> {t('reporter.tip')}
+        </p>
+      )} />
+    )
+  }
+
+  if (role === 'other') {
+    const name = firstName(st.reporter ?? st.forced)
+    return (
+      <div className="flex w-full flex-col items-center">
+        <span className="grid h-16 w-16 place-items-center rounded-full bg-mint-soft text-mint-dark"><Check className="h-8 w-8" /></span>
+        <h1 className="mt-4 font-display text-3xl font-medium tracking-tight">{t('reporter.otherTitle', { name })}</h1>
+        <p className="mt-2 max-w-xs text-slate-600">{t('reporter.otherText')}</p>
+        <div aria-hidden className="mt-6 flex items-center gap-2.5">
+          {[0, 1, 2].map((d) => <span key={d} className="h-3 w-3 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: `${d * 160}ms` }} />)}
+        </div>
+        {confirmRelay ? (
+          <div className="mt-8 w-full rounded-2xl border border-slate-200 bg-white p-4">
+            <p className="text-sm text-slate-600">{t('reporter.relayConfirm', { name })}</p>
+            <Button type="button" onClick={() => choose('relay')} disabled={!!busy} icon={busy ? Loader2 : Mic} className="mt-3 w-full">{t('reporter.relayYes')}</Button>
+            <Button type="button" variant="outline" onClick={() => setConfirmRelay(false)} className="mt-2 w-full">{t('reporter.cancel')}</Button>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setConfirmRelay(true)} className="mt-10 text-sm font-semibold text-brand-dark underline underline-offset-4">
+            {t('reporter.relay', { name })}
+          </button>
+        )}
+        {errorLine}
+      </div>
+    )
+  }
+
+  const others = (st?.members ?? []).filter((m) => m.id !== currentUser.id)
+  const list = others.length > 0 && (
+    <section className="mt-8 w-full text-left">
+      <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><Users className="h-3.5 w-3.5" /> {t('reporter.yourTable')}</h2>
+      <ul className="mt-2.5 space-y-2" aria-live="polite">
+        {others.map((m) => {
+          const p = participants.find((x) => x.id === m.id)
+          return (
+            <li key={m.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5">
+              <Avatar name={p?.name ?? '?'} photo={p?.photo} size="sm" />
+              <span className="min-w-0 flex-1 truncate font-semibold">{p?.name ?? t('reporter.someone')}</span>
+              <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${m.choice === 'me' ? 'bg-brand text-white' : 'bg-slate-100 text-slate-600'}`}>
+                {t(m.choice === 'me' ? 'reporter.doing' : m.choice === 'pass' ? 'reporter.passed' : 'reporter.deciding')}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+
+  if (role === 'passed') {
+    return (
+      <div className="flex w-full flex-col items-center">
+        <span className="grid h-16 w-16 place-items-center rounded-full bg-accent-soft text-accent"><Handshake className="h-8 w-8" /></span>
+        <h1 className="mt-4 font-display text-3xl font-medium tracking-tight">{t('reporter.passedTitle')}</h1>
+        <p className="mt-2 max-w-xs text-slate-600">{t('reporter.passedText')}</p>
+        {list}
+        <button type="button" onClick={() => choose('me')} disabled={!!busy} className="mt-6 text-sm font-semibold text-brand-dark underline underline-offset-4 disabled:opacity-60">
+          {t('reporter.changeMind')}
+        </button>
+        {errorLine}
+      </div>
+    )
+  }
+
+  // choose
+  return (
+    <div className="flex w-full flex-col items-center">
+      <span className="grid h-20 w-20 place-items-center rounded-full bg-ink text-white"><TimerOff className="h-9 w-9" /></span>
+      <h1 className="mt-5 font-display text-4xl font-medium tracking-tight">{t('round.timeUp')}</h1>
+      <p className="mt-2 max-w-sm text-slate-600">{t('reporter.chooseText')}</p>
+      <Button type="button" onClick={() => choose('me')} disabled={!!busy} icon={busy === 'me' ? Loader2 : Mic} className="mt-8 w-full py-4 text-base">{t('reporter.me')}</Button>
+      <Button type="button" variant="outline" onClick={() => choose('pass')} disabled={!!busy || (remote && !st)} className="mt-2 w-full py-3.5 text-base">{t('reporter.pass')}</Button>
+      {errorLine}
+      {list}
     </div>
   )
 }
@@ -357,7 +495,7 @@ function Companions({ table }) {
  * Nota de audio al acabar la ronda: grabar (máx. 1 min) → escuchar / regrabar → continuar (se envía).
  * Hasta que todos la han enviado, el móvil se queda en espera y el proyector en «on hold».
  */
-function NoteRecorder({ table }) {
+function NoteRecorder({ table, intro, footer }) {
   const { event, submitNote } = useApp()
   const { t } = useI18n()
   const [state, setState] = useState(() => (canRecord() ? 'idle' : 'unsupported')) // idle · recording · review · sending · error · unsupported
@@ -449,11 +587,16 @@ function NoteRecorder({ table }) {
 
   return (
     <div className="flex w-full flex-col items-center">
-      <span className="grid h-20 w-20 place-items-center rounded-full bg-ink text-white"><TimerOff className="h-9 w-9" /></span>
-      <h1 className="mt-5 font-display text-4xl font-medium tracking-tight">{t('round.timeUp')}</h1>
-      <p className="mt-2 max-w-sm text-slate-600">{t('round.recordPrompt')}</p>
-      <Button type="button" onClick={start} icon={Mic} className="mt-8 w-full py-4 text-base">{t('round.record')}</Button>
+      {intro ?? (
+        <>
+          <span className="grid h-20 w-20 place-items-center rounded-full bg-ink text-white"><TimerOff className="h-9 w-9" /></span>
+          <h1 className="mt-5 font-display text-4xl font-medium tracking-tight">{t('round.timeUp')}</h1>
+          <p className="mt-2 max-w-sm text-slate-600">{t('round.recordPrompt')}</p>
+        </>
+      )}
+      <Button type="button" onClick={start} icon={Mic} className="mt-8 w-full py-4 text-base">{t(intro ? 'reporter.record' : 'round.record')}</Button>
       {state === 'error' && <p role="alert" className="mt-3 text-sm font-semibold text-brand-dark">{t('round.micError')}</p>}
+      {footer}
     </div>
   )
 }

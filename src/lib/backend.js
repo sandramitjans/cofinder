@@ -114,6 +114,20 @@ export async function submitAudioNote({ id, round, tableId, topic, path, blob })
   return rpc('submit_audio_note', args)
 }
 
+/* ---------- Quién graba el resumen de la mesa (supabase/2026-11-un-resumen-por-mesa.sql) ----------
+   Estado: { members: [{ id, choice: 'me' | 'pass' | null }], reporter, forced, sent, lost } */
+const toReporter = (d) => ({
+  members: (d?.members ?? []).map((m) => ({ id: m.id, choice: m.choice ?? null })),
+  reporter: d?.reporter ?? null,
+  forced: d?.forced ?? null,
+  sent: !!d?.sent,
+  lost: !!d?.lost,
+})
+export const fetchReporter = async (id, round) => toReporter(await rpc('get_reporter_state', { p_id: id, p_round: round }))
+/** choice: 'me' (me apunto) · 'pass' (pas moi) · 'relay' (tomo el relevo) */
+export const chooseReporter = async (id, round, choice) =>
+  toReporter(await rpc('choose_reporter', { p_id: id, p_round: round, p_choice: choice }))
+
 /* ---------- Página #resum: transcripción en el navegador (con el PIN de Admin) ---------- */
 export const modPendingAudio = async (pin) => (await rpc('mod_pending_audio', { p_pin: pin }))?.notes ?? []
 export async function modGetAudio(pin, id, round) {
