@@ -184,7 +184,7 @@ export default function RegisterView({ mode = 'create' }) {
   }[screen]
 
   return (
-    <section className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
+    <main className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
       <div className={`mx-auto flex w-full flex-1 flex-col ${WIDTH}`}>
         {/* Volver + progreso «▬▬▬ 2/4», como en el prototipo */}
         <div className="flex min-h-10 items-center justify-between gap-4">
@@ -294,7 +294,7 @@ export default function RegisterView({ mode = 'create' }) {
         </form>
       </div>
       <PublicFooter className="!pt-2" />
-    </section>
+    </main>
   )
 }
 
@@ -315,8 +315,8 @@ function GuestCard({ form, onPhoto }) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-bold uppercase tracking-wider text-brand-dark">{t('register.guestCard')}</p>
-        <p className={`mt-0.5 truncate font-display text-xl font-medium leading-tight ${name ? 'text-ink' : 'text-slate-400'}`}>{name || t('register.guestName')}</p>
-        <p className={`truncate text-sm ${role ? 'text-slate-600' : 'text-slate-400'}`}>{role || t('register.guestRole')}</p>
+        <p className={`mt-0.5 truncate font-display text-xl font-medium leading-tight ${name ? 'text-ink' : 'text-slate-500'}`}>{name || t('register.guestName')}</p>
+        <p className={`truncate text-sm ${role ? 'text-slate-600' : 'text-slate-500'}`}>{role || t('register.guestRole')}</p>
         {place && <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-slate-600"><MapPin className="h-3.5 w-3.5 shrink-0" /> {place}</p>}
       </div>
       {complete && <CheckCircle2 aria-hidden className="animate-pop-in h-6 w-6 shrink-0 self-start text-mint" />}
@@ -365,10 +365,10 @@ function Landing({ resume, onStart }) {
   const { t, formatDate } = useI18n()
   return (
     <div className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
-      <div className={`mx-auto flex w-full ${WIDTH} items-center justify-between gap-4`}>
+      <header className={`mx-auto flex w-full ${WIDTH} items-center justify-between gap-4`}>
         <Logo />
         <LangSwitch />
-      </div>
+      </header>
 
       <main className={`mx-auto flex w-full ${WIDTH} flex-1 flex-col justify-center py-10`}>
         <h1 className="font-display text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">{t('register.titleMain')}</h1>

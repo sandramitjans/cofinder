@@ -219,12 +219,12 @@ function AccessCode({ name, code }) {
       <div className="border-t border-slate-200 bg-brand-soft/40 p-4">
         <p className="text-sm font-semibold text-ink">{t('waiting.keepIt')}</p>
         <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-          <button type="button" onClick={downloadIcs} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand px-3 text-[15px] font-semibold text-white transition hover:bg-brand-hover">
-            <CalendarPlus className="h-5 w-5" /> {t('waiting.calendar')}
-          </button>
-          <a href={mailHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[15px] font-semibold text-ink transition hover:border-slate-300">
+          <a href={mailHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand px-3 text-[15px] font-semibold text-white transition hover:bg-brand-hover">
             <Mail className="h-5 w-5" /> {t('waiting.byEmail')}
           </a>
+          <button type="button" onClick={downloadIcs} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[15px] font-semibold text-ink transition hover:border-slate-300">
+            <CalendarPlus className="h-5 w-5" /> {t('waiting.calendar')}
+          </button>
         </div>
         <p className="mt-2.5 text-center text-sm text-slate-500">{t('waiting.orScreenshot')}</p>
       </div>
