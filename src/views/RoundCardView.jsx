@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { Check, ChevronDown, ChevronLeft, Copy, Download, Handshake, Hourglass, Lightbulb, Loader2, MapPin, Mic, RotateCcw, Send, Sparkles, Square, Timer, TimerOff, Users, Zap } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { FIND_MINUTES, REPORT_LANGS, REPORT_LANG_BY_COUNTRY, TOPIC_EMOJI, TOTAL_ROUNDS } from '../constants'
+import { FIND_MINUTES, REPORT_LANGS, REPORT_LANG_BY_COUNTRY, TOTAL_ROUNDS } from '../constants'
 import { roleOf } from '../lib/matching'
-import { isCustom, topicKey } from '../lib/topics'
+import { topicKey, topicEmoji } from '../lib/topics'
 import { icebreakerFor } from '../lib/icebreakers'
 import { useCountdown } from '../lib/useCountdown'
 import { MAX_NOTE_SECONDS, canRecord, extensionOf, getNote, recorderMime } from '../lib/audioNotes'
@@ -19,7 +19,7 @@ import LangSwitch from '../components/ui/LangSwitch'
 import LobbyView from './LobbyView'
 import PublicFooter from '../components/layout/PublicFooter'
 
-const emojiOf = (id) => (isCustom(id) ? '💬' : TOPIC_EMOJI[id] ?? '💬')
+const emojiOf = topicEmoji
 const expertModeOf = (participants) => participants.some((p) => p.offers?.length)
 
 /**
