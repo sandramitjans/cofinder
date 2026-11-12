@@ -36,6 +36,10 @@ export const fromRow = (r) => r && ({
   accessCode: r.access_code ?? null,
   readyAt: r.ready_at ? Date.parse(r.ready_at) : null, // pulsó «Preparado» el día del evento // solo llega para la propia persona y para la moderadora
   createdAt: r.created_at ? Date.parse(r.created_at) : undefined,
+  // Informe ejecutivo (supabase/2026-11-informe.sql): solo para la propia persona y la moderadora
+  reportEmail: r.report_email ?? null,
+  reportLang: r.report_lang ?? null,
+  reportAt: r.report_at ? Date.parse(r.report_at) : null,
 })
 
 const toRow = (p, lang) => ({
@@ -92,6 +96,9 @@ export async function fetchMyTable(id) {
 /** «Preparado» el día del evento (supabase/2026-11-preparados.sql) */
 export const setMyReady = (id, ready) => rpc('set_my_ready', { p_id: id, p_ready: ready })
 export const modResetReady = (pin) => rpc('mod_reset_ready', { p_pin: pin })
+
+/** Pantalla final: e-mail e idioma del informe ejecutivo (supabase/2026-11-informe.sql) */
+export const setMyReport = (id, email, lang) => rpc('set_my_report', { p_id: id, p_email: email, p_lang: lang })
 
 /** Nota de audio validada (supabase/2026-11-notas-audio.sql): el audio ya está en Storage en `path` */
 const toBase64 = (blob) => new Promise((resolve, reject) => {

@@ -276,6 +276,27 @@ export function AppProvider({ children }) {
     return true
   }, [currentUserId, refreshMine])
 
+  /* ---------- Pantalla final: e-mail e idioma del informe ejecutivo ----------
+     Devuelve null si se guardó, o el código de error: 'invalid_email' | 'sql' | 'network' */
+  const saveReport = useCallback(async (email, lang) => {
+    if (!currentUserId) return 'network'
+    const clean = email.trim().toLowerCase()
+    const patch = { reportEmail: clean, reportLang: lang, reportAt: Date.now() }
+    if (REMOTE) {
+      try { await api.setMyReport(currentUserId, clean, lang) } catch (err) {
+        if (err.code === 'invalid_email') return 'invalid_email'
+        if (err.code === 'PGRST202') return 'sql' // falta supabase/2026-11-informe.sql
+        return 'network'
+      }
+      setMe((m) => (m?.id === currentUserId ? { ...m, ...patch } : m))
+      api.ping('report')
+      refreshMine()
+    } else {
+      setLocalParticipants((prev) => prev.map((p) => (p.id === currentUserId ? { ...p, ...patch } : p)))
+    }
+    return null
+  }, [currentUserId, refreshMine])
+
   /* ---------- Notas de audio de cada ronda ---------- */
   const [notesOverride, setNotesOverride] = useState([]) // rondas enviadas en este dispositivo, antes de que lo confirme el servidor
   const myNotes = REMOTE ? [...(myTable?.notes ?? []), ...notesOverride] : (currentUser?.notedRounds ?? [])
@@ -664,7 +685,8 @@ export function AppProvider({ children }) {
   // Todos vuelven a «no preparados» (al reiniciar o borrar el plan)
   const resetReady = useCallback(() => {
     if (REMOTE) return modAction(async (pin) => { await api.modResetReady(pin); await api.modClearNotes(pin).catch(() => {}) })
-    setLocalParticipants((prev) => prev.map((p) => (p.readyAt || p.notedRounds || p.reporterChoices ? { ...p, readyAt: null, notedRounds: [], reporterChoices: {} } : p)))
+    setLocalParticipants((prev) => prev.map((p) => (p.readyAt || p.notedRounds || p.reporterChoices || p.reportAt
+      ? { ...p, readyAt: null, notedRounds: [], reporterChoices: {}, reportEmail: null, reportLang: null, reportAt: null } : p)))
   }, [modAction])
   const resetEvent = useCallback(() => {
     resetReady()
@@ -700,14 +722,14 @@ export function AppProvider({ children }) {
     view, navigate,
     participants, currentUser, event, currentRound, seatedEver,
     modLoading: REMOTE && modUnlocked && !modState,
-    register, login, joinedLive, myPlan, ready, setReady, readyCount, readyTotal: realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, notedTotal: realTables.length, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, joinedLive, myPlan, ready, setReady, saveReport, readyCount, readyTotal: realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, notedTotal: realTables.length, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     modUnlocked, gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
   }), [view, navigate, participants, currentUser, event, currentRound, seatedEver, modUnlocked, modState,
-    register, login, joinedLive, myPlan, ready, setReady, readyCount, realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, realTables.length, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, joinedLive, myPlan, ready, setReady, saveReport, readyCount, realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, realTables.length, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     gateOpen, openGate, closeGate, unlockModerator, lockModerator,

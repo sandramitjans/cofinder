@@ -107,4 +107,21 @@ export const MAX_SUPERPOWERS = 1
 export const COUNTRIES = ['fr', 'be', 'es', 'pt', 'it', 'cz', 'sk', 'hu', 'pl']
 
 export const LANGS = ['fr', 'en']
+
+// Idiomas del informe ejecutivo (pantalla final): uno por país del grupo + inglés.
+// `name` va en su propio idioma; `fam` reutiliza los pasteles de las familias de temas.
+// Bélgica: francés por defecto (también se ofrece neerlandés).
+export const REPORT_LANGS = [
+  { id: 'fr', name: 'Français', fam: 'acquisition' },
+  { id: 'en', name: 'English', fam: 'data' },
+  { id: 'es', name: 'Español', fam: 'business' },
+  { id: 'pt', name: 'Português', fam: 'customer' },
+  { id: 'it', name: 'Italiano', fam: 'brand' },
+  { id: 'nl', name: 'Nederlands', fam: 'acquisition' },
+  { id: 'cs', name: 'Čeština', fam: 'data' },
+  { id: 'sk', name: 'Slovenčina', fam: 'business' },
+  { id: 'hu', name: 'Magyar', fam: 'customer' },
+  { id: 'pl', name: 'Polski', fam: 'brand' },
+]
+export const REPORT_LANG_BY_COUNTRY = { fr: 'fr', be: 'fr', es: 'es', pt: 'pt', it: 'it', cz: 'cs', sk: 'sk', hu: 'hu', pl: 'pl' }
 export const DEFAULT_LANG = 'fr'

@@ -269,6 +269,26 @@ export const DICT = {
       title: 'Accès réservé', text: 'Saisissez le code PIN.', wrong: 'Code PIN incorrect', locked: 'Trop de tentatives. Réessayez dans 10 minutes.', network: 'Pas de connexion. Réessayez.', checking: 'Vérification…', enter: 'Entrer', close: 'Fermer', pin: 'Code PIN',
     },
 
+    report: {
+      title: 'Merci pour vos échanges\u00A0!',
+      text: 'Nous allons réunir les résumés audio de toutes les tables dans un **rapport exécutif**, envoyé par e-mail.',
+      email: 'Votre e-mail', emailPlaceholder: 'prenom.nom@cofidis.fr',
+      lang: 'Langue du rapport',
+      submit: 'Finaliser', needEmail: 'Indiquez votre e-mail pour continuer',
+      error: { invalid_email: 'Cette adresse e-mail ne semble pas valide.', sql: 'Il reste à exécuter supabase/2026-11-informe.sql dans Supabase.', network: 'Pas de connexion. Réessayez.' },
+      doneTitle: 'Tout est prêt\u00A0!',
+      doneText: 'Vous recevrez le rapport de la session dans les prochains jours.\nVous pouvez fermer cette page.',
+      doneEmail: 'E-mail', doneLang: 'Langue', edit: 'Modifier', cancel: 'Annuler',
+      history: 'Revoir mes conversations du jour', back: 'Retour',
+      langs: { fr: 'Français', en: 'Anglais', es: 'Espagnol', pt: 'Portugais', it: 'Italien', nl: 'Néerlandais', cs: 'Tchèque', sk: 'Slovaque', hu: 'Hongrois', pl: 'Polonais' },
+      list: {
+        title: 'E-mails pour le rapport', count: '{n} / {total} réponses', byLang: 'Par langue\u00A0:', show: 'Voir la liste',
+        name: 'Nom', email: 'E-mail', lang: 'Langue', at: 'Reçu', waiting: 'en attente',
+        download: 'Liste (.csv)', fileName: 'cofinder-rapport-emails',
+        hint: 'Chaque participant les indique sur son téléphone après le dernier tour. Le rapport n’est pas envoyé automatiquement.',
+      },
+    },
+
     resum: {
       fileName: 'cofinder-syntheses',
       title: 'Synthèses des tables', pinText: 'Saisissez le code PIN admin pour voir les transcriptions.',
@@ -719,6 +739,26 @@ export const DICT = {
 
     gate: {
       title: 'Restricted access', text: 'Enter the PIN.', wrong: 'Wrong PIN', locked: 'Too many attempts. Try again in 10 minutes.', network: 'No connection. Try again.', checking: 'Checking…', enter: 'Enter', close: 'Close', pin: 'PIN',
+    },
+
+    report: {
+      title: 'Thanks for sharing!',
+      text: 'We’ll gather the audio summaries from every table into an **executive report**, sent by email.',
+      email: 'Your email', emailPlaceholder: 'firstname.lastname@cofidis.com',
+      lang: 'Report language',
+      submit: 'Finish', needEmail: 'Enter your email to continue',
+      error: { invalid_email: 'This email address doesn’t look valid.', sql: 'supabase/2026-11-informe.sql still has to be run in Supabase.', network: 'No connection. Try again.' },
+      doneTitle: 'All set!',
+      doneText: 'You’ll receive the session report in the coming days.\nYou can close this page.',
+      doneEmail: 'Email', doneLang: 'Language', edit: 'Change', cancel: 'Cancel',
+      history: 'See my conversations from today', back: 'Back',
+      langs: { fr: 'French', en: 'English', es: 'Spanish', pt: 'Portuguese', it: 'Italian', nl: 'Dutch', cs: 'Czech', sk: 'Slovak', hu: 'Hungarian', pl: 'Polish' },
+      list: {
+        title: 'Emails for the report', count: '{n} / {total} replies', byLang: 'By language:', show: 'Show list',
+        name: 'Name', email: 'Email', lang: 'Language', at: 'Received', waiting: 'waiting',
+        download: 'List (.csv)', fileName: 'cofinder-report-emails',
+        hint: 'Each participant enters them on their phone after the last round. The report is not sent automatically.',
+      },
     },
 
     resum: {
