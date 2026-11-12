@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, ArrowRight, Briefcase, Building2, CalendarDays, Check, CheckCircle2, Clock, Info, Lock, MapPin, RotateCcw, User } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Briefcase, CalendarDays, Check, CheckCircle2, Clock, Info, Lock, MapPin, RotateCcw, User } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { COUNTRIES, MANDATORY_TOPICS, TOPICS, TOPIC_EMOJI, EVENT_DATE, EVENT_PLACE, MAX_INTERESTS, MAX_SUPERPOWERS, ROUND_MINUTES, TOTAL_ROUNDS, VIEWS } from '../constants'
@@ -7,6 +7,7 @@ import { DICT } from '../lib/i18n'
 import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
 import Field from '../components/ui/Field'
+import CountryPicker from '../components/ui/CountryPicker'
 import TopicPicker from '../components/TopicPicker'
 import SuperpowerPicker from '../components/ui/SuperpowerPicker'
 import PhotoPicker from '../components/ui/PhotoPicker'
@@ -16,7 +17,7 @@ import { chosenTopics, isCustom, isMandatory } from '../lib/topics'
 import { familyOfTopic, familyTone } from '../lib/familyColors'
 import { CELEBRATE_KEY } from '../components/ui/Confetti'
 
-// `country` guarda «Filial / Departamento» (texto libre, con sugerencias de filiales)
+// `country` guarda el código de la filial ('fr', 'es'…) o, con «Autre», un texto libre (sede, departamento…)
 // `needs` guarda las mesas elegidas (hasta 2); los 4 temas obligatorios no se guardan: cuentan para todo el mundo
 const EMPTY = { name: '', role: '', country: '', photo: '', offers: [], needs: [], customTopics: [], superpowers: [] }
 
@@ -28,7 +29,7 @@ const loadDraft = () => {
     if (!d || typeof d !== 'object') return null
     // Borradores de antes del cambio: sin nivel y como mucho 2 temas elegidos (sin los obligatorios)
     const { levels: _levels, ...rest } = d
-    return { ...EMPTY, ...rest, needs: chosenTopics(rest).slice(0, MAX_INTERESTS), offers: [] }
+    return { ...EMPTY, ...rest, country: normalizeBranch(String(rest.country ?? '')), needs: chosenTopics(rest).slice(0, MAX_INTERESTS), offers: [] }
   } catch { return null }
 }
 const isEmpty = (f) => !f.name.trim() && !f.role.trim() && !f.country.trim() && !f.photo
@@ -53,14 +54,14 @@ export function EditProfileView() {
   return <RegisterView mode="edit" />
 }
 
-/** Perfil guardado → valores del formulario (la filial vuelve a texto legible) */
-const formFromProfile = (p, countryLabel) => {
+/** Perfil guardado → valores del formulario */
+const formFromProfile = (p) => {
   const used = chosenTopics(p).filter(isCustom)
   return {
     ...EMPTY,
     name: p.name ?? '',
     role: p.role ?? '',
-    country: countryLabel(p.country) ?? '',
+    country: normalizeBranch(String(p.country ?? '')),
     photo: p.photo || '',
     offers: [],
     needs: chosenTopics(p).slice(0, MAX_INTERESTS), // solo las elegidas; las obligatorias se suman siempre
@@ -76,7 +77,7 @@ export default function RegisterView({ mode = 'create' }) {
   const editing = mode === 'edit'
   const { register, navigate, currentUser, updateProfile, eventTopics, eventTopicsLoaded, loadEventTopics } = useApp()
   const { t, country } = useI18n()
-  const [form, setForm] = useState(() => (editing && currentUser ? formFromProfile(currentUser, country) : loadDraft() ?? EMPTY))
+  const [form, setForm] = useState(() => (editing && currentUser ? formFromProfile(currentUser) : loadDraft() ?? EMPTY))
   const [restored, setRestored] = useState(() => !editing && !!loadDraft() && !isEmpty(loadDraft()))
   const [screen, setScreen] = useState(editing ? 1 : 0)
   const [errors, setErrors] = useState({})
@@ -239,10 +240,7 @@ export default function RegisterView({ mode = 'create' }) {
                 <Field label={t('register.role')} name="role" icon={Briefcase} placeholder={t('register.rolePh')} autoComplete="organization-title" value={form.role} onChange={(e) => set('role', e.target.value)} error={errors.role} />
               </div>
               <div data-field="country">
-                <Field label={t('register.country')} name="country" icon={Building2} placeholder={t('register.countryPh')} list="branch-suggestions" autoComplete="off" value={form.country} onChange={(e) => set('country', e.target.value)} error={errors.country} />
-                <datalist id="branch-suggestions">
-                  {COUNTRIES.map((c) => <option key={c} value={country(c)} />)}
-                </datalist>
+                <CountryPicker value={form.country} onChange={(v) => set('country', v)} error={errors.country} />
               </div>
             </div>
           )}
@@ -303,10 +301,10 @@ export default function RegisterView({ mode = 'create' }) {
  * Borde discontinuo mientras falta algo; cuando está completa, borde sólido y check verde.
  */
 function GuestCard({ form, onPhoto }) {
-  const { t } = useI18n()
+  const { t, country } = useI18n()
   const name = form.name.trim()
   const role = form.role.trim()
-  const place = form.country.trim()
+  const place = country(form.country.trim())
   const complete = !!(name && role && place)
   return (
     <div className={`flex items-center gap-4 rounded-2xl border-2 bg-white p-4 transition-all duration-300 ${complete ? 'border-brand/30 shadow-md shadow-brand/10' : 'border-dashed border-slate-300'}`}>
