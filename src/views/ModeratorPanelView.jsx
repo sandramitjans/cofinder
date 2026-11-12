@@ -7,7 +7,7 @@ import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { FIND_MINUTES, PAUSE_AFTER_ROUND, PAUSE_MINUTES, TOPIC_FAMILIES, VIEWS } from '../constants'
 import { planStats, tableRange } from '../lib/matching'
-import { MAX_CUSTOM_LENGTH, makeEventTopic, topicKey, topicsWithLevel } from '../lib/topics'
+import { MAX_CUSTOM_LENGTH, hasTopic, isMandatory, makeEventTopic, myTopics, topicKey } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
 import { useConnected } from '../lib/useConnected'
 import Logo from '../components/ui/Logo'
@@ -172,9 +172,6 @@ export default function ModeratorPanelView() {
                 <ul className="mt-2 space-y-1 text-sm">
                   <Quality ok={stats.chosenPct >= 80} label={t('panel.chosen')} value={`${stats.chosenPct} %`} />
                   <Quality ok={!stats.repeatedTopics} label={t('panel.repeatedTopics')} value={stats.repeatedTopics} />
-                  {participants.some((p) => p.offers?.length) && (
-                    <Quality ok={stats.noExpert <= stats.tables * 0.1} label={t('panel.noExpert')} value={`${stats.noExpert} / ${stats.tables}`} />
-                  )}
                   <Quality ok={!stats.overLimitPairs} label={t('panel.overLimit')} value={stats.overLimitPairs} />
                   <Quality ok label={t('panel.contacts')} value={`${stats.avgContacts.toFixed(1)} / ${Math.max(0, participants.length - 1)}`} />
                 </ul>
@@ -237,8 +234,9 @@ export default function ModeratorPanelView() {
                     </div>
                   </div>
                   <div className="flex flex-1 flex-wrap gap-1">
-                    {topicsWithLevel(p).map(({ id: x, level }) => (
-                      <span key={x} className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${level === 'high' ? 'bg-brand-soft text-brand-dark' : level === 'medium' ? 'bg-accent-soft text-accent-dark' : 'bg-slate-100 text-slate-700'}`}>{topic(x)}</span>
+                    {/* Elegidos en rojo suave; los obligatorios (de todo el mundo) no se repiten en cada fila */}
+                    {myTopics(p).filter((x) => !isMandatory(x)).map((x) => (
+                      <span key={x} className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-medium text-brand-dark">{topic(x)}</span>
                     ))}
                     {(p.superpowers ?? []).map((x) => (
                       <span key={x} title={superpower(x)} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200">
@@ -285,7 +283,7 @@ function EventTopics({ topics, participants, onAdd, onRemove, t, topic }) {
   const [desc, setDesc] = useState('')
   const [family, setFamily] = useState('')
   const [exists, setExists] = useState(false)
-  const votes = (id) => participants.filter((p) => [...p.offers, ...p.needs].some((x) => topicKey(x) === topicKey(id))).length
+  const votes = (id) => participants.filter((p) => hasTopic(p, id)).length
 
   const add = (e) => {
     e.preventDefault()
@@ -430,7 +428,7 @@ function PlanGrid({ rounds, current, finished, byId, planning, onRegenerate, onS
                           {tb.members.map((id) => {
                             const p = byId.get(id)
                             if (!p) return null
-                            const chosen = [...(p.offers ?? []), ...(p.needs ?? [])].some((x) => topicKey(x) === topicKey(tb.topic))
+                            const chosen = hasTopic(p, tb.topic)
                             const isSel = selected?.round === i && selected.id === id
                             return (
                               <button

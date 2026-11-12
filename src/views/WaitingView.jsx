@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { CalendarDays, CheckCircle2, KeyRound, MapPin, PencilLine } from 'lucide-react'
+import { CalendarDays, CheckCircle2, KeyRound, Lock, MapPin, PencilLine } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { EVENT_DATE, EVENT_PLACE, TOPIC_EMOJI, VIEWS } from '../constants'
 import { useTimeLeft } from '../lib/useTimeLeft'
-import { isCustom, topicsWithLevel } from '../lib/topics'
+import { isCustom, isMandatory, myTopics } from '../lib/topics'
 import { familyIn, familyTone } from '../lib/familyColors'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
@@ -28,7 +28,7 @@ export default function WaitingView({ onLobby }) {
   }, [justUpdated])
   if (!currentUser) return null
 
-  const tables = topicsWithLevel(currentUser)
+  const tables = myTopics(currentUser)
 
   return (
     <div className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
@@ -67,13 +67,15 @@ export default function WaitingView({ onLobby }) {
           <h2 className="mt-7 text-xs font-bold uppercase tracking-wider text-slate-500">{t('waiting.yourTables')}</h2>
           {tables.length ? (
             <ul className="mt-2.5 space-y-2">
-              {tables.map(({ id, level }) => (
+              {tables.map((id) => (
                 <li key={id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5">
                   <span aria-hidden className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-lg ${familyTone(familyIn(id, eventTopics)).tile}`}>{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
                   <span className="min-w-0 flex-1 text-[15px] font-semibold leading-snug">{topic(id)}</span>
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${level === 'high' ? 'bg-brand-soft text-brand-dark' : level === 'medium' ? 'bg-accent-soft text-accent-dark' : 'bg-slate-100 text-slate-600'}`}>
-                    {t(`register.level.${level}Badge`)}
-                  </span>
+                  {isMandatory(id) && (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-mint-soft px-2.5 py-1 text-[11px] font-semibold text-mint-dark">
+                      <Lock aria-hidden className="h-3 w-3" /> {t('register.mandatoryBadge')}
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>

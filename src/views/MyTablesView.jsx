@@ -3,7 +3,7 @@ import { ArrowRight, MapPin } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { TOPIC_EMOJI } from '../constants'
-import { isCustom, topicsWithLevel } from '../lib/topics'
+import { isCustom, myTopics } from '../lib/topics'
 import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
 import LangSwitch from '../components/ui/LangSwitch'
@@ -57,7 +57,7 @@ export default function MyTablesView({ onBack }) {
                   </div>
                 </li>
               ))
-              : topicsWithLevel(currentUser).map(({ id }) => (
+              : myTopics(currentUser).map((id) => (
                 <li key={id} className="flex items-center gap-3 rounded-xl border border-brand/40 bg-brand-soft px-4 py-3">
                   <span aria-hidden className="text-2xl">{emojiOf(id)}</span>
                   <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug text-ink">{topic(id)}</p>

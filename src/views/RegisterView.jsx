@@ -1,31 +1,34 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, ArrowRight, Briefcase, Building2, CalendarDays, CheckCircle2, Clock, MapPin, RotateCcw, User } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Briefcase, Building2, CalendarDays, Check, CheckCircle2, Clock, Info, Lock, MapPin, RotateCcw, User } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { COUNTRIES, TOPICS, EVENT_DATE, EVENT_PLACE, MAX_INTERESTS, MAX_SUPERPOWERS, ROUND_MINUTES, TOTAL_ROUNDS, VIEWS } from '../constants'
+import { COUNTRIES, MANDATORY_TOPICS, TOPICS, TOPIC_EMOJI, EVENT_DATE, EVENT_PLACE, MAX_INTERESTS, MAX_SUPERPOWERS, ROUND_MINUTES, TOTAL_ROUNDS, VIEWS } from '../constants'
 import { DICT } from '../lib/i18n'
 import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
 import Field from '../components/ui/Field'
 import TopicPicker from '../components/TopicPicker'
-import LevelPicker from '../components/LevelPicker'
 import SuperpowerPicker from '../components/ui/SuperpowerPicker'
 import PhotoPicker from '../components/ui/PhotoPicker'
 import LangSwitch from '../components/ui/LangSwitch'
 import PublicFooter from '../components/layout/PublicFooter'
-import { isCustom, topicsWithLevel } from '../lib/topics'
+import { chosenTopics, isCustom, isMandatory } from '../lib/topics'
+import { familyOfTopic, familyTone } from '../lib/familyColors'
 import { CELEBRATE_KEY } from '../components/ui/Confetti'
 
 // `country` guarda «Filial / Departamento» (texto libre, con sugerencias de filiales)
-// `needs` guarda en el formulario las mesas elegidas; `levels` dice el nivel en cada una: 'high' | 'medium' | 'low'
-const EMPTY = { name: '', role: '', country: '', photo: '', offers: [], needs: [], levels: {}, customTopics: [], superpowers: [] }
+// `needs` guarda las mesas elegidas (hasta 2); los 4 temas obligatorios no se guardan: cuentan para todo el mundo
+const EMPTY = { name: '', role: '', country: '', photo: '', offers: [], needs: [], customTopics: [], superpowers: [] }
 
 // Borrador automático: se guarda en este dispositivo y se borra al validar el perfil
 const DRAFT_KEY = 'cofinder:draft'
 const loadDraft = () => {
   try {
     const d = JSON.parse(localStorage.getItem(DRAFT_KEY))
-    return d && typeof d === 'object' ? { ...EMPTY, ...d } : null
+    if (!d || typeof d !== 'object') return null
+    // Borradores de antes del cambio: sin nivel y como mucho 2 temas elegidos (sin los obligatorios)
+    const { levels: _levels, ...rest } = d
+    return { ...EMPTY, ...rest, needs: chosenTopics(rest).slice(0, MAX_INTERESTS), offers: [] }
   } catch { return null }
 }
 const isEmpty = (f) => !f.name.trim() && !f.role.trim() && !f.country.trim() && !f.photo
@@ -42,8 +45,9 @@ const normalizeBranch = (text) => {
 /**
  * Registro «Speed dating de conocimiento», con el estilo del prototipo (cfndr.lovable.app):
  * bienvenida con un único botón y formulario en 4 pasos, cada uno con su barra de progreso:
- * perfil, mesas (hasta 5, las que la moderadora añade desde el panel, en orden aleatorio para cada persona), nivel en cada mesa
- * (Alto / Medio / Bajo) y arma secreta (facultativa). Al validar se pasa a la confirmación.
+ * perfil, los 4 temas obligatorios (solo informativo: ya están apuntados), selector de mesas
+ * (hasta 2, en orden aleatorio para cada persona) y arma secreta (facultativa).
+ * Al validar se pasa a la confirmación.
  */
 export function EditProfileView() {
   return <RegisterView mode="edit" />
@@ -51,7 +55,7 @@ export function EditProfileView() {
 
 /** Perfil guardado → valores del formulario (la filial vuelve a texto legible) */
 const formFromProfile = (p, countryLabel) => {
-  const used = [...(p.offers ?? []), ...(p.needs ?? [])].filter(isCustom)
+  const used = chosenTopics(p).filter(isCustom)
   return {
     ...EMPTY,
     name: p.name ?? '',
@@ -59,14 +63,13 @@ const formFromProfile = (p, countryLabel) => {
     country: countryLabel(p.country) ?? '',
     photo: p.photo || '',
     offers: [],
-    needs: [...new Set([...(p.offers ?? []), ...(p.needs ?? [])])].slice(0, MAX_INTERESTS), // una sola lista de mesas
-    levels: Object.fromEntries(topicsWithLevel(p).map(({ id, level }) => [id, level])),
+    needs: chosenTopics(p).slice(0, MAX_INTERESTS), // solo las elegidas; las obligatorias se suman siempre
     customTopics: [...new Set([...(p.customTopics ?? []), ...used])],
     superpowers: (p.superpowers ?? []).slice(0, MAX_SUPERPOWERS),
   }
 }
 
-// Pantallas: 0 = bienvenida, 1 = perfil, 2 = mesas, 3 = nivel por mesa, 4 = arma secreta
+// Pantallas: 0 = bienvenida, 1 = perfil, 2 = temas obligatorios (informativa), 3 = mesas elegidas, 4 = arma secreta
 const LAST = 4
 
 export default function RegisterView({ mode = 'create' }) {
@@ -81,13 +84,13 @@ export default function RegisterView({ mode = 'create' }) {
   const [saveError, setSaveError] = useState(false)
 
   // Las mesas que han propuesto otras personas se cargan al llegar al paso de las mesas
-  useEffect(() => { if (screen <= 2) loadEventTopics() }, [screen, loadEventTopics])
+  useEffect(() => { if (screen <= 3) loadEventTopics() }, [screen, loadEventTopics])
   // Si la moderadora ha quitado una mesa que estaba elegida, deja de contar como elegida
   useEffect(() => {
     if (!eventTopicsLoaded) return
     const valid = new Set(eventTopics.length ? eventTopics.map((x) => x.id) : TOPICS)
     setForm((f) => {
-      const needs = f.needs.filter((id) => valid.has(id))
+      const needs = f.needs.filter((id) => valid.has(id) && !isMandatory(id))
       return needs.length === f.needs.length ? f : { ...f, needs }
     })
   }, [eventTopics, eventTopicsLoaded])
@@ -137,9 +140,7 @@ export default function RegisterView({ mode = 'create' }) {
       if (!form.role.trim()) er.role = t('register.errRole')
       if (!form.country.trim()) er.country = t('register.errCountry')
     }
-    if (screen === 2 && !form.needs.length) er.needs = t('register.errInterests', { max: MAX_INTERESTS })
-    const missing = form.needs.filter((id) => !form.levels?.[id]).length
-    if (screen === 3 && missing) er.levels = t('register.errLevels', { n: missing })
+    if (screen === 3 && !form.needs.length) er.needs = t('register.errInterests', { max: MAX_INTERESTS })
     setErrors(er)
     const first = Object.keys(er)[0]
     if (first) document.querySelector(`[data-field="${first}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -150,17 +151,13 @@ export default function RegisterView({ mode = 'create' }) {
     e.preventDefault()
     if (saving || !validate()) return
     if (screen < LAST) return goTo(screen + 1)
-    // Cada mesa elegida se guarda según su nivel: Alto en `offers`, Bajo en `needs`, Medio en las dos.
-    // Las mesas añadidas desde el panel (`custom:…`) se guardan también en `customTopics`
-    const customTopics = form.needs.filter(isCustom)
-    // Borradores antiguos: «expert» = Alto, «curious» = Bajo
-    const levelOf = (id) => ({ expert: 'high', curious: 'low' })[form.levels?.[id]] ?? form.levels?.[id] ?? 'low'
-    const { levels: _levels, ...rest } = form
+    // Las mesas elegidas van en `needs` (sin nivel). Las añadidas desde el panel (`custom:…`) también en `customTopics`
+    const needs = form.needs.filter((id) => !isMandatory(id)).slice(0, MAX_INTERESTS)
     const data = {
-      ...rest,
-      offers: form.needs.filter((id) => levelOf(id) !== 'low'),
-      needs: form.needs.filter((id) => levelOf(id) !== 'high'),
-      customTopics, name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country),
+      ...form,
+      offers: [],
+      needs,
+      customTopics: needs.filter(isCustom), name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country),
     }
     setSaveError(false)
     setSaving(true)
@@ -181,8 +178,8 @@ export default function RegisterView({ mode = 'create' }) {
 
   const steps = {
     1: { title: t('register.step1'), sub: t('register.step1Sub') },
-    2: { title: t('register.interestsTitle'), sub: t('register.interestsSub', { max: MAX_INTERESTS }) },
-    3: { title: t('register.levelTitle'), sub: t('register.levelSub') },
+    2: { title: t('register.mandatoryTitle', { n: MANDATORY_TOPICS.length }), sub: t('register.mandatorySub', { n: MANDATORY_TOPICS.length }) },
+    3: { title: t('register.interestsTitle', { max: MAX_INTERESTS }), sub: t('register.interestsSub', { max: MAX_INTERESTS, n: MANDATORY_TOPICS.length }) },
     4: { title: t('register.step3'), sub: t('register.step3Sub') },
   }[screen]
 
@@ -250,33 +247,19 @@ export default function RegisterView({ mode = 'create' }) {
             </div>
           )}
 
-          {/* 2 · Mesas */}
-          {screen === 2 && (
+          {/* 2 · Temas obligatorios: solo informativo, ya están apuntados */}
+          {screen === 2 && <MandatoryTopics />}
+
+          {/* 3 · Mesas elegidas (hasta 2) */}
+          {screen === 3 && (
             <div key="interests" data-field="needs" className="animate-view-in">
               <TopicPicker
                 max={MAX_INTERESTS}
                 value={form.needs}
-                topics={eventTopics}
+                topics={eventTopics.filter((x) => !isMandatory(x.id))}
                 onChange={patch}
                 error={errors.needs}
               />
-            </div>
-          )}
-
-          {/* 3 · Nivel en cada mesa elegida */}
-          {screen === 3 && (
-            <div key="levels" data-field="levels" className="animate-view-in">
-              {form.needs.length ? (
-                <LevelPicker topics={form.needs} levels={form.levels ?? {}} onChange={patch} error={errors.levels} />
-              ) : (
-                <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 text-center">
-                  <p className="font-semibold">{t('register.levelNone')}</p>
-                  <p className="mt-1 text-sm text-slate-500">{t('register.levelNoneSub', { max: MAX_INTERESTS })}</p>
-                  <button type="button" onClick={() => goTo(2)} className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold ring-1 ring-slate-200 hover:bg-slate-50">
-                    <ArrowLeft className="h-4 w-4" /> {t('register.levelPick')}
-                  </button>
-                </div>
-              )}
             </div>
           )}
 
@@ -297,7 +280,7 @@ export default function RegisterView({ mode = 'create' }) {
           <div className="sticky bottom-0 z-10 mt-auto pt-6">
             <div className="-mx-5 bg-gradient-to-t from-paper via-paper to-paper/0 px-5 pb-4 pt-4 sm:-mx-8 sm:px-8">
               <Button type="submit" iconRight={ArrowRight} disabled={saving} className="w-full py-4 text-base">
-                {saving ? t('register.saving') : screen < LAST ? t('register.next') : t(editing ? 'register.editSave' : 'register.submit')}
+                {saving ? t('register.saving') : screen === 2 ? t('register.continue') : screen < LAST ? t('register.next') : t(editing ? 'register.editSave' : 'register.submit')}
               </Button>
               {editing && (
                 <button type="button" onClick={() => navigate(VIEWS.HOME)} disabled={saving}
@@ -337,6 +320,39 @@ function GuestCard({ form, onPhoto }) {
         {place && <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-slate-600"><MapPin className="h-3.5 w-3.5 shrink-0" /> {place}</p>}
       </div>
       {complete && <CheckCircle2 aria-hidden className="animate-pop-in h-6 w-6 shrink-0 self-start text-mint" />}
+    </div>
+  )
+}
+
+/** Paso 2: los temas obligatorios, ya marcados y bloqueados. Solo para informar. */
+function MandatoryTopics() {
+  const { t, topic } = useI18n()
+  return (
+    <div key="mandatory" className="animate-view-in mt-6">
+      <ul className="grid gap-2.5 lg:grid-cols-2">
+        {MANDATORY_TOPICS.map((id) => {
+          const family = familyOfTopic(id)
+          const description = isCustom(id) ? '' : t(`topicDesc.${id}`)
+          return (
+            <li key={id} className="flex items-start gap-3 rounded-xl border border-brand/40 bg-white p-3.5 shadow-sm lg:p-4">
+              <span aria-hidden className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl ${familyTone(family).tile}`}>{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold leading-snug text-ink">{topic(id)}</span>
+                {description && <span className="mt-0.5 block text-sm leading-snug text-slate-500">{description}</span>}
+                <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-mint-soft px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-mint-dark">
+                  <Lock aria-hidden className="h-3 w-3" /> {t('register.mandatoryBadge')}
+                </span>
+              </span>
+              <span aria-hidden className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 border-mint bg-mint text-white">
+                <Check className="h-3.5 w-3.5" strokeWidth={3} />
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+      <p className="mt-5 flex items-start gap-2.5 rounded-xl bg-accent-soft px-4 py-3 text-[15px] text-ink">
+        <Info aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-accent-dark" /> {t('register.mandatoryNext', { max: MAX_INTERESTS })}
+      </p>
     </div>
   )
 }

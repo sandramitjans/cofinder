@@ -2,7 +2,7 @@
 
 **Speed dating de conocimiento** para eventos internos de Cofidis: directores y directoras de marketing
 se apuntan a las mesas (temas) que les interesan, y Cofinder decide con quién se sienta cada uno en
-**5 rondas de 15 minutos**. El día del evento, una pantalla grande (proyector) y el móvil de cada
+**4 rondas de 15 minutos**. El día del evento, una pantalla grande (proyector) y el móvil de cada
 participante van sincronizados en directo, y al final de cada ronda cada persona graba una nota de audio
 con lo que se lleva. Esas notas se transcriben con Whisper (código abierto) y se leen por tema de mesa.
 
@@ -20,19 +20,21 @@ con Supabase (base de datos, tiempo real y almacenamiento) o en modo local sin s
 
 ### 1. Registro (antes del evento)
 
-Cuatro pasos (unos 3 minutos): **Cuéntanos quién eres** (nombre, cargo, filial, foto) → **Apúntate a las
-mesas** (temas que le interesan) → **Tu expertise** (nivel en cada tema) → **Tu arma secreta** (opcional,
+Cuatro pasos (unos 3 minutos): **Cuéntanos quién eres** (nombre, cargo, filial, foto) → **Tus 4 mesas
+obligatorias** (solo informativa: todo el mundo está apuntado de oficio) → **Elige 2 mesas más** (de 13
+temas) → **Tu arma secreta** (opcional,
 un rasgo divertido para romper el hielo). Después, pantalla de espera con cuenta atrás hasta el evento
 (`VITE_EVENT_DATE`, por defecto el 25/11/2026) y su **código de acceso de 4 cifras** para el día del evento.
 Cada persona puede volver a editar su perfil.
 
 Las mesas (temas) las crea el Admin en el panel («Mesas del evento»): título, quién la propone,
-descripción y familia. Mientras no haya ninguna, se usan los 20 temas por defecto.
+descripción y familia. Mientras no haya ninguna, se usan los 13 temas por defecto. Los 4 obligatorios
+están en `MANDATORY_TOPICS` (`src/constants/index.js`) y no se guardan en el perfil: cuentan para todos.
 
 ### 2. Plan de las rondas
 
-En el panel, «Generar el plan» calcula de una vez las 5 rondas (`lib/matching.js`, en un worker):
-mesas de 2 a 5 personas, como mucho 5 mesas por ronda, pausa de 10 minutos tras la ronda 3. Reparte
+En el panel, «Generar el plan» calcula de una vez las 4 rondas (`lib/matching.js`, en un worker):
+mesas de 3 a 4 personas, como mucho 5 mesas por ronda, un mismo tema en hasta 2 mesas de la ronda, pausa de 10 minutos tras la ronda 3. Reparte
 minimizando: personas en un tema que no eligieron, temas repetidos, parejas que ya coincidieron y personas
 de la misma filial (reparto voraz + enfriamiento simulado). El panel muestra la calidad del plan y permite
 intercambiar o mover a alguien con dos clics, o regenerar una ronda.
@@ -174,7 +176,7 @@ src/
 ├── context/I18nContext.jsx     # Idioma, t(), nombres de temas
 ├── lib/
 │   ├── backend.js              # Supabase: RPC, tiempo real, presencia, subida de audios
-│   ├── matching.js · planner.worker.js   # Plan de las 5 rondas
+│   ├── matching.js · planner.worker.js   # Plan de las 4 rondas
 │   ├── audioNotes.js           # Grabar / guardar notas (también en el dispositivo)
 │   ├── browserTranscriber.js · whisper.worker.js   # Whisper en el navegador (#resum)
 │   ├── icebreakers.js          # «Pour briser la glace» por tema (FR / EN)
