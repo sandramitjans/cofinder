@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, ArrowRight, Briefcase, CalendarDays, Check, CheckCircle2, Clock, Info, Lock, MapPin, RotateCcw, User } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Briefcase, CalendarDays, CheckCircle2, Clock, Info, MapPin, RotateCcw, User } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { COUNTRIES, MANDATORY_TOPICS, TOPICS, TOPIC_EMOJI, EVENT_DATE, EVENT_PLACE, MAX_INTERESTS, MAX_SUPERPOWERS, ROUND_MINUTES, TOTAL_ROUNDS, VIEWS } from '../constants'
@@ -322,32 +322,32 @@ function GuestCard({ form, onPhoto }) {
   )
 }
 
-/** Paso 2: los temas obligatorios, ya marcados y bloqueados. Solo para informar. */
+/** Paso 2: los temas obligatorios, como lista de lectura (sin check ni tarjetas pulsables). Solo para informar. */
 function MandatoryTopics() {
   const { t, topic } = useI18n()
   return (
     <div key="mandatory" className="animate-view-in mt-6">
-      <ul className="grid gap-2.5 lg:grid-cols-2">
-        {MANDATORY_TOPICS.map((id) => {
-          const family = familyOfTopic(id)
-          const description = isCustom(id) ? '' : t(`topicDesc.${id}`)
-          return (
-            <li key={id} className="flex items-start gap-3 rounded-xl border border-brand/40 bg-white p-3.5 shadow-sm lg:p-4">
-              <span aria-hidden className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl ${familyTone(family).tile}`}>{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block font-semibold leading-snug text-ink">{topic(id)}</span>
-                {description && <span className="mt-0.5 block text-sm leading-snug text-slate-500">{description}</span>}
-                <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-mint-soft px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-mint-dark">
-                  <Lock aria-hidden className="h-3 w-3" /> {t('register.mandatoryBadge')}
+      {/* Un solo bloque de lectura (no tarjetas sueltas): no hay nada que pulsar */}
+      <section className="rounded-2xl bg-white/70 ring-1 ring-slate-200">
+        <p className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500 lg:px-5">
+          <CalendarDays aria-hidden className="h-4 w-4" /> {t('register.mandatoryList')}
+        </p>
+        <ol className="divide-y divide-slate-200/80">
+          {MANDATORY_TOPICS.map((id) => {
+            const family = familyOfTopic(id)
+            const description = isCustom(id) ? '' : t(`topicDesc.${id}`)
+            return (
+              <li key={id} className="flex items-start gap-3.5 px-4 py-3.5 lg:px-5">
+                <span aria-hidden className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-lg ${familyTone(family).tile}`}>{isCustom(id) ? '💬' : TOPIC_EMOJI[id]}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold leading-snug text-ink">{topic(id)}</span>
+                  {description && <span className="mt-0.5 block text-sm leading-snug text-slate-500">{description}</span>}
                 </span>
-              </span>
-              <span aria-hidden className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 border-mint bg-mint text-white">
-                <Check className="h-3.5 w-3.5" strokeWidth={3} />
-              </span>
-            </li>
-          )
-        })}
-      </ul>
+              </li>
+            )
+          })}
+        </ol>
+      </section>
       <p className="mt-5 flex items-start gap-2.5 rounded-xl bg-accent-soft px-4 py-3 text-[15px] text-ink">
         <Info aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-accent-dark" /> {t('register.mandatoryNext', { max: MAX_INTERESTS })}
       </p>
