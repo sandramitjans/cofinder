@@ -1,9 +1,9 @@
 import { MAX_INTERESTS, TOPICS } from '../constants'
-import { isMandatory } from './topics'
+import { LEVELS, isMandatory, listsFromLevels, mandatoryTopics } from './topics'
 
 // 12 directores ficticios (de las filiales del grupo, cargos en FR/EN) para ensayar la dinámica desde el panel de moderadora.
-// Como en el formulario, cada uno elige 2 temas (además de los obligatorios, que cuentan para todos):
-// los 2 primeros de su lista que no sean obligatorios y sigan en la lista de temas.
+// Como en el formulario, cada uno elige 1 tema (además de los obligatorios, que cuentan para todos):
+// el primero de su lista que no sea obligatorio y siga en la lista de temas. El nivel de cada tema, al azar.
 const DEMO = [
   ['Laura Martín', 'Marketing Director', 'es', ['analytics', 'customer_journey', 'ai_guru', 'geo', 'social_strategy', 'b2b', 'pnl', 'branding'], ['shortcuts', 'outlook']],
   ['João Ferreira', 'Head of Marketing', 'pt', ['paid_performance', 'affiliates', 'branding', 'b2b', 'geo', 'emailing_loyalty', 'guerrilla', 'cofidis_ninja'], ['punchlines']],
@@ -19,7 +19,7 @@ const DEMO = [
   ['Carmen Ruiz', 'Head of CRM', 'es', ['analytics', 'paid_performance', 'public_relations', 'cofidis_ninja', 'ai_guru', 'b2b', 'risk_management', 'compliance'], ['shortcuts', 'generations']],
 ]
 
-// `eventTopics` = mesas añadidas desde el panel: si hay, cada perfil de prueba elige 2 al azar entre ellas
+// `eventTopics` = mesas añadidas desde el panel: si hay, cada perfil de prueba elige 1 al azar entre ellas
 export const demoParticipants = (eventTopics = []) =>
   DEMO.map(([name, role, country, topics, superpowers]) => {
     const pool = eventTopics.filter((id) => !isMandatory(id))
@@ -28,7 +28,7 @@ export const demoParticipants = (eventTopics = []) =>
       : topics.filter((id) => TOPICS.includes(id)).slice(0, MAX_INTERESTS)
     return {
       id: crypto.randomUUID(), createdAt: Date.now(), demo: true, name, role, country,
-      offers: [], needs: mine,
+      ...listsFromLevels([...mandatoryTopics(), ...mine], Object.fromEntries([...mandatoryTopics(), ...mine].map((id) => [id, LEVELS[Math.floor(Math.random() * LEVELS.length)]]))),
       customTopics: pool.length ? mine : [], superpowers: superpowers.slice(0, 1),
     }
   })

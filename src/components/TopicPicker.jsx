@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Check } from 'lucide-react'
-import { MAX_TAGS, TOPICS, TOPIC_FAMILIES } from '../constants'
+import { MAX_TAGS, TOPICS, TOPIC_FAMILIES, TOPIC_PROPOSERS } from '../constants'
 import { familyOfTopic, familyTone } from '../lib/familyColors'
 import { useI18n } from '../context/I18nContext'
 import { isCustom, seededOrder, topicOrderSeed, topicEmoji } from '../lib/topics'
@@ -11,7 +11,8 @@ import { isCustom, seededOrder, topicOrderSeed, topicEmoji } from '../lib/topics
  *
  * `topics` = mesas del evento que la moderadora ha añadido desde el panel:
  *   [{ id: 'custom:…', by: 'Quien la propone', desc: '…' }]. Cada tarjeta muestra «Propuesta por…».
- * Si aún no hay ninguna, se muestran los 20 temas de la lista. Arriba, filtros por familia
+ * Si aún no hay ninguna, se muestran los temas de la lista, con quien los propone según TOPIC_PROPOSERS.
+ * Con `max` = 1 se comporta como una elección única: pulsar otra mesa cambia la elegida. Arriba, filtros por familia
  * (Adquisición, Marca, Datos/IA…): la de cada mesa la elige la moderadora al añadirla.
  *
  * Las mesas salen en un orden aleatorio distinto para cada persona (estable en su dispositivo),
@@ -34,6 +35,9 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
     if (value.includes(id)) {
       onChange({ needs: value.filter((x) => x !== id) })
       setNotice(false)
+    } else if (max === 1) {
+      onChange({ needs: [id] })
+      setNotice(false)
     } else if (value.length >= max) {
       setNotice(true)
     } else {
@@ -43,7 +47,7 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
   }
 
   const ordered = useMemo(
-    () => (eventMode ? seededOrder(topics, seed, (x) => x.id) : seededOrder(TOPICS, seed).map((id) => ({ id }))),
+    () => (eventMode ? seededOrder(topics, seed, (x) => x.id) : seededOrder(TOPICS, seed).map((id) => ({ id, by: TOPIC_PROPOSERS[id] ?? '' }))),
     [eventMode, topics, seed],
   )
   // Familia de cada mesa: la de la lista por defecto o la que eligió la moderadora al añadirla
@@ -60,7 +64,7 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
     const { id, by, desc } = x
     const family = familyOf(x)
     const selected = value.includes(id)
-    const full = !selected && value.length >= max
+    const full = !selected && max > 1 && value.length >= max
     const custom = isCustom(id)
     const description = custom ? desc : t(`topicDesc.${id}`)
     return (
@@ -124,7 +128,7 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
       )}
 
       <p className={`${filters.length ? 'mt-4' : ''} text-sm font-semibold text-slate-600`} aria-live="polite">
-        <span className="font-bold text-brand-dark">{value.length} / {max}</span> {t('register.tablesChosen')}
+        <span className="font-bold text-brand-dark">{value.length} / {max}</span> {t(max === 1 ? 'register.tableChosen' : 'register.tablesChosen')}
       </p>
 
       {notice && (

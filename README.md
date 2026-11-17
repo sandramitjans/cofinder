@@ -20,23 +20,27 @@ con Supabase (base de datos, tiempo real y almacenamiento) o en modo local sin s
 
 ### 1. Registro (antes del evento)
 
-Cuatro pasos (unos 3 minutos): **Cuéntanos quién eres** (nombre, cargo, filial, foto) → **Tus 4 mesas
-obligatorias** (solo informativa: todo el mundo está apuntado de oficio) → **Elige 2 mesas más** (de 13
-temas) → **Tu arma secreta** (opcional,
-un rasgo divertido para romper el hielo). Después, pantalla de espera con cuenta atrás hasta el evento
+Seis pasos (unos 3 minutos): **Cuéntanos quién eres** (nombre, cargo, filial, foto) → **Tus 4 mesas
+obligatorias** (solo informativa: todo el mundo está apuntado de oficio) → **Tu nivel en las 4**
+(Avancé / Intermédiaire / Découverte, obligatorio) → **Elige 1 mesa** (de 13 temas, cada tarjeta con quién
+la propone) → **Tu nivel en esa mesa** → **Tu arma secreta** (opcional, un rasgo divertido para romper el
+hielo). Después, pantalla de espera con cuenta atrás hasta el evento
 (`VITE_EVENT_DATE`, por defecto el 25/11/2026) y su **código de acceso de 4 cifras** para el día del evento,
 con botones para guardarlo en el calendario (.ics) o enviárselo por email.
 Cada persona puede volver a editar su perfil.
 
 Las mesas (temas) las crea el Admin en el panel («Mesas del evento»): título, quién la propone,
-descripción y familia. Mientras no haya ninguna, se usan los 13 temas por defecto. Los 4 obligatorios
-están en `MANDATORY_TOPICS` (`src/constants/index.js`) y no se guardan en el perfil: cuentan para todos.
+descripción y familia. Mientras no haya ninguna, se usan los 13 temas por defecto, con quién los propone en
+`TOPIC_PROPOSERS`. Los 4 obligatorios están en `MANDATORY_TOPICS` (`src/constants/index.js`) y cuentan
+para todos. El nivel de cada tema se guarda en `offers` / `needs`: Avancé solo en `offers`, Découverte solo en
+`needs` e Intermédiaire en las dos.
 
 ### 2. Plan de las rondas
 
 En el panel, «Generar el plan» calcula de una vez las 4 rondas (`lib/matching.js`, en un worker):
 mesas de 3 a 4 personas, como mucho 5 mesas por ronda, un mismo tema en hasta 2 mesas de la ronda, pausa de 10 minutos tras la ronda 3. Reparte
-minimizando: personas en un tema que no eligieron, temas repetidos, parejas que ya coincidieron y personas
+minimizando: mesas sin nadie con experiencia (Avancé o Intermédiaire; casi prohibido), mesas sin nadie
+Avancé o solo con Avancé, personas en un tema que no eligieron, temas repetidos, parejas que ya coincidieron y personas
 de la misma filial (reparto voraz + enfriamiento simulado). El panel muestra la calidad del plan y permite
 intercambiar o mover a alguien con dos clics, o regenerar una ronda.
 

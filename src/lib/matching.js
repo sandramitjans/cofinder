@@ -19,7 +19,9 @@ import { chosenTopics, hasTopic, isCustom, mandatoryTopics, topicKey } from './t
  *       - dos personas ya coincidieron tres veces (sería la cuarta)  (+400: prácticamente prohibido)
  *       - dos personas de la misma filial/departamento               (+1 por pareja, fomenta cross-border)
  *       - el tema ya salió en otro tour                              (+3 por vez)
- *       - si hay perfiles con «Je maîtrise»: mesa sin experto (+6) o sin nadie que lo demande (+4)
+ *       - si hay perfiles con nivel: mesa sin nadie con experiencia, Avancé o Intermédiaire (+50,
+ *         casi prohibido), sin nadie Avancé (+4), todos Avancé sin nadie que venga a aprender (+3)
+ *         o sin nadie que lo haya elegido (+4)
  *     Con ~12 personas y 8 tours es imposible no repetir parejas, así que el límite es 3 veces.
  *  3. Reparto inicial voraz + búsqueda local (intercambiar personas, mover a alguien de mesa y
  *     cambiar el tema de una mesa) con enfriamiento simulado y varios reinicios. Mover personas
@@ -32,6 +34,9 @@ const COST_TOPIC_AGAIN = 60
 const COST_MET = [0, 4, 15]
 const COST_OVER_LIMIT = 400
 const COST_TOPIC_REUSED = 3
+const COST_NO_EXPERIENCE = 50
+const COST_NO_ADVANCED = 4
+const COST_ALL_ADVANCED = 3
 
 const sameBranch = (a, b) => !!a && String(a).trim().toLowerCase() === String(b ?? '').trim().toLowerCase()
 const pairKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`)
@@ -73,8 +78,10 @@ const prepare = (people) =>
   new Map(people.map((p) => [p.id, {
     id: p.id,
     country: p.country,
-    // Sin niveles: todos los temas de la persona (obligatorios + elegidos) cuentan como «needs»
-    offers: new Set(),
+    // Todos los temas de la persona (obligatorios + elegido) cuentan como «needs» (los ha elegido);
+    // `offers` = con experiencia (Avancé o Intermédiaire) y `advanced` = solo Avancé (ver lib/topics.js)
+    offers: new Set((p.offers ?? []).map(topicKey)),
+    advanced: new Set((p.offers ?? []).filter((x) => !(p.needs ?? []).some((y) => topicKey(y) === topicKey(x))).map(topicKey)),
     needs: new Set([...mandatoryTopics(), ...chosenTopics(p)].map(topicKey)),
   }]))
 
@@ -131,12 +138,14 @@ const pickTopics = (scored, k) =>
 function tableCost(key, members, byId, history, expertMode) {
   let cost = 0
   let offerers = 0
+  let advanced = 0
   let needers = 0
   members.forEach((id, i) => {
     const p = byId.get(id)
     const offers = p.offers.has(key)
     const needs = p.needs.has(key)
     if (offers) offerers++
+    if (p.advanced.has(key)) advanced++
     if (needs) needers++
     if (!offers && !needs) cost += COST_NOT_CHOSEN
     if (history.topicsByPerson.get(id)?.has(key)) cost += COST_TOPIC_AGAIN
@@ -148,7 +157,9 @@ function tableCost(key, members, byId, history, expertMode) {
   })
   if (members.length) {
     cost += (history.usedTopics.get(key) ?? 0) * COST_TOPIC_REUSED
-    if (expertMode && offerers === 0) cost += 6
+    if (expertMode && offerers === 0) cost += COST_NO_EXPERIENCE
+    else if (expertMode && advanced === 0) cost += COST_NO_ADVANCED
+    if (expertMode && members.length > 1 && advanced === members.length) cost += COST_ALL_ADVANCED
     if (expertMode && needers === 0) cost += 4
   }
   return cost

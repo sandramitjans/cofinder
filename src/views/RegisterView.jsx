@@ -9,17 +9,19 @@ import Button from '../components/ui/Button'
 import Field from '../components/ui/Field'
 import CountryPicker from '../components/ui/CountryPicker'
 import TopicPicker from '../components/TopicPicker'
+import LevelPicker from '../components/LevelPicker'
 import SuperpowerPicker from '../components/ui/SuperpowerPicker'
 import PhotoPicker from '../components/ui/PhotoPicker'
 import LangSwitch from '../components/ui/LangSwitch'
 import PublicFooter from '../components/layout/PublicFooter'
-import { chosenTopics, isCustom, isMandatory, mandatoryTopics, optionalTopics, topicEmoji } from '../lib/topics'
+import { chosenTopics, isCustom, isMandatory, levelOfTopic, listsFromLevels, mandatoryTopics, myTopics, optionalTopics, topicEmoji } from '../lib/topics'
 import { familyOfTopic, familyTone } from '../lib/familyColors'
 import { CELEBRATE_KEY } from '../components/ui/Confetti'
 
 // `country` guarda el código de la filial ('fr', 'es'…) o, con «Autre», un texto libre (sede, departamento…)
-// `needs` guarda las mesas elegidas (hasta 2); los 4 temas obligatorios no se guardan: cuentan para todo el mundo
-const EMPTY = { name: '', role: '', country: '', photo: '', offers: [], needs: [], customTopics: [], superpowers: [] }
+// En el formulario, `needs` guarda la mesa elegida (1) y `levels` el nivel en cada tema (obligatorios + elegida):
+// { [tema]: 'high' | 'medium' | 'low' }. Al guardar se convierten en `offers` / `needs` (ver lib/topics.js).
+const EMPTY = { name: '', role: '', country: '', photo: '', offers: [], needs: [], levels: {}, customTopics: [], superpowers: [] }
 
 // Borrador automático: se guarda en este dispositivo y se borra al validar el perfil
 const DRAFT_KEY = 'cofinder:draft'
@@ -27,13 +29,13 @@ const loadDraft = () => {
   try {
     const d = JSON.parse(localStorage.getItem(DRAFT_KEY))
     if (!d || typeof d !== 'object') return null
-    // Borradores de antes del cambio: sin nivel y como mucho 2 temas elegidos (sin los obligatorios)
-    const { levels: _levels, ...rest } = d
-    return { ...EMPTY, ...rest, country: normalizeBranch(String(rest.country ?? '')), needs: chosenTopics(rest).slice(0, MAX_INTERESTS), offers: [] }
+    // Borradores de antes del cambio: como mucho 1 tema elegido (sin los obligatorios)
+    const levels = d.levels && typeof d.levels === 'object' ? d.levels : {}
+    return { ...EMPTY, ...d, levels, country: normalizeBranch(String(d.country ?? '')), needs: chosenTopics(d).slice(0, MAX_INTERESTS), offers: [] }
   } catch { return null }
 }
 const isEmpty = (f) => !f.name.trim() && !f.role.trim() && !f.country.trim() && !f.photo
-  && !f.offers.length && !f.needs.length && !f.customTopics.length && !f.superpowers.length
+  && !f.offers.length && !f.needs.length && !Object.keys(f.levels ?? {}).length && !f.customTopics.length && !f.superpowers.length
 
 /** Si el texto coincide con una filial conocida (en cualquier idioma), guarda su identificador */
 const normalizeBranch = (text) => {
@@ -45,10 +47,14 @@ const normalizeBranch = (text) => {
 
 /**
  * Registro «Speed dating de conocimiento», con el estilo del prototipo (cfndr.lovable.app):
- * bienvenida con un único botón y formulario en 4 pasos, cada uno con su barra de progreso:
- * perfil, los 4 temas obligatorios (solo informativo: ya están apuntados), selector de mesas
- * (hasta 2, en orden aleatorio para cada persona) y arma secreta (facultativa).
- * Al validar se pasa a la confirmación.
+ * bienvenida con un único botón y formulario en 6 pasos, cada uno con su barra de progreso:
+ *  1. perfil
+ *  2. los 4 temas obligatorios (solo informativo: ya están apuntados)
+ *  3. nivel en cada uno de los 4 (obligatorio)
+ *  4. 1 tema entre los 13, en orden aleatorio para cada persona y con quién lo propone
+ *  5. nivel en el tema elegido (obligatorio)
+ *  6. arma secreta (facultativa)
+ * Al validar se pasa a la pantalla con el código de acceso (la 7.ª).
  */
 export function EditProfileView() {
   return <RegisterView mode="edit" />
@@ -64,14 +70,16 @@ const formFromProfile = (p) => {
     country: normalizeBranch(String(p.country ?? '')),
     photo: p.photo || '',
     offers: [],
-    needs: chosenTopics(p).slice(0, MAX_INTERESTS), // solo las elegidas; las obligatorias se suman siempre
+    needs: chosenTopics(p).slice(0, MAX_INTERESTS), // solo la elegida; las obligatorias se suman siempre
+    levels: Object.fromEntries(myTopics(p).map((id) => [id, levelOfTopic(p, id)]).filter(([, l]) => l)),
     customTopics: [...new Set([...(p.customTopics ?? []), ...used])],
     superpowers: (p.superpowers ?? []).slice(0, MAX_SUPERPOWERS),
   }
 }
 
-// Pantallas: 0 = bienvenida, 1 = perfil, 2 = temas obligatorios (informativa), 3 = mesas elegidas, 4 = arma secreta
-const LAST = 4
+// Pantallas: 0 = bienvenida, 1 = perfil, 2 = temas obligatorios (informativa), 3 = nivel en los obligatorios,
+// 4 = mesa elegida, 5 = nivel en la mesa elegida, 6 = arma secreta
+const LAST = 6
 
 export default function RegisterView({ mode = 'create' }) {
   const editing = mode === 'edit'
@@ -85,7 +93,7 @@ export default function RegisterView({ mode = 'create' }) {
   const [saveError, setSaveError] = useState(false)
 
   // Las mesas que han propuesto otras personas se cargan al llegar al paso de las mesas
-  useEffect(() => { if (screen <= 3) loadEventTopics() }, [screen, loadEventTopics])
+  useEffect(() => { if (screen <= 4) loadEventTopics() }, [screen, loadEventTopics])
   // Si la moderadora ha quitado una mesa que estaba elegida, deja de contar como elegida
   useEffect(() => {
     if (!eventTopicsLoaded) return
@@ -121,8 +129,8 @@ export default function RegisterView({ mode = 'create' }) {
   }, [form, saving, editing])
 
   const goTo = (n) => {
-    // Sin temas obligatorios (el Admin no ha marcado ninguno), la pantalla 2 se salta
-    if (n === 2 && !mandatoryTopics().length) n = screen > 2 ? 1 : 3
+    // Sin temas obligatorios (el Admin no ha marcado ninguno), las pantallas 2 y 3 se saltan
+    if ((n === 2 || n === 3) && !mandatoryTopics().length) n = screen > 3 ? 1 : 4
     setScreen(n)
     window.scrollTo({ top: 0 })
   }
@@ -143,7 +151,12 @@ export default function RegisterView({ mode = 'create' }) {
       if (!form.role.trim()) er.role = t('register.errRole')
       if (!form.country.trim()) er.country = t('register.errCountry')
     }
-    if (screen === 3 && !form.needs.length) er.needs = t('register.errInterests', { max: MAX_INTERESTS })
+    if (screen === 3) {
+      const missing = mandatoryTopics().filter((id) => !form.levels[id]).length
+      if (missing) er.levels = t('register.errLevels', { n: missing })
+    }
+    if (screen === 4 && !form.needs.length) er.needs = t('register.errInterests', { max: MAX_INTERESTS })
+    if (screen === 5 && form.needs.some((id) => !form.levels[id])) er.levels = t('register.errLevel')
     setErrors(er)
     const first = Object.keys(er)[0]
     if (first) document.querySelector(`[data-field="${first}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -154,13 +167,13 @@ export default function RegisterView({ mode = 'create' }) {
     e.preventDefault()
     if (saving || !validate()) return
     if (screen < LAST) return goTo(screen + 1)
-    // Las mesas elegidas van en `needs` (sin nivel). Las añadidas desde el panel (`custom:…`) también en `customTopics`
-    const needs = form.needs.filter((id) => !isMandatory(id)).slice(0, MAX_INTERESTS)
+    // Nivel de cada tema (obligatorios + elegido) → `offers` / `needs`. Las mesas del panel (`custom:…`) también en `customTopics`
+    const chosen = form.needs.filter((id) => !isMandatory(id)).slice(0, MAX_INTERESTS)
+    const { levels, ...rest } = form
     const data = {
-      ...form,
-      offers: [],
-      needs,
-      customTopics: needs.filter(isCustom), name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country),
+      ...rest,
+      ...listsFromLevels([...mandatoryTopics(), ...chosen], levels),
+      customTopics: chosen.filter(isCustom), name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country),
     }
     setSaveError(false)
     setSaving(true)
@@ -182,8 +195,10 @@ export default function RegisterView({ mode = 'create' }) {
   const steps = {
     1: { title: t('register.step1'), sub: t('register.step1Sub') },
     2: { title: t('register.mandatoryTitle', { n: mandatoryTopics().length }), sub: t('register.mandatorySub', { n: mandatoryTopics().length }) },
-    3: { title: t('register.interestsTitle', { max: MAX_INTERESTS }), sub: t('register.interestsSub', { max: MAX_INTERESTS, n: mandatoryTopics().length }) },
-    4: { title: t('register.step3'), sub: t('register.step3Sub') },
+    3: { title: t('register.levelMandatoryTitle'), sub: t('register.levelMandatorySub') },
+    4: { title: t('register.interestsTitle', { max: MAX_INTERESTS }), sub: t('register.interestsSub', { max: MAX_INTERESTS, n: mandatoryTopics().length }) },
+    5: { title: t('register.levelChosenTitle'), sub: t('register.levelChosenSub') },
+    6: { title: t('register.step3'), sub: t('register.step3Sub') },
   }[screen]
 
   return (
@@ -250,8 +265,15 @@ export default function RegisterView({ mode = 'create' }) {
           {/* 2 · Temas obligatorios: solo informativo, ya están apuntados */}
           {screen === 2 && <MandatoryTopics />}
 
-          {/* 3 · Mesas elegidas (hasta 2) */}
+          {/* 3 · Nivel en cada tema obligatorio */}
           {screen === 3 && (
+            <div key="levels-mandatory" data-field="levels" className="animate-view-in">
+              <LevelPicker topics={mandatoryTopics()} levels={form.levels} onChange={patch} error={errors.levels} />
+            </div>
+          )}
+
+          {/* 4 · Mesa elegida (1 entre las 13) */}
+          {screen === 4 && (
             <div key="interests" data-field="needs" className="animate-view-in">
               <TopicPicker
                 max={MAX_INTERESTS}
@@ -263,8 +285,15 @@ export default function RegisterView({ mode = 'create' }) {
             </div>
           )}
 
-          {/* 4 · Arma secreta (facultativa, una sola) */}
-          {screen === 4 && (
+          {/* 5 · Nivel en la mesa elegida */}
+          {screen === 5 && (
+            <div key="levels-chosen" data-field="levels" className="animate-view-in">
+              <LevelPicker topics={form.needs} levels={form.levels} onChange={patch} error={errors.levels} />
+            </div>
+          )}
+
+          {/* 6 · Arma secreta (facultativa, una sola) */}
+          {screen === 6 && (
             <div key="power" data-field="superpowers" className="animate-view-in mt-6">
               <SuperpowerPicker value={form.superpowers} onChange={(v) => set('superpowers', v)} />
             </div>

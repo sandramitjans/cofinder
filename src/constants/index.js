@@ -52,8 +52,8 @@ export const PAUSE_MINUTES = 10
 // Al empezar cada ronda: minutos para encontrar la mesa antes de que arranque la conversación
 export const FIND_MINUTES = 2
 export const MAX_TAGS = 5
-// Paso 3 del formulario: hasta 2 temas elegidos (se guardan en `needs`), además de los obligatorios
-export const MAX_INTERESTS = 2
+// Paso 4 del formulario: 1 tema elegido entre los 13, además de los obligatorios
+export const MAX_INTERESTS = 1
 
 // Identificadores estables: los textos visibles están en lib/i18n.js (FR / EN).
 // 4 temas obligatorios: todo el mundo está apuntado de oficio (no se guardan en el perfil,
@@ -66,6 +66,14 @@ export const TOPICS = [
   'geo', 'b2b', 'analytics', 'customer_success', 'branding',
   'public_relations', 'product_management', 'operational_efficiency', 'risk_management',
 ]
+
+// Quién propone cada uno de los 13 temas (nombre del director o directora). Se muestra en la tarjeta
+// del tema con «Proposée par…». Vacío = no se muestra. Los temas añadidos desde el panel llevan el suyo.
+export const TOPIC_PROPOSERS = {
+  paid_performance: '', social_strategy: '', affiliates: '', emailing_loyalty: '',
+  geo: '', b2b: '', analytics: '', customer_success: '', branding: '',
+  public_relations: '', product_management: '', operational_efficiency: '', risk_management: '',
+}
 
 // Los temas agrupados en familias, para los filtros y colores del formulario.
 // Incluye también temas que ya no se ofrecen (guerrilla, mass_media, compliance) por si salen en datos antiguos.
