@@ -78,14 +78,14 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
     const full = !selected && max > 1 && value.length >= max
     const description = isCustom(id) ? desc : t(`topicDesc.${id}`)
     return (
-      <li key={id}>
+      <li key={id} className="h-full">
         <button
           type="button"
           data-tag={id}
           onClick={() => toggle(id)}
           aria-pressed={selected}
           aria-disabled={full || undefined}
-          className={`relative block w-full overflow-hidden rounded-2xl border-2 p-4 pl-6 text-left transition-all duration-150 active:scale-[0.99] lg:p-5 lg:pl-8 ${
+          className={`relative block h-full w-full overflow-hidden rounded-2xl border-2 p-4 pl-6 text-left transition-all duration-150 active:scale-[0.99] lg:p-5 lg:pl-8 ${
             selected ? 'border-brand bg-brand-soft shadow-lg shadow-brand/15'
               : full ? 'border-slate-200 bg-white opacity-60'
               : 'border-transparent bg-white shadow-sm hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md'
@@ -111,7 +111,7 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
           </span>
           {/* Título y descripción, cada uno en 2 líneas como mucho. El bloque reserva siempre el sitio de las 4
               líneas (el hueco queda abajo): misma altura en todas las tarjetas */}
-          <span className="mt-2.5 block min-h-[96px] lg:min-h-[62px]">
+          <span className="mt-2.5 block min-h-[96px] lg:min-h-[84px]">
             <span className="line-clamp-2 block text-lg font-semibold leading-snug text-ink lg:text-xl">{topic(id)}</span>
             <span title={description} className="mt-1 line-clamp-2 block text-[15px] leading-snug text-slate-600 lg:text-base">{description}</span>
           </span>
@@ -156,8 +156,8 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
       )}
       {error && <p role="alert" className="mt-3 text-sm font-semibold text-brand-dark">{error}</p>}
 
-      {/* Una sola columna también en PC: se lee de arriba abajo, sin zigzag */}
-      <ul className="mt-4 grid gap-3">{visible.map(card)}</ul>
+      {/* En PC, 2 tarjetas por fila (todas de la misma altura, así quedan alineadas) */}
+      <ul className="mt-4 grid gap-3 lg:grid-cols-2 lg:gap-4">{visible.map(card)}</ul>
     </div>
   )
 }
