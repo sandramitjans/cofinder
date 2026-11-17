@@ -12,12 +12,13 @@ import LangSwitch from '../components/ui/LangSwitch'
 import PublicFooter from '../components/layout/PublicFooter'
 import { SuperpowerChips } from '../components/ui/SuperpowerPicker'
 import Confetti from '../components/ui/Confetti'
+import { LEVEL_EMOJI } from '../components/LevelPicker'
 
 /**
  * Pantalla final del registro (y la que ve al volver antes del día del evento):
- * «Profil créé !» con la fecha, el código de acceso para el día J (con calendario y email),
- * fecha y lugar con la cuenta atrás, y la ficha con arma secreta, los 2 temas elegidos y los
- * 4 obligatorios. Desde aquí se edita el perfil.
+ * «Profil créé !» con la fecha y confeti, el código de acceso para el día J (con calendario y email),
+ * la credencial de invitado (persona, arma secreta, tema elegido y los 4 obligatorios, con el nivel)
+ * y la fecha con la cuenta atrás. Desde la credencial se edita el perfil.
  */
 export default function WaitingView({ onLobby }) {
   const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt, eventTopics } = useApp()
@@ -74,12 +75,16 @@ export default function WaitingView({ onLobby }) {
           {/* 2. Código de acceso: lo único que hay que guardar */}
           {currentUser.accessCode && <AccessCode name={currentUser.name} code={currentUser.accessCode} />}
 
-          {/* 3. Fecha, lugar y cuenta atrás */}
-          <DateBlock />
-
-          {/* 4. Ficha: persona, arma secreta y temas */}
-          <h2 className="mt-8 text-xs font-bold uppercase tracking-wider text-slate-500">{t('waiting.yourFile')}</h2>
-          <section aria-label={t('waiting.yourFile')} className="mt-2.5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          {/* 3. Credencial de invitado: persona, arma secreta y temas */}
+          <div className="relative mt-8">
+            {/* Cordón y ranura: se lee como la acreditación del evento */}
+            <span aria-hidden className="absolute -top-5 left-1/2 h-8 w-3 -translate-x-1/2 rounded-full bg-brand/70" />
+          <section aria-label={t('waiting.yourFile')} className="animate-rise-in relative overflow-hidden rounded-3xl bg-white shadow-xl shadow-ink/10 ring-1 ring-slate-200 [animation-delay:200ms]">
+            <div className="flex items-center justify-between gap-3 bg-brand px-5 pb-2.5 pt-4 text-white">
+              <span className="text-sm font-bold uppercase tracking-[0.2em]">{t('waiting.badgeKicker')}</span>
+              <span aria-hidden className="h-2.5 w-14 rounded-full bg-white/40" />
+              <span className="text-sm font-semibold">{formatDate(EVENT_DATE, { day: 'numeric', month: 'short' })}</span>
+            </div>
             <div className="flex items-center gap-4 bg-ink p-5 text-white">
               <Avatar name={currentUser.name} photo={currentUser.photo} size="lg" tone="bg-brand text-white" className="!ring-white/30" />
               <div className="min-w-0">
@@ -139,6 +144,12 @@ export default function WaitingView({ onLobby }) {
               </button>
             )}
           </section>
+          </div>
+
+
+          {/* 4. Fecha, lugar y cuenta atrás */}
+          <DateBlock />
+
         </main>
 
         <PublicFooter className="!py-3">
@@ -293,5 +304,5 @@ function LevelTag({ person, id }) {
   const { t } = useI18n()
   const level = levelOfTopic(person, id)
   if (!level) return null
-  return <span className="font-normal opacity-75">· {t(`register.level.${level}`)}</span>
+  return <span className="font-normal opacity-75">· {LEVEL_EMOJI[level]} {t(`register.level.${level}`)}</span>
 }

@@ -217,13 +217,16 @@ export default function RegisterView({ mode = 'create' }) {
               <ArrowLeft className="h-5 w-5" />
             </button>
           ) : <span />}
-          <div className="flex items-center gap-3">
-            <div className="flex gap-1" aria-hidden>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="hidden gap-1 sm:flex" aria-hidden>
               {Array.from({ length: LAST }, (_, i) => (
                 <span key={i} className={`h-1.5 w-6 rounded-full transition-colors ${i < screen ? 'bg-brand' : 'bg-slate-200'}`} />
               ))}
             </div>
-            <span className="text-xs font-semibold tabular-nums text-slate-500">{t('register.stepOf', { n: screen, total: LAST })}</span>
+            {/* «Étape 3/6 · Votre niveau»: se sabe dónde se está y qué viene */}
+            <span key={screen} className="animate-pop-in min-w-0 truncate text-sm font-semibold text-slate-600 lg:text-base">
+              <span className="tabular-nums text-brand-dark"><span className="hidden sm:inline">{t('register.stepWord')} </span>{t('register.stepOf', { n: screen, total: LAST })}</span> · {t(`register.stepNames.${screen}`)}
+            </span>
             <LangSwitch />
           </div>
         </div>
@@ -295,7 +298,7 @@ export default function RegisterView({ mode = 'create' }) {
           {/* 6 · Arma secreta (facultativa, una sola) */}
           {screen === 6 && (
             <div key="power" data-field="superpowers" className="animate-view-in mt-6">
-              <SuperpowerPicker value={form.superpowers} onChange={(v) => set('superpowers', v)} />
+              <SuperpowerPicker value={form.superpowers} onChange={(v) => set('superpowers', v)} person={form} />
             </div>
           )}
 
@@ -308,7 +311,7 @@ export default function RegisterView({ mode = 'create' }) {
           {/* Botón siempre a la vista, también con la lista larga de mesas */}
           <div className="sticky bottom-0 z-10 mt-auto pt-6">
             <div className="-mx-5 bg-gradient-to-t from-paper via-paper to-paper/0 px-5 pb-4 pt-4 sm:-mx-8 sm:px-8">
-              <Button type="submit" iconRight={ArrowRight} disabled={saving} className="w-full py-4 text-base">
+              <Button type="submit" iconRight={ArrowRight} disabled={saving} className="w-full py-4 text-base lg:py-5 lg:text-xl">
                 {saving ? t('register.saving') : screen === 2 ? t('register.continue') : screen === 4 && form.needs.length ? t('register.continueWith', { topic: topic(form.needs[0]) }) : screen < LAST ? t('register.next') : t(editing ? 'register.editSave' : 'register.submit')}
               </Button>
               {editing && (
@@ -353,35 +356,35 @@ function GuestCard({ form, onPhoto }) {
   )
 }
 
-/** Paso 2: los temas obligatorios, como lista de lectura (sin check ni tarjetas pulsables). Solo para informar. */
+/** Paso 2: los temas obligatorios como un programa: tarjetas con el sello «Déjà réservé ✓». Solo para informar. */
 function MandatoryTopics() {
   const { t, topic } = useI18n()
   const { eventTopics } = useApp()
   return (
     <div key="mandatory" className="animate-view-in mt-6">
-      {/* Un solo bloque de lectura (no tarjetas sueltas): no hay nada que pulsar */}
-      <section className="rounded-2xl bg-white/70 ring-1 ring-slate-200">
-        <p className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500 lg:px-5">
-          <CalendarDays aria-hidden className="h-4 w-4" /> {t('register.mandatoryList')}
-        </p>
-        <ol className="divide-y divide-slate-200/80">
-          {mandatoryTopics().map((id) => {
-            const fromPanel = eventTopics.find((x) => x.id === id)
-            const family = familyOfTopic(id, fromPanel?.family)
-            const description = isCustom(id) ? fromPanel?.desc ?? '' : t(`topicDesc.${id}`)
-            return (
-              <li key={id} className="flex items-start gap-3.5 px-4 py-3.5 lg:px-5">
-                <span aria-hidden className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-lg ${familyTone(family).tile}`}>{topicEmoji(id)}</span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-semibold leading-snug text-ink">{topic(id)}</span>
-                  {description && <span className="mt-0.5 block text-sm leading-snug text-slate-500">{description}</span>}
-                </span>
-              </li>
-            )
-          })}
-        </ol>
-      </section>
-      <p className="mt-5 flex items-start gap-2.5 rounded-xl bg-accent-soft px-4 py-3 text-[15px] text-ink">
+      <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500">
+        <CalendarDays aria-hidden className="h-4 w-4" /> {t('register.mandatoryList')}
+      </p>
+      <ol className="mt-3 grid gap-3 sm:grid-cols-2 lg:gap-4">
+        {mandatoryTopics().map((id, i) => {
+          const fromPanel = eventTopics.find((x) => x.id === id)
+          const family = familyOfTopic(id, fromPanel?.family)
+          const description = isCustom(id) ? fromPanel?.desc ?? '' : t(`topicDesc.${id}`)
+          return (
+            <li key={id} style={{ animationDelay: `${i * 90}ms` }}
+              className="animate-rise-in relative flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-4 lg:p-5">
+              <span aria-hidden className={`grid h-12 w-12 place-items-center rounded-2xl text-2xl ${familyTone(family).tile}`}>{topicEmoji(id)}</span>
+              <span className="mt-3 block text-lg font-semibold leading-snug text-ink lg:text-xl">{topic(id)}</span>
+              {description && <span className="mt-1 block text-[15px] leading-snug text-slate-600 lg:text-base">{description}</span>}
+              {/* Sello: ya está reservado para todo el mundo */}
+              <span className="absolute right-3 top-3 -rotate-3 rounded-lg border-2 border-mint px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-mint-dark lg:right-4 lg:top-4 lg:text-sm">
+                {t('register.mandatoryBadge')} ✓
+              </span>
+            </li>
+          )
+        })}
+      </ol>
+      <p className="mt-5 flex items-start gap-2.5 rounded-xl bg-accent-soft px-4 py-3 text-[15px] text-ink lg:text-base">
         <Info aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-accent-dark" /> {t('register.mandatoryNext', { max: MAX_INTERESTS })}
       </p>
     </div>
@@ -406,13 +409,38 @@ function Landing({ resume, onStart }) {
         <h1 className="font-display text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">{t('register.titleMain')}</h1>
         <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-600">{t('register.subtitle', { rounds: TOTAL_ROUNDS, min: ROUND_MINUTES })}</p>
 
-        <ul className="mt-8 space-y-2.5 rounded-xl border border-slate-200 bg-white p-4 text-[15px] text-slate-700">
-          <li className="flex items-center gap-2.5"><CalendarDays className="h-4 w-4 text-brand" /> {formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</li>
-          <li className="flex items-center gap-2.5"><MapPin className="h-4 w-4 text-brand" /> {EVENT_PLACE || t('register.placeTbc')}</li>
-          <li className="flex items-center gap-2.5"><Clock className="h-4 w-4 text-brand" /> {t('register.roundsInfo', { n: TOTAL_ROUNDS, min: ROUND_MINUTES })}</li>
-        </ul>
+        {/* Invitación: una entrada de evento con la fecha y el lugar */}
+        <div className="animate-rise-in mt-8 flex overflow-hidden rounded-2xl bg-white shadow-lg shadow-brand/10 ring-1 ring-brand/15">
+          <div className="grid w-28 shrink-0 place-items-center bg-brand px-3 py-5 text-center text-white sm:w-36">
+            <span>
+              <span className="block text-xs font-bold uppercase tracking-widest text-white/80">{formatDate(EVENT_DATE, { weekday: 'short' })}</span>
+              <span className="block font-display text-5xl font-medium leading-none sm:text-6xl">{formatDate(EVENT_DATE, { day: 'numeric' })}</span>
+              <span className="block text-sm font-bold uppercase tracking-widest">{formatDate(EVENT_DATE, { month: 'short' })}</span>
+            </span>
+          </div>
+          {/* Borde troquelado, como el de una entrada */}
+          <div aria-hidden className="relative w-0 border-l-2 border-dashed border-brand/30">
+            <span className="absolute -left-2.5 -top-2.5 h-5 w-5 rounded-full bg-paper" />
+            <span className="absolute -bottom-2.5 -left-2.5 h-5 w-5 rounded-full bg-paper" />
+          </div>
+          <div className="min-w-0 flex-1 p-5 sm:p-6">
+            <p className="text-xs font-bold uppercase tracking-widest text-brand-dark">{t('register.ticketKicker')}</p>
+            <p className="mt-1 font-display text-xl font-medium leading-tight text-ink sm:text-2xl">{formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+            <p className="mt-2 flex items-center gap-2 text-[15px] text-slate-600 sm:text-base"><MapPin className="h-4 w-4 shrink-0 text-brand" /> {EVENT_PLACE || t('register.placeTbc')}</p>
+          </div>
+        </div>
 
-        <Button type="button" onClick={onStart} iconRight={ArrowRight} className="mt-10 w-full py-4 text-base">
+        {/* Los 3 pasos, dibujados */}
+        <ol className="mt-6 grid gap-3 sm:grid-cols-3">
+          {[['👋', 'landingStep1'], ['🎯', 'landingStep2'], ['🥂', 'landingStep3']].map(([emoji, key], i) => (
+            <li key={key} style={{ animationDelay: `${150 + i * 120}ms` }} className="animate-rise-in flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 ring-1 ring-slate-200 sm:flex-col sm:items-start sm:gap-2 sm:py-4">
+              <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-soft text-xl">{emoji}</span>
+              <span className="text-[15px] font-semibold leading-snug text-ink sm:text-base"><span className="text-brand-dark">{i + 1}.</span> {t(`register.${key}`)}</span>
+            </li>
+          ))}
+        </ol>
+
+        <Button type="button" onClick={onStart} iconRight={ArrowRight} className="mt-8 w-full py-4 text-base lg:py-5 lg:text-xl">
           {t(resume ? 'register.landingResume' : 'register.landingCta')}
         </Button>
         <p className="mt-3 text-center text-sm text-slate-500">{t(resume ? 'register.landingNote' : 'register.landingHow')}</p>
