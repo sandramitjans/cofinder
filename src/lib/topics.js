@@ -86,9 +86,9 @@ export const eventFamilyOf = (id) => EVENT.family[topicKey(id)] ?? ''
 /** Icono de un tema: el suyo si es de la lista; si es del panel, el de su familia */
 export const topicEmoji = (id) => TOPIC_EMOJI[id] ?? FAMILY_EMOJI[eventFamilyOf(id)] ?? '💬'
 
-/* ---------- Temas de una persona: los obligatorios + los que ha elegido ----------
-   Los obligatorios no se guardan en el perfil: cuentan para todo el mundo.
-   Los elegidos están en `needs` (perfiles antiguos: también en `offers`). Ya no hay nivel. */
+/* ---------- Temas de una persona: los obligatorios + el que ha elegido ----------
+   Los obligatorios cuentan para todo el mundo; en el perfil solo se guarda el nivel de cada uno.
+   El elegido y los obligatorios están en `offers` y/o `needs` según el nivel (ver más abajo). */
 export const isMandatory = (id) => EVENT.mandatory.some((m) => topicKey(m) === topicKey(id))
 /**
  * Temas elegidos por la persona: como mucho MAX_INTERESTS, sin los obligatorios, sin repetir y sin
@@ -107,6 +107,23 @@ export const chosenTopics = (person) => {
     return true
   }).slice(0, MAX_INTERESTS)
 }
+/* ---------- Nivel en cada tema: Avancé / Intermédiaire / Découverte ----------
+   Se guarda con las dos listas de siempre, para que el reparto no cambie de lógica:
+   Avancé → solo en `offers` (puede compartir) · Découverte → solo en `needs` (viene a aprender) ·
+   Intermédiaire → en las dos (comparte y aprende). Avancé e Intermédiaire cuentan como «con experiencia». */
+export const LEVELS = ['high', 'medium', 'low']
+export const levelOfTopic = (person, id) => {
+  const key = topicKey(id)
+  const o = (person?.offers ?? []).some((x) => topicKey(x) === key)
+  const n = (person?.needs ?? []).some((x) => topicKey(x) === key)
+  return o && n ? 'medium' : o ? 'high' : n ? 'low' : null
+}
+/** Listas `offers` / `needs` a partir de { [tema]: 'high' | 'medium' | 'low' } */
+export const listsFromLevels = (topics, levels = {}) => ({
+  offers: topics.filter((id) => levels[id] && levels[id] !== 'low'),
+  needs: topics.filter((id) => levels[id] !== 'high'),
+})
+
 /** Todos los temas de la persona: primero los obligatorios, después los elegidos */
 export const myTopics = (person) => [...EVENT.mandatory, ...chosenTopics(person)]
 /** ¿La persona tiene este tema (obligatorio o elegido)? */

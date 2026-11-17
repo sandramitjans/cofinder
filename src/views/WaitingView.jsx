@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { EVENT_DATE, EVENT_PLACE, VIEWS } from '../constants'
 import { useTimeLeft } from '../lib/useTimeLeft'
-import { isMandatory, myTopics, topicEmoji } from '../lib/topics'
+import { isMandatory, levelOfTopic, myTopics, topicEmoji } from '../lib/topics'
 import { familyIn, familyTone } from '../lib/familyColors'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
@@ -99,11 +99,12 @@ export default function WaitingView({ onLobby }) {
 
               {chosen.length ? (
                 <>
-                  <p className={`${currentUser.superpowers?.length ? 'mt-5' : ''} text-xs font-bold uppercase tracking-wider text-slate-500`}>{t('waiting.choices', { n: chosen.length })}</p>
+                  <p className={`${currentUser.superpowers?.length ? 'mt-5' : ''} text-xs font-bold uppercase tracking-wider text-slate-500`}>{t(chosen.length === 1 ? 'waiting.choice' : 'waiting.choices', { n: chosen.length })}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {chosen.map((id) => (
                       <span key={id} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[15px] font-semibold ${familyTone(familyIn(id, eventTopics)).chip}`}>
                         <span aria-hidden>{topicEmoji(id)}</span> {topic(id)}
+                        <LevelTag person={currentUser} id={id} />
                       </span>
                     ))}
                   </div>
@@ -119,6 +120,7 @@ export default function WaitingView({ onLobby }) {
                     {mandatory.map((id) => (
                       <span key={id} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-ink">
                         <span aria-hidden>{topicEmoji(id)}</span> {topic(id)}
+                        <LevelTag person={currentUser} id={id} />
                       </span>
                     ))}
                   </div>
@@ -284,4 +286,12 @@ function icsFor({ title, place, body, url }) {
     `URL:${url}`,
     'END:VEVENT', 'END:VCALENDAR', '',
   ].join('\r\n')
+}
+
+/** Nivel que la persona indicó en el tema: «· Avancé», «· Intermédiaire» o «· Découverte» */
+function LevelTag({ person, id }) {
+  const { t } = useI18n()
+  const level = levelOfTopic(person, id)
+  if (!level) return null
+  return <span className="font-normal opacity-75">· {t(`register.level.${level}`)}</span>
 }
