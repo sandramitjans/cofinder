@@ -80,7 +80,7 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
             {by ? (
               <>
                 <span aria-hidden className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold ${selected ? 'bg-brand text-white' : 'bg-ink text-white'}`}>{initials(by)}</span>
-                <span className="min-w-0 flex-1 truncate text-[15px] text-slate-600"><strong className="font-semibold text-ink">{by}</strong> {t('register.proposes')}</span>
+                <span className="min-w-0 flex-1 truncate text-[15px] text-slate-600 lg:text-base"><strong className="font-semibold text-ink">{by}</strong> {t('register.proposes')}</span>
               </>
             ) : <span className="flex-1" />}
             {selected ? (
@@ -93,9 +93,9 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
           </span>
           {/* Título y descripción, cada uno en 2 líneas como mucho. El bloque reserva siempre el sitio de las 4
               líneas (el hueco queda abajo): misma altura en todas las tarjetas */}
-          <span className="mt-2.5 block min-h-[96px]">
-            <span className="line-clamp-2 block text-lg font-semibold leading-snug text-ink">{topic(id)}</span>
-            <span title={description} className="mt-1 line-clamp-2 block text-[15px] leading-snug text-slate-600">{description}</span>
+          <span className="mt-2.5 block min-h-[96px] lg:min-h-[62px]">
+            <span className="line-clamp-2 block text-lg font-semibold leading-snug text-ink lg:text-xl">{topic(id)}</span>
+            <span title={description} className="mt-1 line-clamp-2 block text-[15px] leading-snug text-slate-600 lg:text-base">{description}</span>
           </span>
         </button>
       </li>
