@@ -1,39 +1,37 @@
 import { Check } from 'lucide-react'
-import { LEVELS, topicEmoji } from '../lib/topics'
+import { LEVELS } from '../lib/topics'
 import { useI18n } from '../context/I18nContext'
-import { useApp } from '../context/AppContext'
-import { familyOfTopic, familyTone } from '../lib/familyColors'
 
 /**
  * Pasos 3 y 5 del formulario: para cada tema, la persona indica su nivel: Avancé, Intermédiaire o Découverte.
  * Es obligatorio en cada tema. Así el reparto puede poner en cada mesa al menos a alguien con experiencia
  * y mezclar los niveles (ver lib/topics.js → listsFromLevels y lib/matching.js).
- * Cada tema es una tarjeta: arriba el tema; debajo, las tres opciones del mismo ancho.
+ * Cada tema es una tarjeta con el tema bien visible y tres botones pequeños (en PC, a la derecha).
+ * Lo que significa cada nivel se explica una sola vez, arriba.
  * `levels` = { [tema]: 'high' | 'medium' | 'low' }
  */
 export default function LevelPicker({ topics, levels, onChange, error }) {
   const { t, topic } = useI18n()
-  const { eventTopics } = useApp()
   if (!topics.length) return null
   const missing = topics.filter((id) => !levels[id]).length
   const choose = (id, level) => onChange({ levels: { ...levels, [id]: level } })
 
   return (
     <div className="mt-6">
-      <ul className="space-y-3">
+      {/* Leyenda una sola vez arriba: así las opciones pueden ser botones pequeños */}
+      <p className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-600 lg:text-base">
+        {LEVELS.map((o) => <span key={o}><strong className="font-semibold text-ink">{t(`register.level.${o}`)}</strong> · {t(`register.level.${o}Hint`)}</span>)}
+      </p>
+      <ul className="mt-4 space-y-3">
         {topics.map((id) => {
           const level = levels[id]
-          const family = familyOfTopic(id, eventTopics.find((x) => x.id === id)?.family)
           return (
-            <li key={id} className={`rounded-xl border bg-white p-3.5 transition-colors lg:p-4 ${level ? 'border-brand/40' : 'border-slate-200'}`}>
-              <p className="flex items-center gap-3">
-                <span aria-hidden className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-lg ${familyTone(family).tile}`}>{topicEmoji(id)}</span>
-                <span className="min-w-0 flex-1 font-semibold leading-snug text-ink">{topic(id)}</span>
-              </p>
-              <div role="radiogroup" aria-label={topic(id)} className="mt-3 grid grid-cols-3 gap-1.5 sm:gap-2">
+            <li key={id} className={`rounded-2xl border-2 bg-white p-4 transition-colors lg:flex lg:items-center lg:gap-6 lg:px-6 lg:py-5 ${level ? 'border-brand/40' : 'border-slate-200'}`}>
+              {/* El tema, bien visible: es lo que se valora */}
+              <p className="min-w-0 flex-1 text-lg font-semibold leading-snug text-ink lg:text-xl">{topic(id)}</p>
+              <div role="radiogroup" aria-label={topic(id)} className="mt-3 grid grid-cols-3 gap-1.5 sm:gap-2 lg:mt-0 lg:flex lg:shrink-0">
                 {LEVELS.map((o) => (
-                  <LevelOption key={o} on={level === o} onClick={() => choose(id, o)}
-                    label={t(`register.level.${o}`)} hint={t(`register.level.${o}Hint`)} />
+                  <LevelOption key={o} on={level === o} onClick={() => choose(id, o)} label={t(`register.level.${o}`)} hint={t(`register.level.${o}Hint`)} />
                 ))}
               </div>
             </li>
@@ -54,19 +52,14 @@ function LevelOption({ on, onClick, label, hint }) {
       type="button"
       role="radio"
       aria-checked={on}
+      title={hint}
       onClick={onClick}
-      className={`flex min-w-0 flex-col items-start rounded-lg border px-2 py-2.5 text-left transition sm:px-2.5 ${
-        on ? 'border-brand bg-brand-soft' : 'border-slate-200 bg-white hover:border-slate-300'
+      className={`flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl border-2 px-0.5 text-[13.5px] font-semibold transition sm:px-3 sm:text-[15px] lg:w-[172px] lg:rounded-full lg:text-base ${
+        on ? 'border-brand bg-brand text-white' : 'border-slate-200 bg-white text-ink hover:border-slate-400'
       }`}
     >
-      {/* La casilla va en su propia línea: «Intermédiaire» o «Intermediate» no caben al lado en un móvil */}
-      <span aria-hidden className={`mb-1.5 grid h-4 w-4 place-items-center rounded-full border ${on ? 'border-mint bg-mint text-white' : 'border-slate-300'}`}>
-        {on && <Check className="h-3 w-3" strokeWidth={3} />}
-      </span>
-      <span className={`max-w-full hyphens-auto text-[13px] font-semibold leading-tight sm:text-sm ${on ? 'text-brand-dark' : 'text-ink'}`}>
-        {label}
-      </span>
-      <span className="mt-1 text-xs leading-tight text-slate-500">{hint}</span>
+      {on && <Check aria-hidden className="hidden h-4 w-4 shrink-0 sm:block" strokeWidth={3} />}
+      <span className="truncate">{label}</span>
     </button>
   )
 }
