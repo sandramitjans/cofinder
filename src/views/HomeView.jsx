@@ -14,12 +14,12 @@ import MyTablesView from './MyTablesView'
  *  - en cuanto empieza la ronda y tiene mesa → «Encuentra tu mesa» (2 min) → ronda con cuenta atrás
  */
 export default function HomeView() {
-  const { event, seatedEver, joinedLive, ready } = useApp()
+  const { event, seatedEver, joinedLive, ready, progress } = useApp()
   const [peek, setPeek] = useState(false) // ya preparado, repasando sus mesas
   if (event.round && seatedEver) return <RoundCardView />
   const eventDay = !event.finished && (joinedLive || Date.now() >= EVENT_DATE)
   if (!eventDay) return <WaitingView />
   if (!ready) return <MyTablesView />
   if (peek) return <MyTablesView onBack={() => setPeek(false)} />
-  return <LobbyView onTables={() => setPeek(true)} />
+  return <LobbyView onTables={() => setPeek(true)} count={progress && { n: progress.ready, total: progress.readyTotal }} />
 }
