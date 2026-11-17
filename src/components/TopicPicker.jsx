@@ -18,6 +18,9 @@ import { isCustom, seededOrder, topicOrderSeed, topicEmoji } from '../lib/topics
  * Las mesas salen en un orden aleatorio distinto para cada persona (estable en su dispositivo),
  * para que las primeras de la lista no se lleven todos los votos.
  */
+/** «Zsófia Nagy» → «ZN» */
+const initials = (name) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('')
+
 export default function TopicPicker({ value, topics = [], onChange, error, max = MAX_TAGS }) {
   const { t, topic } = useI18n()
   const [filter, setFilter] = useState('all')
@@ -84,17 +87,14 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
           <span aria-hidden className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl ${familyTone(family).tile}`}>
             {topicEmoji(id)}
           </span>
+          {/* Sin etiqueta de familia: el color del icono y los filtros ya la indican. Letra grande y quién lo propone bien visible */}
           <span className="min-w-0 flex-1">
-            <span className="block font-semibold leading-snug text-ink">{topic(id)}</span>
-            {description && <span className="mt-0.5 block text-sm leading-snug text-slate-500">{description}</span>}
+            <span className="block text-[17px] font-semibold leading-snug text-ink">{topic(id)}</span>
+            {description && <span className="mt-1 block text-[15px] leading-snug text-slate-600">{description}</span>}
             {by && (
-              <span className="mt-1.5 block text-sm text-slate-500">
-                {t('register.proposedBy')} <strong className="font-semibold text-ink">{by}</strong>
-              </span>
-            )}
-            {family && (
-              <span className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${familyTone(family).chip}`}>
-                {t(`register.families.${family}`)}
+              <span className="mt-2.5 flex items-center gap-2 text-[15px] text-slate-600">
+                <span aria-hidden className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-bold ${familyTone(family).tile}`}>{initials(by)}</span>
+                <span>{t('register.proposedBy')} <strong className="font-semibold text-ink">{by}</strong></span>
               </span>
             )}
           </span>
