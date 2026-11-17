@@ -16,9 +16,9 @@ import { LEVEL_EMOJI } from '../components/LevelPicker'
 
 /**
  * Pantalla final del registro (y la que ve al volver antes del día del evento):
- * «Profil créé !» con la fecha y, con confeti, la credencial de invitado (persona, arma secreta,
- * tema elegido y los 4 obligatorios, con el nivel). Después el código de acceso para el día J
- * (con calendario y email) y la fecha con la cuenta atrás. Desde la credencial se edita el perfil.
+ * «Profil créé !» con la fecha y confeti, el código de acceso para el día J (con calendario y email),
+ * la credencial de invitado (persona, arma secreta, tema elegido y los 4 obligatorios, con el nivel)
+ * y la fecha con la cuenta atrás. Desde la credencial se edita el perfil.
  */
 export default function WaitingView({ onLobby }) {
   const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt, eventTopics } = useApp()
@@ -72,7 +72,10 @@ export default function WaitingView({ onLobby }) {
             </p>
           </section>
 
-          {/* 2. Credencial de invitado: persona, arma secreta y temas */}
+          {/* 2. Código de acceso: lo único que hay que guardar */}
+          {currentUser.accessCode && <AccessCode name={currentUser.name} code={currentUser.accessCode} />}
+
+          {/* 3. Credencial de invitado: persona, arma secreta y temas */}
           <div className="relative mt-8">
             {/* Cordón y ranura: se lee como la acreditación del evento */}
             <span aria-hidden className="absolute -top-5 left-1/2 h-8 w-3 -translate-x-1/2 rounded-full bg-brand/70" />
@@ -143,8 +146,6 @@ export default function WaitingView({ onLobby }) {
           </section>
           </div>
 
-          {/* 3. Código de acceso: lo único que hay que guardar */}
-          {currentUser.accessCode && <AccessCode name={currentUser.name} code={currentUser.accessCode} />}
 
           {/* 4. Fecha, lugar y cuenta atrás */}
           <DateBlock />
