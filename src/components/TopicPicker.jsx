@@ -1,29 +1,31 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Check } from 'lucide-react'
-import { MAX_TAGS, TOPICS, TOPIC_FAMILIES, TOPIC_PROPOSERS } from '../constants'
-import { familyOfTopic, familyTone } from '../lib/familyColors'
+import { MAX_TAGS, TOPICS, TOPIC_PROPOSERS } from '../constants'
 import { useI18n } from '../context/I18nContext'
-import { isCustom, seededOrder, topicOrderSeed, topicEmoji } from '../lib/topics'
-
+import { isCustom, seededOrder, topicOrderSeed } from '../lib/topics'
 
 /**
- * «Apúntate a las mesas»: cada tema es una mesa de conversación y se eligen hasta `max`.
+ * «Choisissez votre table»: cada tema es una mesa de conversación que propone un colega.
+ * La tarjeta se lee como una invitación: arriba quién la propone (iniciales + «X vous propose»),
+ * debajo el tema en grande y la descripción. Sin iconos ni filtros: pensado para leerse de un vistazo.
  *
- * `topics` = mesas del evento que la moderadora ha añadido desde el panel:
- *   [{ id: 'custom:…', by: 'Quien la propone', desc: '…' }]. Cada tarjeta muestra «Propuesta por…».
+ * Todas las tarjetas miden lo mismo: el título ocupa siempre 2 líneas y la descripción 2 líneas
+ * (si es más larga se corta con «…»). Por eso conviene escribir títulos de ~35 caracteres y
+ * descripciones de ~70 en el panel.
+ *
+ * `topics` = mesas del evento que el Admin ha añadido desde el panel: [{ id: 'custom:…', by, desc }].
  * Si aún no hay ninguna, se muestran los temas de la lista, con quien los propone según TOPIC_PROPOSERS.
- * Con `max` = 1 se comporta como una elección única: pulsar otra mesa cambia la elegida. Arriba, filtros por familia
- * (Adquisición, Marca, Datos/IA…): la de cada mesa la elige la moderadora al añadirla.
+ * Con `max` = 1 es una elección única: pulsar otra mesa cambia la elegida.
  *
  * Las mesas salen en un orden aleatorio distinto para cada persona (estable en su dispositivo),
  * para que las primeras de la lista no se lleven todos los votos.
  */
+
 /** «Zsófia Nagy» → «ZN» */
 const initials = (name) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('')
 
 export default function TopicPicker({ value, topics = [], onChange, error, max = MAX_TAGS }) {
   const { t, topic } = useI18n()
-  const [filter, setFilter] = useState('all')
   const [notice, setNotice] = useState(false)
   const seed = useMemo(topicOrderSeed, [])
   const eventMode = topics.length > 0
@@ -53,23 +55,12 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
     () => (eventMode ? seededOrder(topics, seed, (x) => x.id) : seededOrder(TOPICS, seed).map((id) => ({ id, by: TOPIC_PROPOSERS[id] ?? '' }))),
     [eventMode, topics, seed],
   )
-  // Familia de cada mesa: la de la lista por defecto o la que eligió la moderadora al añadirla
-  const familyOf = (x) => familyOfTopic(x.id, x.family)
-  const present = new Set(ordered.map(familyOf))
-  const families = TOPIC_FAMILIES.filter((g) => present.has(g.id))
-  const filters = families.length < 2 ? [] : [
-    { id: 'all', label: t('register.filterAll') },
-    ...families.map((g) => ({ id: g.id, label: t(`register.families.${g.id}`) })),
-  ]
-  const visible = filter === 'all' || !filters.length ? ordered : ordered.filter((x) => familyOf(x) === filter)
 
   const card = (x) => {
     const { id, by, desc } = x
-    const family = familyOf(x)
     const selected = value.includes(id)
     const full = !selected && max > 1 && value.length >= max
-    const custom = isCustom(id)
-    const description = custom ? desc : t(`topicDesc.${id}`)
+    const description = isCustom(id) ? desc : t(`topicDesc.${id}`)
     return (
       <li key={id}>
         <button
@@ -78,28 +69,33 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
           onClick={() => toggle(id)}
           aria-pressed={selected}
           aria-disabled={full || undefined}
-          className={`flex w-full items-start gap-3 rounded-xl border p-3.5 text-left transition-all duration-150 active:scale-[0.99] lg:p-4 ${
-            selected ? 'border-brand bg-white shadow-md shadow-brand/10 ring-1 ring-brand'
+          className={`block w-full rounded-2xl border-2 p-4 text-left transition-all duration-150 active:scale-[0.99] lg:p-5 ${
+            selected ? 'border-brand bg-brand-soft shadow-md shadow-brand/10'
               : full ? 'border-slate-200 bg-white opacity-60'
               : 'border-slate-200 bg-white hover:border-brand/50'
           }`}
         >
-          <span aria-hidden className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl ${familyTone(family).tile}`}>
-            {topicEmoji(id)}
-          </span>
-          {/* Sin etiqueta de familia: el color del icono y los filtros ya la indican. Letra grande y quién lo propone bien visible */}
-          <span className="min-w-0 flex-1">
-            <span className="block text-[17px] font-semibold leading-snug text-ink">{topic(id)}</span>
-            {description && <span className="mt-1 block text-[15px] leading-snug text-slate-600">{description}</span>}
-            {by && (
-              <span className="mt-2.5 flex items-center gap-2 text-[15px] text-slate-600">
-                <span aria-hidden className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-bold ${familyTone(family).tile}`}>{initials(by)}</span>
-                <span>{t('register.proposedBy')} <strong className="font-semibold text-ink">{by}</strong></span>
+          {/* Quién lo propone: siempre la misma línea (vacía si no hay nombre), para que todas midan igual */}
+          <span className="flex min-h-8 items-center gap-2.5">
+            {by ? (
+              <>
+                <span aria-hidden className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold ${selected ? 'bg-brand text-white' : 'bg-ink text-white'}`}>{initials(by)}</span>
+                <span className="min-w-0 flex-1 truncate text-[15px] text-slate-600"><strong className="font-semibold text-ink">{by}</strong> {t('register.proposes')}</span>
+              </>
+            ) : <span className="flex-1" />}
+            {selected ? (
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-mint text-white">
+                <Check aria-hidden className="h-4 w-4" strokeWidth={3} /><span className="sr-only">{t('register.yourChoice')}</span>
               </span>
+            ) : (
+              <span aria-hidden className="h-6 w-6 shrink-0 rounded-full border-2 border-slate-400" />
             )}
           </span>
-          <span aria-hidden className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 ${selected ? 'border-mint bg-mint text-white' : 'border-slate-400'}`}>
-            {selected && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+          {/* Título y descripción, cada uno en 2 líneas como mucho. El bloque reserva siempre el sitio de las 4
+              líneas (el hueco queda abajo): misma altura en todas las tarjetas */}
+          <span className="mt-2.5 block min-h-[96px]">
+            <span className="line-clamp-2 block text-lg font-semibold leading-snug text-ink">{topic(id)}</span>
+            <span title={description} className="mt-1 line-clamp-2 block text-[15px] leading-snug text-slate-600">{description}</span>
           </span>
         </button>
       </li>
@@ -108,35 +104,18 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
 
   return (
     <div className="mt-5">
-      {/* Filtros por familia (solo con la lista de temas por defecto) */}
-      {filters.length > 0 && (
-        <div className="-mx-1 flex flex-wrap gap-2 px-1" role="group" aria-label={t('register.filterLabel')}>
-          {filters.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => setFilter(f.id)}
-              aria-pressed={filter === f.id}
-              className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
-                filter === f.id ? 'bg-ink text-white' : f.id === 'all' ? 'bg-white text-slate-700 ring-1 ring-slate-200 hover:ring-slate-300' : `${familyTone(f.id).chip} hover:brightness-95`
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+      {max > 1 && (
+        <p className="text-sm font-semibold text-slate-600" aria-live="polite">
+          <span className="font-bold text-brand-dark">{value.length} / {max}</span> {t('register.tablesChosen')}
+        </p>
       )}
-
-      <p className={`${filters.length ? 'mt-4' : ''} text-sm font-semibold text-slate-600`} aria-live="polite">
-        <span className="font-bold text-brand-dark">{value.length} / {max}</span> {t(max === 1 ? 'register.tableChosen' : 'register.tablesChosen')}
-      </p>
-
       {notice && (
         <p role="alert" className="mt-3 rounded-lg bg-brand-soft px-3 py-2 text-sm font-semibold text-brand-dark">{t('register.maxTables', { max })}</p>
       )}
       {error && <p role="alert" className="mt-3 text-sm font-semibold text-brand-dark">{error}</p>}
 
-      <ul className="mt-4 grid gap-2.5 lg:grid-cols-2">{visible.map(card)}</ul>
+      {/* Una sola columna también en PC: se lee de arriba abajo, sin zigzag */}
+      <ul className="mt-2 grid gap-3">{ordered.map(card)}</ul>
     </div>
   )
 }

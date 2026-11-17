@@ -84,7 +84,7 @@ const LAST = 6
 export default function RegisterView({ mode = 'create' }) {
   const editing = mode === 'edit'
   const { register, navigate, currentUser, updateProfile, eventTopics, eventTopicsLoaded, loadEventTopics } = useApp()
-  const { t, country } = useI18n()
+  const { t, country, topic } = useI18n()
   const [form, setForm] = useState(() => (editing && currentUser ? formFromProfile(currentUser) : loadDraft() ?? EMPTY))
   const [restored, setRestored] = useState(() => !editing && !!loadDraft() && !isEmpty(loadDraft()))
   const [screen, setScreen] = useState(editing ? 1 : 0)
@@ -232,7 +232,7 @@ export default function RegisterView({ mode = 'create' }) {
           <header>
             {editing && screen === 1 && <p className="mb-1 text-sm font-bold uppercase tracking-wider text-brand-dark">{t('register.editKicker')}</p>}
             {/* Ánimo según el paso */}
-            {!editing && <p key={screen} className="animate-pop-in mb-1.5 text-sm font-semibold text-brand-dark">{t(`register.cheer${screen}`)}</p>}
+            {!editing && screen !== 4 && <p key={screen} className="animate-pop-in mb-1.5 text-sm font-semibold text-brand-dark">{t(`register.cheer${screen}`)}</p>}
             <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink lg:text-4xl">{steps.title}</h1>
             <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600 lg:text-base">{steps.sub}</p>
           </header>
@@ -309,7 +309,7 @@ export default function RegisterView({ mode = 'create' }) {
           <div className="sticky bottom-0 z-10 mt-auto pt-6">
             <div className="-mx-5 bg-gradient-to-t from-paper via-paper to-paper/0 px-5 pb-4 pt-4 sm:-mx-8 sm:px-8">
               <Button type="submit" iconRight={ArrowRight} disabled={saving} className="w-full py-4 text-base">
-                {saving ? t('register.saving') : screen === 2 ? t('register.continue') : screen < LAST ? t('register.next') : t(editing ? 'register.editSave' : 'register.submit')}
+                {saving ? t('register.saving') : screen === 2 ? t('register.continue') : screen === 4 && form.needs.length ? t('register.continueWith', { topic: topic(form.needs[0]) }) : screen < LAST ? t('register.next') : t(editing ? 'register.editSave' : 'register.submit')}
               </Button>
               {editing && (
                 <button type="button" onClick={() => navigate(VIEWS.HOME)} disabled={saving}
