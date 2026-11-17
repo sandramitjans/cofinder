@@ -69,10 +69,12 @@ export const TOPICS = [
 
 // Quién propone cada uno de los 13 temas (nombre del director o directora). Se muestra en la tarjeta
 // del tema con «Proposée par…». Vacío = no se muestra. Los temas añadidos desde el panel llevan el suyo.
+// EJEMPLO: nombres ficticios para ver cómo queda. Cambiarlos por los reales.
 export const TOPIC_PROPOSERS = {
-  paid_performance: '', social_strategy: '', affiliates: '', emailing_loyalty: '',
-  geo: '', b2b: '', analytics: '', customer_success: '', branding: '',
-  public_relations: '', product_management: '', operational_efficiency: '', risk_management: '',
+  paid_performance: 'João Ferreira', social_strategy: 'Petra Nováková', affiliates: 'Martin Horváth',
+  emailing_loyalty: 'Marco Rossi', geo: 'Tomasz Kowalski', b2b: 'Laura Martín', analytics: 'Carmen Ruiz',
+  customer_success: 'Zsófia Nagy', branding: 'Camille Dubois', public_relations: 'Sophie Peeters',
+  product_management: 'Nicolas Bernard', operational_efficiency: 'Giulia Conti', risk_management: 'Pedro Alves',
 }
 
 // Los temas agrupados en familias, para los filtros y colores del formulario.
