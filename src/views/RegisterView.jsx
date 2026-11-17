@@ -232,7 +232,7 @@ export default function RegisterView({ mode = 'create' }) {
           <header>
             {editing && screen === 1 && <p className="mb-1 text-sm font-bold uppercase tracking-wider text-brand-dark">{t('register.editKicker')}</p>}
             {/* Ánimo según el paso */}
-            {!editing && screen !== 4 && <p key={screen} className="animate-pop-in mb-1.5 text-sm font-semibold text-brand-dark">{t(`register.cheer${screen}`)}</p>}
+            {!editing && <p key={screen} className="animate-pop-in mb-1.5 text-sm font-semibold text-brand-dark">{t(`register.cheer${screen}`)}</p>}
             <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink lg:text-5xl">{steps.title}</h1>
             <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600 lg:mt-3 lg:text-lg">{steps.sub}</p>
           </header>
