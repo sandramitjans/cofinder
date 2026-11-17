@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react'
 import {
   AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Coffee, Eraser, Flag, LayoutGrid, Loader2, Lock, Monitor,
-  MessagesSquare, PencilLine, Plus, RefreshCcw, RotateCcw, Shuffle, Sparkles, TimerReset, Trash2, UserPlus, Users,
+  MessagesSquare, PencilLine, Plus, RefreshCcw, RotateCcw, Search, Shuffle, Sparkles, TimerReset, Trash2, UserPlus, Users,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { FAMILY_EMOJI, FIND_MINUTES, MAX_INTERESTS, PAUSE_AFTER_ROUND, PAUSE_MINUTES, TOPIC_FAMILIES, VIEWS } from '../constants'
 import { familyTone } from '../lib/familyColors'
 import { planStats, tableRange } from '../lib/matching'
-import { MAX_CUSTOM_LENGTH, hasTopic, isMandatory, makeEventTopic, myTopics, topicKey } from '../lib/topics'
+import { MAX_CUSTOM_LENGTH, hasTopic, isMandatory, makeEventTopic, myTopics, normalizeText, topicKey } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
 import { useConnected } from '../lib/useConnected'
 import Logo from '../components/ui/Logo'
@@ -61,12 +61,118 @@ export default function ModeratorPanelView() {
 
   // Personas inscritas después de generar el plan (sin mesa en los tours que faltan)
   const planned = new Set(event.rounds.slice(Math.max(0, event.round)).flatMap((x) => x.plan.flatMap((tb) => tb.members)))
+  // Buscador de la lista de participantes (nombre sin acentos, o código)
+  const [who, setWho] = useState('')
+  const shown = useMemo(() => {
+    const q = normalizeText(who)
+    if (!q) return participants
+    return participants.filter((p) => normalizeText(p.name).includes(q) || (p.accessCode ?? '').includes(q))
+  }, [participants, who])
+
   const unplanned = hasPlan && !event.finished && event.round < total ? participants.filter((p) => !planned.has(p.id)) : []
 
   const confirmThen = (msg, fn) => () => window.confirm(msg) && fn()
   const status = event.finished ? t('panel.statusDone')
     : live ? t(`panel.phase.${phase}`, { n: event.round, k: r.revealed, total: r.plan.length })
       : hasPlan ? t('panel.statusPlanned') : t('panel.statusReady')
+
+  // Bloques del panel, ordenados por fases más abajo
+  const topicsSection = (
+    <EventTopics
+      topics={eventTopics}
+      participants={participants}
+      onAdd={addEventTopic}
+      onRemove={(x) => window.confirm(t('panel.confirmRemoveTopic', { label: topic(x.id) })) && removeEventTopic(x.id)}
+      t={t}
+      topic={topic}
+    />
+  )
+  const participantsSection = (
+    <section className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4">
+        <h2 className="flex items-center gap-2 text-lg font-bold"><Users className="h-5 w-5 text-brand-dark" /> {t('panel.participants', { n: participants.length })}</h2>
+        {participants.length > 0 && (
+          // El día del evento: «no encuentro mi código» → se busca por nombre (sin acentos) o por código
+          <label className="relative order-last w-full sm:order-none sm:ml-auto sm:w-64">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input value={who} onChange={(e) => setWho(e.target.value)} placeholder={t('panel.searchPh')} aria-label={t('panel.searchPh')}
+              className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/25" />
+          </label>
+        )}
+        {hasDemo
+          ? <Button variant="ghost" icon={RefreshCcw} className="py-2" onClick={confirmThen(t('panel.confirmClearDemo'), clearDemo)}>{t('panel.clearDemo')}</Button>
+          : <Button variant="outline" icon={UserPlus} className="py-2" onClick={seedDemo}>{t('panel.addDemo')}</Button>}
+      </div>
+
+      {participants.length === 0 ? (
+        <p className="p-8 text-center text-sm text-slate-500">{t('panel.empty')}</p>
+      ) : (
+        <ul className="divide-y divide-slate-100">
+          {shown.length === 0 && <li className="p-6 text-center text-sm text-slate-500">{t('panel.searchNone')}</li>}
+          {shown.map((p) => (
+            <li key={p.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 items-center gap-3 sm:w-64">
+                <Avatar name={p.name} photo={p.photo} />
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">
+                    {p.name}
+                    {p.id === currentUser?.id && <span className="ml-2 rounded bg-brand px-1.5 py-0.5 text-[10px] font-bold">{t('panel.youBadge')}</span>}
+                    {p.demo && <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">{t('panel.demoBadge')}</span>}
+                  </p>
+                  <p className="truncate text-xs text-slate-500">{p.role} · {country(p.country)}</p>
+                </div>
+              </div>
+              <div className="flex flex-1 flex-wrap gap-1">
+                {/* Elegidos en rojo suave; los obligatorios (de todo el mundo) no se repiten en cada fila */}
+                {myTopics(p).filter((x) => !isMandatory(x)).map((x) => (
+                  <span key={x} className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-medium text-brand-dark">{topic(x)}</span>
+                ))}
+                {(p.superpowers ?? []).map((x) => (
+                  <span key={x} title={superpower(x)} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200">
+                    {SUPERPOWERS.find((sp) => sp.id === x)?.emoji} {superpower(x)}
+                  </span>
+                ))}
+              </div>
+              {p.accessCode && (
+                <span title={t('login.panelCode')} className={`inline-flex shrink-0 items-center gap-1.5 self-start rounded-lg px-2 py-1 font-mono text-sm font-bold tracking-widest sm:self-auto ${isOn?.(p.id) ? 'bg-mint-soft text-mint-dark' : 'bg-slate-100 text-slate-700'}`}>
+                  {isOn && <span aria-hidden className={`h-2 w-2 rounded-full ${isOn(p.id) ? 'bg-mint-dark' : 'bg-slate-300'}`} />}
+                  {p.accessCode}
+                </span>
+              )}
+              <button
+                onClick={confirmThen(t('panel.confirmRemove', { name: p.name }), () => removeParticipant(p.id))}
+                className="self-end rounded-lg p-2 text-slate-400 hover:bg-accent-soft hover:text-accent-dark sm:self-auto"
+                aria-label={t('panel.remove', { name: p.name })}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="flex items-center gap-4 border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-brand" /> {t('panel.legendOffer')}</span>
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-200" /> {t('panel.legendMid')}</span>
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-slate-300" /> {t('panel.legendNeed')}</span>
+        <span className="ml-auto">🔑 {t('login.panelHint')}{isOn && <> · {t('join.connected', { n: participants.filter((p) => isOn(p.id)).length, total: participants.length })}</>}</span>
+      </p>
+    </section>
+  )
+  const planSection = hasPlan && (
+    <PlanGrid
+      rounds={event.rounds}
+      current={event.round}
+      finished={event.finished}
+      byId={byId}
+      planning={planning}
+      onRegenerate={regeneratePlanRound}
+      onSwap={swapSeats}
+      onMove={moveSeat}
+      onClear={confirmThen(t('panel.confirmClear'), clearPlan)}
+      t={t}
+      topic={topic}
+    />
+  )
 
   return (
     <div className="min-h-dvh bg-paper">
@@ -185,94 +291,23 @@ export default function ModeratorPanelView() {
           </div>
         </section>
 
-        {/* Plan de los 8 tours */}
-        {hasPlan && (
-          <PlanGrid
-            rounds={event.rounds}
-            current={event.round}
-            finished={event.finished}
-            byId={byId}
-            planning={planning}
-            onRegenerate={regeneratePlanRound}
-            onSwap={swapSeats}
-            onMove={moveSeat}
-            onClear={confirmThen(t('panel.confirmClear'), clearPlan)}
-            t={t}
-            topic={topic}
-          />
+        {/* Por fases: antes del evento se prepara (mesas → inscripciones → plan); durante, el plan y las personas van primero */}
+        {live || event.finished ? (
+          <>
+            <PhaseHeading>{t('panel.phaseDuring')}</PhaseHeading>
+            {planSection}
+            {participantsSection}
+            <PhaseHeading>{t('panel.phasePrep')}</PhaseHeading>
+            {topicsSection}
+          </>
+        ) : (
+          <>
+            <PhaseHeading>{t('panel.phaseBefore')}</PhaseHeading>
+            {topicsSection}
+            {participantsSection}
+            {planSection}
+          </>
         )}
-
-        {/* Mesas del evento: los temas propuestos, que los participantes eligen */}
-        <EventTopics
-          topics={eventTopics}
-          participants={participants}
-          onAdd={addEventTopic}
-          onRemove={(x) => window.confirm(t('panel.confirmRemoveTopic', { label: topic(x.id) })) && removeEventTopic(x.id)}
-          t={t}
-          topic={topic}
-        />
-
-        {/* Participantes */}
-        <section className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4">
-            <h2 className="flex items-center gap-2 text-lg font-bold"><Users className="h-5 w-5 text-brand-dark" /> {t('panel.participants', { n: participants.length })}</h2>
-            {hasDemo
-              ? <Button variant="ghost" icon={RefreshCcw} className="py-2" onClick={confirmThen(t('panel.confirmClearDemo'), clearDemo)}>{t('panel.clearDemo')}</Button>
-              : <Button variant="outline" icon={UserPlus} className="py-2" onClick={seedDemo}>{t('panel.addDemo')}</Button>}
-          </div>
-
-          {participants.length === 0 ? (
-            <p className="p-8 text-center text-sm text-slate-500">{t('panel.empty')}</p>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {participants.map((p) => (
-                <li key={p.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-                  <div className="flex min-w-0 items-center gap-3 sm:w-64">
-                    <Avatar name={p.name} photo={p.photo} />
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold">
-                        {p.name}
-                        {p.id === currentUser?.id && <span className="ml-2 rounded bg-brand px-1.5 py-0.5 text-[10px] font-bold">{t('panel.youBadge')}</span>}
-                        {p.demo && <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">{t('panel.demoBadge')}</span>}
-                      </p>
-                      <p className="truncate text-xs text-slate-500">{p.role} · {country(p.country)}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-1 flex-wrap gap-1">
-                    {/* Elegidos en rojo suave; los obligatorios (de todo el mundo) no se repiten en cada fila */}
-                    {myTopics(p).filter((x) => !isMandatory(x)).map((x) => (
-                      <span key={x} className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-medium text-brand-dark">{topic(x)}</span>
-                    ))}
-                    {(p.superpowers ?? []).map((x) => (
-                      <span key={x} title={superpower(x)} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200">
-                        {SUPERPOWERS.find((sp) => sp.id === x)?.emoji} {superpower(x)}
-                      </span>
-                    ))}
-                  </div>
-                  {p.accessCode && (
-                    <span title={t('login.panelCode')} className={`inline-flex shrink-0 items-center gap-1.5 self-start rounded-lg px-2 py-1 font-mono text-sm font-bold tracking-widest sm:self-auto ${isOn?.(p.id) ? 'bg-mint-soft text-mint-dark' : 'bg-slate-100 text-slate-700'}`}>
-                      {isOn && <span aria-hidden className={`h-2 w-2 rounded-full ${isOn(p.id) ? 'bg-mint-dark' : 'bg-slate-300'}`} />}
-                      {p.accessCode}
-                    </span>
-                  )}
-                  <button
-                    onClick={confirmThen(t('panel.confirmRemove', { name: p.name }), () => removeParticipant(p.id))}
-                    className="self-end rounded-lg p-2 text-slate-400 hover:bg-accent-soft hover:text-accent-dark sm:self-auto"
-                    aria-label={t('panel.remove', { name: p.name })}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="flex items-center gap-4 border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
-            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-brand" /> {t('panel.legendOffer')}</span>
-            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-200" /> {t('panel.legendMid')}</span>
-            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-slate-300" /> {t('panel.legendNeed')}</span>
-            <span className="ml-auto">🔑 {t('login.panelHint')}{isOn && <> · {t('join.connected', { n: participants.filter((p) => isOn(p.id)).length, total: participants.length })}</>}</span>
-          </p>
-        </section>
       </main>
     </div>
   )
@@ -540,6 +575,10 @@ function Quality({ ok, label, value }) {
       <span className="font-semibold tabular-nums">{value}</span>
     </li>
   )
+}
+
+function PhaseHeading({ children }) {
+  return <h2 className="pt-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">{children}</h2>
 }
 
 function Notice({ children }) {
