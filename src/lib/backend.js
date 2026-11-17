@@ -275,7 +275,7 @@ export function watchPresence(cb) {
 /* ---------- Mesas del evento ----------
    Las añade la moderadora desde el panel (supabase/2026-11-mesas.sql). La lista es pública: solo
    el título de cada mesa, una descripción opcional y el nombre de quien la propone. */
-const topicFromRow = (r) => ({ id: CUSTOM + r.label, by: r.proposer ?? '', desc: r.description ?? '', family: r.family ?? '' })
+const topicFromRow = (r) => ({ id: CUSTOM + r.label, by: r.proposer ?? '', desc: r.description ?? '', family: r.family ?? '', mandatory: !!r.mandatory })
 
 export async function fetchEventTopics() {
   const { data, error } = await supabase.rpc('list_mesa_topics')
@@ -285,6 +285,12 @@ export async function fetchEventTopics() {
 
 export const modAddTopic = (pin, { id, by, desc, family }) =>
   rpc('mod_add_mesa_topic', { p_pin: pin, p_label: id.slice(CUSTOM.length), p_proposer: by, p_description: desc, p_family: family ?? '' })
+/** Añade un tema o edita `oldId` (también su título); `mandatory` = obligatorio para todo el mundo */
+export const modSaveTopic = (pin, { id, by, desc, family, mandatory }, oldId = null) =>
+  rpc('mod_save_mesa_topic', {
+    p_pin: pin, p_old_label: oldId ? oldId.slice(CUSTOM.length) : '', p_label: id.slice(CUSTOM.length),
+    p_proposer: by, p_description: desc, p_family: family ?? '', p_mandatory: !!mandatory,
+  })
 export const modRemoveTopic = (pin, id) =>
   rpc('mod_remove_mesa_topic', { p_pin: pin, p_label: id.slice(CUSTOM.length) })
 

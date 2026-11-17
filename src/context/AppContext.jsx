@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { VIEWS, MODERATOR_VIEWS, isModHash, JOIN_HASH, MOD_PIN, PAUSE_AFTER_ROUND, FIND_MINUTES, ROUND_MINUTES } from '../constants'
 import { demoParticipants } from '../lib/demo'
+import { configureEventTopics } from '../lib/topics'
 import * as api from '../lib/backend'
 import { translate } from '../lib/i18n'
 import { clearNotes, saveNote } from '../lib/audioNotes'
@@ -164,6 +165,8 @@ export function AppProvider({ children }) {
     setRemoteTopicsLoaded(true)
   }, [])
   const eventTopics = REMOTE ? remoteTopics : localTopics
+  // Los temas del panel (obligatorios y «au choix») se aplican antes de pintar cualquier pantalla
+  useMemo(() => configureEventTopics(eventTopics), [eventTopics])
   const eventTopicsLoaded = REMOTE ? remoteTopicsLoaded : true
 
   /* ---------- Remoto: moderadora ---------- */
@@ -513,10 +516,12 @@ export function AppProvider({ children }) {
     })
   }, [modAction, eventTopics])
 
-  // La moderadora añade o quita mesas del evento (con el nombre de quien la propone)
-  const addEventTopic = useCallback((entry) => {
-    if (REMOTE) return modAction((pin) => api.modAddTopic(pin, entry))
-    setLocalTopics((prev) => [...prev, entry])
+  // El Admin añade, edita o quita temas del evento. `oldId` = tema que se está editando (puede cambiar de título)
+  const addEventTopic = useCallback((entry, oldId = null) => {
+    if (REMOTE) return modAction((pin) => api.modSaveTopic(pin, entry, oldId))
+    setLocalTopics((prev) => (oldId && prev.some((x) => x.id === oldId)
+      ? prev.map((x) => (x.id === oldId ? entry : x))
+      : [...prev, entry]))
   }, [modAction])
 
   const removeEventTopic = useCallback((id) => {
@@ -567,7 +572,7 @@ export function AppProvider({ children }) {
     worker.onerror = (e) => { reject(e); worker.terminate() }
     worker.postMessage({
       ...payload,
-      topics: topicsRef.current.map((x) => x.id),
+      topics: topicsRef.current.map(({ id, family, mandatory }) => ({ id, family, mandatory: !!mandatory })),
       people: peopleRef.current.map(({ id, country, offers, needs }) => ({ id, country, offers, needs })),
     })
   }), [])

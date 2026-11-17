@@ -2,13 +2,12 @@ import { useState } from 'react'
 import { ArrowRight, MapPin } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { TOPIC_EMOJI } from '../constants'
-import { isCustom, myTopics } from '../lib/topics'
+import { myTopics, topicEmoji } from '../lib/topics'
 import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
 import LangSwitch from '../components/ui/LangSwitch'
 
-const emojiOf = (id) => (isCustom(id) ? '💬' : TOPIC_EMOJI[id] ?? '💬')
+const emojiOf = topicEmoji
 
 /**
  * Tras iniciar sesión el día del evento: las mesas que le tocan en cada ronda (mesa + tema) y el

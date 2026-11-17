@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import {
   AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Coffee, Eraser, Flag, LayoutGrid, Loader2, Lock, Monitor,
-  MessagesSquare, Plus, RefreshCcw, RotateCcw, Shuffle, Sparkles, TimerReset, Trash2, UserPlus, Users,
+  MessagesSquare, PencilLine, Plus, RefreshCcw, RotateCcw, Shuffle, Sparkles, TimerReset, Trash2, UserPlus, Users,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { FIND_MINUTES, PAUSE_AFTER_ROUND, PAUSE_MINUTES, TOPIC_FAMILIES, VIEWS } from '../constants'
+import { FAMILY_EMOJI, FIND_MINUTES, MAX_INTERESTS, PAUSE_AFTER_ROUND, PAUSE_MINUTES, TOPIC_FAMILIES, VIEWS } from '../constants'
+import { familyTone } from '../lib/familyColors'
 import { planStats, tableRange } from '../lib/matching'
 import { MAX_CUSTOM_LENGTH, hasTopic, isMandatory, makeEventTopic, myTopics, topicKey } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
@@ -15,6 +16,10 @@ import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
 import LangSwitch from '../components/ui/LangSwitch'
 import { SUPERPOWERS } from '../constants'
+
+// Objetivo de temas del evento (los contadores solo avisan)
+const MANDATORY_TARGET = 4
+const OPTIONAL_TARGET = 13
 
 export default function ModeratorPanelView() {
   const {
@@ -277,24 +282,77 @@ export default function ModeratorPanelView() {
  * Mesas del evento: la moderadora añade cada tema propuesto con el nombre de quien lo propone
  * (y una descripción opcional) y puede quitarlo. Al lado de cada mesa, cuántas personas la han elegido.
  */
+/**
+ * Temas del evento: el Admin los añade uno a uno (título, familia, resumen, quién lo propone y tipo).
+ * Los obligatorios salen en la pantalla informativa del registro; los «au choix», en el selector.
+ * Los contadores 4 / 13 solo avisan: no impiden guardar.
+ */
 function EventTopics({ topics, participants, onAdd, onRemove, t, topic }) {
-  const [label, setLabel] = useState('')
-  const [by, setBy] = useState('')
-  const [desc, setDesc] = useState('')
-  const [family, setFamily] = useState('')
+  const blank = { label: '', by: '', desc: '', family: '', mandatory: false }
+  const [form, setForm] = useState(blank)
+  const [editing, setEditing] = useState(null) // id del tema que se está editando
   const [exists, setExists] = useState(false)
+  const [missingFamily, setMissingFamily] = useState(false)
   const votes = (id) => participants.filter((p) => hasTopic(p, id)).length
+  const set = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setExists(false); if (k === 'family') setMissingFamily(false) }
 
-  const add = (e) => {
+  const save = (e) => {
     e.preventDefault()
-    if (!label.trim()) return
-    const entry = makeEventTopic({ label, by, desc, family })
-    if (topics.some((x) => topicKey(x.id) === topicKey(entry.id))) return setExists(true)
-    onAdd(entry)
-    setLabel(''); setBy(''); setDesc(''); setExists(false) // la familia se mantiene para la siguiente
+    if (!form.label.trim()) return
+    if (!form.family) return setMissingFamily(true)
+    const entry = makeEventTopic(form)
+    if (topics.some((x) => x.id !== editing && topicKey(x.id) === topicKey(entry.id))) return setExists(true)
+    onAdd(entry, editing)
+    // La familia y el tipo se mantienen para el siguiente tema
+    setForm({ ...blank, family: form.family, mandatory: form.mandatory })
+    setEditing(null)
   }
+  const edit = (x) => {
+    setForm({ label: topic(x.id), by: x.by ?? '', desc: x.desc ?? '', family: x.family ?? '', mandatory: !!x.mandatory })
+    setEditing(x.id)
+    setExists(false)
+    document.getElementById('topic-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+  const cancel = () => { setForm(blank); setEditing(null); setExists(false); setMissingFamily(false) }
 
   const input = 'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15'
+  const mandatory = topics.filter((x) => x.mandatory)
+  const optional = topics.filter((x) => !x.mandatory)
+
+  const row = (x) => (
+    <li key={x.id} className={`flex items-start gap-3 p-4 ${editing === x.id ? 'bg-brand-soft/60' : ''}`}>
+      <span aria-hidden className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-lg ${familyTone(x.family).tile}`}>{FAMILY_EMOJI[x.family] ?? '💬'}</span>
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold">
+          {topic(x.id)}
+          {x.family && <span className={`ml-2 inline-block rounded-full px-2 py-0.5 align-middle text-[11px] font-bold ${familyTone(x.family).chip}`}>{t(`register.families.${x.family}`)}</span>}
+        </p>
+        {x.desc && <p className="text-sm text-slate-500">{x.desc}</p>}
+        {x.by && <p className="mt-0.5 text-xs text-slate-500">{t('register.proposedBy')} <strong className="font-semibold text-ink">{x.by}</strong></p>}
+      </div>
+      {!x.mandatory && <span className="hidden shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 sm:inline-block">{t('panel.topicVotes', { n: votes(x.id) })}</span>}
+      <button type="button" onClick={() => edit(x)} className="shrink-0 rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-ink" aria-label={t('panel.topicEdit', { label: topic(x.id) })}>
+        <PencilLine className="h-4 w-4" />
+      </button>
+      <button type="button" onClick={() => onRemove(x)} className="shrink-0 rounded-lg p-2 text-slate-400 hover:bg-accent-soft hover:text-accent-dark" aria-label={t('panel.topicRemove', { label: topic(x.id) })}>
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </li>
+  )
+  const group = (title, list, target) => (
+    <div>
+      <div className="flex items-baseline justify-between gap-3 bg-paper/70 px-4 py-2.5">
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{title}</p>
+        <p className={`shrink-0 text-xs font-bold tabular-nums ${list.length === target ? 'text-mint-dark' : 'text-brand-dark'}`}>
+          {list.length} / {target}{list.length === target ? ' ✓' : ''}
+        </p>
+      </div>
+      {list.length
+        ? <ul className="divide-y divide-slate-100">{list.map(row)}</ul>
+        : <p className="px-4 py-4 text-sm text-slate-400">{t('panel.topicsEmptyGroup')}</p>}
+    </div>
+  )
+
   return (
     <section className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <div className="border-b border-slate-100 p-4">
@@ -302,67 +360,56 @@ function EventTopics({ topics, participants, onAdd, onRemove, t, topic }) {
         <p className="mt-1 text-sm text-slate-500">{t('panel.topicsSub')}</p>
       </div>
 
-      <form onSubmit={add} className="grid gap-3 border-b border-slate-100 p-4 lg:grid-cols-[1.2fr_1fr_1fr_1.4fr_auto] lg:items-end">
+      <form id="topic-form" onSubmit={save} className="grid gap-3 border-b border-slate-100 p-4 lg:grid-cols-2">
+        {editing && <p className="text-sm font-semibold text-brand-dark lg:col-span-2">{t('panel.topicEditing', { label: topic(editing) })}</p>}
         <label className="block">
-          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicLabel')}</span>
-          <input className={input} value={label} maxLength={MAX_CUSTOM_LENGTH * 2} onChange={(e) => { setLabel(e.target.value); setExists(false) }} placeholder={t('panel.topicLabelPh')} required />
+          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicLabel')} *</span>
+          <input className={input} value={form.label} maxLength={MAX_CUSTOM_LENGTH * 2} onChange={(e) => set('label', e.target.value)} placeholder={t('panel.topicLabelPh')} required />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicFamily')} *</span>
+          <select className={`${input} ${missingFamily ? '!border-brand' : ''}`} value={form.family} onChange={(e) => set('family', e.target.value)}>
+            <option value="">{t('panel.topicFamilyPick')}</option>
+            {TOPIC_FAMILIES.map((g) => <option key={g.id} value={g.id}>{FAMILY_EMOJI[g.id]}  {t(`register.families.${g.id}`)}</option>)}
+          </select>
+          {missingFamily && <span role="alert" className="mt-1 block text-xs font-semibold text-brand-dark">{t('panel.topicFamilyMissing')}</span>}
+        </label>
+        <label className="block lg:col-span-2">
+          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicDesc')} <span className="font-normal text-slate-400">({form.desc.length}/160)</span></span>
+          <textarea rows={2} className={input} value={form.desc} maxLength={160} onChange={(e) => set('desc', e.target.value)} placeholder={t('panel.topicDescPh')} />
         </label>
         <label className="block">
           <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicBy')}</span>
-          <input className={input} value={by} maxLength={60} onChange={(e) => setBy(e.target.value)} placeholder={t('panel.topicByPh')} />
+          <input className={input} value={form.by} maxLength={60} onChange={(e) => set('by', e.target.value)} placeholder={t('panel.topicByPh')} />
         </label>
-        <label className="block">
-          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicFamily')}</span>
-          <select className={input} value={family} onChange={(e) => setFamily(e.target.value)}>
-            <option value="">{t('panel.topicFamilyNone')}</option>
-            {TOPIC_FAMILIES.map((g) => <option key={g.id} value={g.id}>{t(`register.families.${g.id}`)}</option>)}
-          </select>
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicDesc')}</span>
-          <input className={input} value={desc} maxLength={160} onChange={(e) => setDesc(e.target.value)} placeholder={t('panel.topicDescPh')} />
-        </label>
-        <Button type="submit" icon={Plus} disabled={!label.trim()} className="py-2.5">{t('panel.topicAdd')}</Button>
-        {exists && <p role="alert" className="text-sm font-semibold text-brand-dark lg:col-span-5">{t('panel.topicExists')}</p>}
+        <div>
+          <span className="mb-1 block text-xs font-semibold text-slate-600">{t('panel.topicType')}</span>
+          <div role="radiogroup" aria-label={t('panel.topicType')} className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
+            {[false, true].map((m) => (
+              <button key={String(m)} type="button" role="radio" aria-checked={form.mandatory === m} onClick={() => set('mandatory', m)}
+                className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${form.mandatory === m ? 'bg-white text-ink shadow-sm' : 'text-slate-500 hover:text-ink'}`}>
+                {t(m ? 'panel.topicMandatory' : 'panel.topicOptional')}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 lg:col-span-2">
+          <p className="text-xs text-slate-500">{t(form.mandatory ? 'panel.topicMandatoryHint' : 'panel.topicOptionalHint', { max: MAX_INTERESTS })}</p>
+          <div className="flex gap-2">
+            {editing && <button type="button" onClick={cancel} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100">{t('panel.topicCancel')}</button>}
+            <Button type="submit" icon={editing ? CheckCircle2 : Plus} disabled={!form.label.trim()} className="py-2.5">{t(editing ? 'panel.topicSave' : 'panel.topicAdd')}</Button>
+          </div>
+        </div>
+        {exists && <p role="alert" className="text-sm font-semibold text-brand-dark lg:col-span-2">{t('panel.topicExists')}</p>}
       </form>
 
-      {topics.length === 0 ? (
-        <p className="p-6 text-center text-sm text-slate-500">{t('panel.topicsDefault')}</p>
-      ) : (
-        <ul className="divide-y divide-slate-100">
-          {topics.map((x) => (
-            <li key={x.id} className="flex items-start gap-3 p-4">
-              <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-lg">💬</span>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold">
-                  {topic(x.id)}
-                  {x.family && <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 align-middle text-[11px] font-bold text-brand-dark">{t(`register.families.${x.family}`)}</span>}
-                </p>
-                {x.desc && <p className="text-sm text-slate-500">{x.desc}</p>}
-                {x.by && <p className="mt-0.5 text-xs text-slate-500">{t('register.proposedBy')} <strong className="font-semibold text-ink">{x.by}</strong></p>}
-              </div>
-              <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{t('panel.topicVotes', { n: votes(x.id) })}</span>
-              <button
-                type="button"
-                onClick={() => onRemove(x)}
-                className="shrink-0 rounded-lg p-2 text-slate-400 hover:bg-accent-soft hover:text-accent-dark"
-                aria-label={t('panel.topicRemove', { label: topic(x.id) })}
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {topics.length === 0 && <p className="border-b border-slate-100 bg-paper/50 px-4 py-3 text-sm text-slate-500">{t('panel.topicsDefault')}</p>}
+      {group(t('panel.topicsMandatory'), mandatory, MANDATORY_TARGET)}
+      {group(t('panel.topicsOptional', { max: MAX_INTERESTS }), optional, OPTIONAL_TARGET)}
     </section>
   )
 }
 
-/**
- * Plan de los 8 tours: una fila por tour y una tarjeta por mesa.
- * Retoques a mano: clic en una persona y luego en otra del mismo tour para intercambiarlas,
- * o en la cabecera de otra mesa para moverla allí. Los tours ya anunciados quedan bloqueados.
- */
 function PlanGrid({ rounds, current, finished, byId, planning, onRegenerate, onSwap, onMove, onClear, t, topic }) {
   const [selected, setSelected] = useState(null) // { round, id }
   const started = current > 0

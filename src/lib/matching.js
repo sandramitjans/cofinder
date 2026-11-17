@@ -1,5 +1,5 @@
-import { MANDATORY_TOPICS, TOPICS, TOTAL_ROUNDS, MIN_TABLE_SIZE, MAX_TABLE_SIZE, MAX_TABLES, MAX_TABLES_PER_TOPIC } from '../constants'
-import { chosenTopics, hasTopic, isCustom, topicKey } from './topics'
+import { TOPICS, TOTAL_ROUNDS, MIN_TABLE_SIZE, MAX_TABLE_SIZE, MAX_TABLES, MAX_TABLES_PER_TOPIC } from '../constants'
+import { chosenTopics, hasTopic, isCustom, mandatoryTopics, topicKey } from './topics'
 
 /**
  * Algoritmo de multi-match de Cofinder.
@@ -75,7 +75,7 @@ const prepare = (people) =>
     country: p.country,
     // Sin niveles: todos los temas de la persona (obligatorios + elegidos) cuentan como «needs»
     offers: new Set(),
-    needs: new Set([...MANDATORY_TOPICS, ...chosenTopics(p)].map(topicKey)),
+    needs: new Set([...mandatoryTopics(), ...chosenTopics(p)].map(topicKey)),
   }]))
 
 /**
@@ -83,7 +83,7 @@ const prepare = (people) =>
  * Si no: los 20 de la lista + temas propios compartidos por ≥ 2 personas.
  */
 function candidateTopics(people, topics = []) {
-  const mandatory = MANDATORY_TOPICS.map((id) => ({ id, key: topicKey(id) }))
+  const mandatory = mandatoryTopics().map((id) => ({ id, key: topicKey(id) }))
   if (topics.length) return [...mandatory, ...topics.filter((id) => !mandatory.some((m) => m.key === topicKey(id))).map((id) => ({ id, key: topicKey(id) }))]
   const list = [...mandatory, ...TOPICS.map((id) => ({ id, key: id }))]
   const custom = new Map() // clave → { id original, personas }
