@@ -23,7 +23,9 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      # onnxruntime-node (lo usa @huggingface/transformers) intenta bajar binarios de GPU que ya no existen (404);
+      # la app no los necesita
+      - run: npm ci --onnxruntime-node-install-cuda=skip
       # Sin secretos → modo demo/local. Con secretos → base real de Supabase.
       # Dominio propio (cofinder.cuentoconcofidis.com): la app vive en la raíz «/», no en «/cofinder/»
       - run: npx vite build --base=/
