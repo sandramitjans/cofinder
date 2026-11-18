@@ -5,6 +5,8 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # No bajar los binarios de GPU de onnxruntime-node (la descarga da 404 y no hacen falta)
+  npm_config_onnxruntime_node_install_cuda = "skip"
   # Supabase (proyecto «Cofinder», Irlanda: el que tiene el día del evento, notas y #resum).
   # La clave pública está pensada para ir en el navegador: con ella solo se puede registrar un perfil;
   # leer datos exige el PIN o el propio identificador. (Antes: proyecto de París, dixhoqdykarenflooirp.)
