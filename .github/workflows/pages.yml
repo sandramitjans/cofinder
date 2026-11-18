@@ -25,7 +25,8 @@ jobs:
           cache: npm
       - run: npm ci
       # Sin secretos → modo demo/local. Con secretos → base real de Supabase.
-      - run: npx vite build --base=/${{ github.event.repository.name }}/
+      # Dominio propio (cofinder.cuentoconcofidis.com): la app vive en la raíz «/», no en «/cofinder/»
+      - run: npx vite build --base=/
         # Supabase «Cofinder» (Irlanda), desde cualquier rama. La clave publicable está pensada para el navegador.
         env:
           VITE_SUPABASE_URL: https://uppsizyvtnyvvtmgyeff.supabase.co

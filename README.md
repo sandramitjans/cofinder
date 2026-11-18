@@ -120,7 +120,8 @@ VITE_PUBLIC_URL=http://192.168.1.20:5173       # opcional: dirección que codifi
 
 **Publicación:**
 - **GitHub Pages** (`.github/workflows/pages.yml`, se lanza a mano o con cada push a `main`):
-  https://sandramitjans.github.io/cofinder/
+  https://cofinder.cuentoconcofidis.com/ (dominio propio; la dirección antigua
+  https://sandramitjans.github.io/cofinder/ redirige sola a esta)
 - **Netlify** (`netlify.toml`): se publica con cada push a `main`.
 - Las dos usan la base de Supabase «Cofinder» (`uppsizyvtnyvvtmgyeff`).
 - Para la versión definitiva en un servidor propio con dominio basta servir la carpeta `dist/`
