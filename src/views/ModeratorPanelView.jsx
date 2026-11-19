@@ -7,7 +7,7 @@ import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { FAMILY_EMOJI, FIND_MINUTES, MAX_INTERESTS, PAUSE_AFTER_ROUND, PAUSE_MINUTES, TOPIC_FAMILIES, VIEWS } from '../constants'
 import { familyTone } from '../lib/familyColors'
-import { planStats, tableRange } from '../lib/matching'
+import { advancedShortfall, planStats, tableRange } from '../lib/matching'
 import { MAX_CUSTOM_LENGTH, hasTopic, isMandatory, makeEventTopic, myTopics, normalizeText, topicKey } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
 import { useConnected } from '../lib/useConnected'
@@ -38,6 +38,8 @@ export default function ModeratorPanelView() {
   const total = event.rounds.length
   const stats = useMemo(() => (hasPlan ? planStats(event.rounds.map((r) => ({ tables: r.plan })), byId) : null), [hasPlan, event.rounds, byId])
   const [kMin, kMax] = tableRange(participants.length)
+  // Regla del evento: en cada mesa, al menos una persona «Avancé» en el tema. Avisa si no hay bastantes
+  const shortAdvanced = useMemo(() => (participants.length >= 6 ? advancedShortfall(participants) : []), [participants])
 
   // Fase del tour en pantalla
   const r = live ? currentRound : null
@@ -267,6 +269,7 @@ export default function ModeratorPanelView() {
 
             {!hasPlan && participants.length > 0 && participants.length < 6 && <Notice>{t('panel.fewPeople')}</Notice>}
             {unplanned.length > 0 && <Notice>{t('panel.unplanned', { n: unplanned.length })}</Notice>}
+            {shortAdvanced.length > 0 && <Notice>{t('panel.shortAdvanced', { topics: shortAdvanced.map((x) => `${topic(x.topic)} (${x.advanced}/${x.needed})`).join(', '), n: shortAdvanced[0].needed })}</Notice>}
           </div>
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
@@ -282,6 +285,7 @@ export default function ModeratorPanelView() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('panel.quality')}</p>
                 <ul className="mt-2 space-y-1 text-sm">
                   <Quality ok={stats.chosenPct >= 80} label={t('panel.chosen')} value={`${stats.chosenPct} %`} />
+                  <Quality ok={!stats.noExpert} label={t('panel.noExpert')} value={stats.noExpert} />
                   <Quality ok={!stats.repeatedTopics} label={t('panel.repeatedTopics')} value={stats.repeatedTopics} />
                   <Quality ok={!stats.overLimitPairs} label={t('panel.overLimit')} value={stats.overLimitPairs} />
                   <Quality ok label={t('panel.contacts')} value={`${stats.avgContacts.toFixed(1)} / ${Math.max(0, participants.length - 1)}`} />

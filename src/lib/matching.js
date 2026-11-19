@@ -19,9 +19,9 @@ import { chosenTopics, hasTopic, isCustom, mandatoryTopics, topicKey, optionalTo
  *       - dos personas ya coincidieron tres veces (sería la cuarta)  (+400: prácticamente prohibido)
  *       - dos personas de la misma filial/departamento               (+1 por pareja, fomenta cross-border)
  *       - el tema ya salió en otro tour                              (+3 por vez)
- *       - si hay perfiles con nivel: mesa sin nadie con experiencia, Avancé o Intermédiaire (+50,
- *         casi prohibido), sin nadie Avancé (+4), todos Avancé sin nadie que venga a aprender (+3)
- *         o sin nadie que lo haya elegido (+4)
+ *       - si hay perfiles con nivel: mesa sin nadie Avancé en el tema (+300: regla del evento, siempre
+ *         al menos una persona avanzada por mesa), sin nadie con experiencia (+50), todos Avancé sin
+ *         nadie que venga a aprender (+3) o sin nadie que lo haya elegido (+4)
  *     Con ~12 personas y 8 tours es imposible no repetir parejas, así que el límite es 3 veces.
  *  3. Reparto inicial voraz + búsqueda local (intercambiar personas, mover a alguien de mesa y
  *     cambiar el tema de una mesa) con enfriamiento simulado y varios reinicios. Mover personas
@@ -35,7 +35,7 @@ const COST_MET = [0, 4, 15]
 const COST_OVER_LIMIT = 400
 const COST_TOPIC_REUSED = 3
 const COST_NO_EXPERIENCE = 50
-const COST_NO_ADVANCED = 4
+const COST_NO_ADVANCED = 300
 const COST_ALL_ADVANCED = 3
 
 const sameBranch = (a, b) => !!a && String(a).trim().toLowerCase() === String(b ?? '').trim().toLowerCase()
@@ -157,8 +157,8 @@ function tableCost(key, members, byId, history, expertMode) {
   })
   if (members.length) {
     cost += (history.usedTopics.get(key) ?? 0) * COST_TOPIC_REUSED
+    if (expertMode && advanced === 0) cost += COST_NO_ADVANCED
     if (expertMode && offerers === 0) cost += COST_NO_EXPERIENCE
-    else if (expertMode && advanced === 0) cost += COST_NO_ADVANCED
     if (expertMode && members.length > 1 && advanced === members.length) cost += COST_ALL_ADVANCED
     if (expertMode && needers === 0) cost += 4
   }
@@ -178,7 +178,7 @@ export function generateRound(people, previousRounds = [], { attempts = 24, iter
   const expertMode = [...byId.values()].some((p) => p.offers.size > 0)
   const [kMin, kMax] = tableRange(people.length)
   const minSize = people.length < MIN_TABLE_SIZE * 2 ? 1 : MIN_TABLE_SIZE
-  const maxSize = Math.max(MAX_TABLE_SIZE, Math.ceil(people.length / kMax))
+  const maxSize = Math.max(MAX_TABLE_SIZE, Math.ceil(people.length / kMax)) // = 4 salvo con más de MAX_TABLES × 4 personas
   const scored = scoreTopics(candidateTopics(people, topics), byId, history)
   const cost = (t) => tableCost(t.key, t.members, byId, history, expertMode)
   let best = null
@@ -291,7 +291,7 @@ export function planStats(rounds, byId) {
     for (const t of round.tables) {
       const key = topicKey(t.topic)
       tables++
-      if (!t.members.some((id) => (byId.get(id)?.offers ?? []).some((x) => topicKey(x) === key))) noExpert++
+      if (!t.members.some((id) => isAdvanced(byId.get(id), key))) noExpert++
       t.members.forEach((id, i) => {
         const p = byId.get(id)
         if (!p) return
@@ -322,6 +322,20 @@ export function planStats(rounds, byId) {
     tables,
     noExpert, // mesas sin nadie «Expérimenté·e» en su tema
   }
+}
+
+/** ¿Nivel Avancé en el tema? (lo ofrece y no lo necesita, ver listsFromLevels en lib/topics.js) */
+const isAdvanced = (p, key) => !!p && (p.offers ?? []).some((x) => topicKey(x) === key) && !(p.needs ?? []).some((x) => topicKey(x) === key)
+
+/**
+ * Temas con menos personas Avancé que mesas: ahí es imposible que todas las mesas tengan a alguien avanzado.
+ * Cada persona pasa una vez por cada tema, así que cada tema necesita unas ceil(n / MAX_TABLE_SIZE) mesas.
+ * Devuelve [{ topic, advanced, needed }].
+ */
+export function advancedShortfall(people) {
+  const needed = Math.ceil(people.length / MAX_TABLE_SIZE)
+  return mandatoryTopics().map((id) => ({ topic: id, advanced: people.filter((p) => isAdvanced(p, topicKey(id))).length, needed }))
+    .filter((x) => x.advanced < needed)
 }
 
 /** Rol de una persona respecto al tema de su mesa (los temas propios se comparan normalizados) */
