@@ -217,7 +217,9 @@ export default function RegisterView({ mode = 'create' }) {
       <div className={`mx-auto flex w-full flex-1 flex-col ${WIDTH}`}>
         {/* Volver + progreso «▬▬▬ 2/4», como en el prototipo */}
         <div className="flex min-h-10 items-center justify-between gap-4">
-          {(screen > 1 || !editing) ? (
+          {/* Al modificar el perfil se entra desde la pantalla final: se mantiene el logo arriba a la izquierda */}
+          <div className="flex shrink-0 items-center gap-2">
+          {(screen > 1 || !editing) && (
             <button
               type="button"
               onClick={() => (screen === 1 && editing ? navigate(VIEWS.HOME) : goBack())}
@@ -227,7 +229,9 @@ export default function RegisterView({ mode = 'create' }) {
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
-          ) : <span />}
+          )}
+          {editing && <Logo markOnlyOnMobile />}
+          </div>
           <div className="flex min-w-0 items-center gap-3">
             <div className="hidden gap-1 sm:flex" aria-hidden>
               {order.map((_, i) => (

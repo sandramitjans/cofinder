@@ -1,6 +1,7 @@
 import { Sparkles } from 'lucide-react'
 
-export default function Logo({ size = 'md', inverted = false }) {
+// markOnlyOnMobile: en pantallas estrechas solo el icono (p. ej. junto al progreso del formulario)
+export default function Logo({ size = 'md', inverted = false, markOnlyOnMobile = false }) {
   const box = size === 'lg' ? 'h-12 w-12' : 'h-9 w-9'
   const text = size === 'lg' ? 'text-3xl' : 'text-xl'
   return (
@@ -9,7 +10,7 @@ export default function Logo({ size = 'md', inverted = false }) {
         <Sparkles className={`h-1/2 w-1/2 ${inverted ? 'text-brand-dark' : 'text-white'}`} strokeWidth={2.25} />
         <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-accent" />
       </div>
-      <span className={`${text} font-extrabold tracking-tight ${inverted ? 'text-white' : 'text-slate-900'}`}>
+      <span className={`${text} ${markOnlyOnMobile ? 'hidden sm:inline' : ''} font-extrabold tracking-tight ${inverted ? 'text-white' : 'text-slate-900'}`}>
         co<span className={inverted ? 'text-brand' : 'text-brand-dark'}>finder</span>
       </span>
     </div>
