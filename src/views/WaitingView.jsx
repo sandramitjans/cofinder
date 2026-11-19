@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { CalendarPlus, Check, CheckCircle2, Copy, KeyRound, Mail, PencilLine } from 'lucide-react'
+import { levelOfTopic, myTopics, topicEmoji } from '../lib/topics'
+import { SuperpowerChips } from '../components/ui/SuperpowerPicker'
+import { LEVEL_EMOJI } from '../components/LevelPicker'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { EVENT_DATE, EVENT_PLACE, VIEWS } from '../constants'
@@ -16,7 +19,7 @@ import Confetti from '../components/ui/Confetti'
  */
 export default function WaitingView({ onLobby }) {
   const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt } = useApp()
-  const { t, country, formatDate } = useI18n()
+  const { t, topic, country, formatDate } = useI18n()
   const [justUpdated, setJustUpdated] = useState(() => Date.now() - profileUpdatedAt < 3000)
   useEffect(() => {
     if (!justUpdated) return
@@ -26,6 +29,7 @@ export default function WaitingView({ onLobby }) {
   if (!currentUser) return null
 
   // Recién registrado (últimos 30 min) → «Profil créé !»; si vuelve más tarde → «Vous êtes inscrit·e !»
+  const topics = myTopics(currentUser)
   const fresh = Date.now() - (currentUser.createdAt ?? 0) < 30 * 60 * 1000
   const longDate = formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long' })
   const line = EVENT_PLACE ? t('waiting.seeYouPlace', { date: '\u0000', place: '\u0001' }) : t('waiting.seeYou', { date: '\u0000' })
@@ -53,7 +57,10 @@ export default function WaitingView({ onLobby }) {
           )}
 
           <header className="animate-pop-in">
-            <p className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-mint-dark"><CheckCircle2 aria-hidden className="h-4 w-4" /> {t('waiting.kicker')}</p>
+            {/* El check grande: la señal de que ya está */}
+            <div className="mb-5 grid h-16 w-16 place-items-center rounded-full bg-mint-soft ring-8 ring-mint-soft/50">
+              <Check aria-hidden className="h-8 w-8 text-mint" strokeWidth={3} />
+            </div>
             <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink lg:text-5xl">{t(fresh ? 'waiting.created' : 'waiting.registered')}</h1>
             <p className="mt-1.5 text-[17px] leading-relaxed text-slate-600 lg:mt-3 lg:text-lg">
               {line.split(/(\u0000|\u0001)/).map((part, i) =>
@@ -66,18 +73,44 @@ export default function WaitingView({ onLobby }) {
           {/* Lo único que hay que guardar */}
           {currentUser.accessCode && <AccessCode name={currentUser.name} code={currentUser.accessCode} />}
 
-          {/* Quién es, en una línea, y el único enlace para cambiar algo */}
-          <section aria-label={t('waiting.yourFile')} className="mt-4 flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 lg:px-6">
-            <Avatar name={currentUser.name} photo={currentUser.photo} size="md" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-lg font-semibold leading-tight text-ink">{currentUser.name}</p>
-              <p className="truncate text-sm text-slate-600">{[currentUser.role, country(currentUser.country)].filter(Boolean).join(', ')}</p>
+          {/* Resumen de lo elegido: quién es, su arma secreta y su nivel en cada tema. Desde aquí se edita */}
+          <section aria-label={t('waiting.yourFile')} className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <div className="flex items-center gap-4 p-4 lg:px-7 lg:py-5">
+              <Avatar name={currentUser.name} photo={currentUser.photo} size="md" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-lg font-semibold leading-tight text-ink">{currentUser.name}</p>
+                <p className="truncate text-sm text-slate-600">{[currentUser.role, country(currentUser.country)].filter(Boolean).join(', ')}</p>
+              </div>
+              {canEditProfile && (
+                <button type="button" onClick={() => navigate(VIEWS.EDIT)} aria-label={t('waiting.edit')} className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl text-base font-semibold text-brand-dark transition-colors hover:bg-brand-soft sm:px-3">
+                  <PencilLine aria-hidden className="h-5 w-5" /> <span className="hidden sm:inline">{t('waiting.edit')}</span>
+                </button>
+              )}
             </div>
-            {canEditProfile && (
-              <button type="button" onClick={() => navigate(VIEWS.EDIT)} aria-label={t('waiting.edit')} className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl text-base font-semibold text-brand-dark transition-colors hover:bg-brand-soft sm:px-3">
-                <PencilLine aria-hidden className="h-5 w-5" /> <span className="hidden sm:inline">{t('waiting.edit')}</span>
-              </button>
-            )}
+            <div className="grid gap-6 border-t border-slate-200 p-4 lg:grid-cols-[1fr_2fr] lg:gap-10 lg:px-7 lg:py-6">
+              {!!currentUser.superpowers?.length && (
+                <div>
+                  <p className="text-sm font-semibold text-slate-600">{t('waiting.superpowers')}</p>
+                  <SuperpowerChips ids={currentUser.superpowers} className="mt-2" />
+                </div>
+              )}
+              {!!topics.length && (
+                <div className={currentUser.superpowers?.length ? '' : 'lg:col-span-2'}>
+                  <p className="text-sm font-semibold text-slate-600">{t('waiting.levels')}</p>
+                  <ul className="mt-1 divide-y divide-slate-100">
+                    {topics.map((id) => {
+                      const level = levelOfTopic(currentUser, id)
+                      return (
+                        <li key={id} className="flex items-center justify-between gap-3 py-2.5">
+                          <span className="min-w-0 text-[17px] font-medium text-ink"><span aria-hidden>{topicEmoji(id)}</span> {topic(id)}</span>
+                          {level && <span className="shrink-0 whitespace-nowrap text-[17px] text-slate-600"><span aria-hidden>{LEVEL_EMOJI[level]}</span> {t(`register.level.${level}`)}</span>}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
           </section>
 
           <p className="mt-4 text-sm text-slate-600">{t('waiting.tablesLater')}</p>
