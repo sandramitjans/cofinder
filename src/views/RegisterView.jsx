@@ -402,13 +402,11 @@ function MandatoryTopics() {
   )
 }
 
-// Ancho del formulario: columna de móvil; en PC, una sola columna de hasta 1080 px (casi todos se registran desde el PC).
-// Solo el registro: la pantalla del código y el resto de la app vuelven al ancho de móvil
-const WIDTH = 'max-w-xl lg:max-w-[1080px]'
+// Ancho de todas las pantallas del invitado en PC: 1024 px (bienvenida, pasos y pantalla final, ver WaitingView). En móvil, una columna.
+const WIDTH = 'max-w-xl lg:max-w-[1024px]'
 
 /** Bienvenida (a la que llega el email): título, datos del evento y un único botón */
-// Bienvenida: como mucho 1024px en PC, para que no se vea tan grande
-const LANDING_WIDTH = 'max-w-xl lg:max-w-[1024px]'
+const LANDING_WIDTH = WIDTH
 
 function Landing({ resume, onStart }) {
   const { t, formatDate } = useI18n()

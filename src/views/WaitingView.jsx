@@ -41,7 +41,7 @@ export default function WaitingView({ onLobby }) {
   return (
     <div className="guest-scale vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
       {fresh && <Confetti />}
-      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
+      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col lg:max-w-[1024px]">
         <header className="flex items-center justify-between gap-4">
           <Logo />
           <LangSwitch />
@@ -59,8 +59,11 @@ export default function WaitingView({ onLobby }) {
             </p>
           )}
 
+          {/* En PC, dos columnas dentro de los mismos 1024 px que el formulario: a la izquierda confirmación, código y fecha; a la derecha la acreditación.
+              En móvil, una columna en el mismo orden: confirmación, código, acreditación, fecha. */}
+          <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-12">
           {/* 1. Confirmación */}
-          <section className="animate-pop-in text-center">
+          <section className="animate-pop-in text-center lg:col-start-1">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-mint-soft ring-8 ring-mint-soft/50">
               <Check aria-hidden className="h-8 w-8 text-mint" strokeWidth={3} />
             </div>
@@ -73,10 +76,10 @@ export default function WaitingView({ onLobby }) {
           </section>
 
           {/* 2. Código de acceso: lo único que hay que guardar */}
-          {currentUser.accessCode && <AccessCode name={currentUser.name} code={currentUser.accessCode} />}
+          {currentUser.accessCode && <div className="lg:col-start-1"><AccessCode name={currentUser.name} code={currentUser.accessCode} /></div>}
 
           {/* 3. Credencial de invitado: persona, arma secreta y temas */}
-          <div className="relative mt-8">
+          <div className="relative mt-8 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:mt-5">
             {/* Cordón y ranura: se lee como la acreditación del evento */}
             <span aria-hidden className="absolute -top-5 left-1/2 h-8 w-3 -translate-x-1/2 rounded-full bg-brand/70" />
           <section aria-label={t('waiting.yourFile')} className="animate-rise-in relative overflow-hidden rounded-3xl bg-white shadow-xl shadow-ink/10 ring-1 ring-slate-200 [animation-delay:200ms]">
@@ -148,7 +151,8 @@ export default function WaitingView({ onLobby }) {
 
 
           {/* 4. Fecha, lugar y cuenta atrás */}
-          <DateBlock />
+          <div className="lg:col-start-1"><DateBlock /></div>
+          </div>
 
         </main>
 
