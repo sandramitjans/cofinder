@@ -354,13 +354,13 @@ function GuestCard({ form, onPhoto }) {
   const place = country(form.country.trim())
   const complete = !!(name && role && place)
   return (
-    // Resumen, no un botón: fondo suave sin borde ni sombra. Lo único que se pulsa aquí es la foto
-    <div className="relative flex items-center gap-4 rounded-2xl bg-brand-soft/50 p-4 lg:flex-col lg:py-5 lg:text-center">
+    // Resumen, no un botón: fondo lila suave sin borde ni sombra (todo el texto ≥ 6:1). Lo único que se pulsa aquí es la foto
+    <div className="relative flex items-center gap-4 rounded-2xl bg-accent-soft p-4 lg:flex-col lg:py-5 lg:text-center">
       <div className="shrink-0">
         <PhotoPicker compact value={form.photo} name={form.name} onChange={onPhoto} />
       </div>
       <div className="min-w-0 flex-1 lg:w-full">
-        <p className="text-sm font-semibold text-brand-dark">{t('register.guestCard')}</p>
+        <p className="text-sm font-semibold text-accent-dark">{t('register.guestCard')}</p>
         <p className={`mt-0.5 truncate font-display text-xl font-medium leading-tight ${name ? 'text-ink' : 'text-slate-500'}`}>{name || t('register.guestName')}</p>
         <p className={`truncate text-sm ${role ? 'text-slate-600' : 'text-slate-500'}`}>{role || t('register.guestRole')}</p>
         {place && <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-slate-600 lg:justify-center"><MapPin className="h-3.5 w-3.5 shrink-0" /> {place}</p>}
