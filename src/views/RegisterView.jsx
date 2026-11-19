@@ -352,7 +352,7 @@ function GuestCard({ form, onPhoto }) {
   const place = country(form.country.trim())
   const complete = !!(name && role && place)
   return (
-    <div className={`flex items-center gap-4 rounded-2xl border-2 bg-white p-4 transition-all duration-300 ${complete ? 'border-brand/30 shadow-md shadow-brand/10' : 'border-dashed border-slate-300'}`}>
+    <div className={`flex items-center gap-4 rounded-2xl border-2 bg-white p-4 transition-[border-color,box-shadow] duration-300 ${complete ? 'border-brand/30 shadow-md shadow-brand/10' : 'border-dashed border-slate-300'}`}>
       <div className="shrink-0">
         <PhotoPicker compact value={form.photo} name={form.name} onChange={onPhoto} />
       </div>
@@ -373,7 +373,7 @@ function MandatoryTopics() {
   const { eventTopics } = useApp()
   return (
     <div key="mandatory" className="animate-view-in mt-6">
-      <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500">
+      <p className="flex items-center gap-2 text-[15px] font-semibold text-slate-600">
         <CalendarDays aria-hidden className="h-4 w-4" /> {t('register.mandatoryList')}
       </p>
       <ol className="mt-3 grid gap-3 sm:grid-cols-2 lg:gap-4">
@@ -388,7 +388,7 @@ function MandatoryTopics() {
               <span className="mt-3 block text-lg font-semibold leading-snug text-ink lg:text-xl">{topic(id)}</span>
               {description && <span className="mt-1 block text-[15px] leading-snug text-slate-600 lg:text-base">{description}</span>}
               {/* Sello: ya está reservado para todo el mundo */}
-              <span className="absolute right-3 top-3 -rotate-3 rounded-lg border-2 border-mint px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-mint-dark lg:right-4 lg:top-4 lg:text-sm">
+              <span className="absolute right-3 top-3 -rotate-3 rounded-lg border-2 border-mint px-2 py-0.5 text-sm font-bold text-mint-dark lg:right-4 lg:top-4 lg:text-[15px]">
                 {t('register.mandatoryBadge')} ✓
               </span>
             </li>
@@ -419,25 +419,26 @@ function Landing({ resume, onStart }) {
         <LangSwitch />
       </header>
 
-      <main className={`mx-auto flex w-full ${LANDING_WIDTH} flex-1 flex-col justify-center py-10`}>
-        <div className="mx-auto flex w-full max-w-[720px] flex-col">
-        <p className="text-center text-sm font-bold uppercase tracking-[0.2em] text-brand-dark">{t('register.ticketKicker')}</p>
-        <h1 className="mt-3 text-center font-display text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">{t('register.titleMain')}</h1>
-        <p className="mx-auto mt-5 max-w-lg text-center text-lg leading-relaxed text-slate-600">{t('register.subtitle', { rounds: TOTAL_ROUNDS, min: ROUND_MINUTES, n: mandatoryTopics().length })}</p>
+      {/* Hallmark · Corridor: una sola columna centrada; la fecha y el lugar van dentro de la frase de invitación */}
+      <main className={`mx-auto flex w-full ${LANDING_WIDTH} flex-1 flex-col justify-center py-12`}>
+        <section className="mx-auto flex w-full max-w-[640px] flex-1 flex-col items-center justify-center text-center">
+          <h1 className="font-display text-5xl font-medium leading-[1.02] tracking-[-0.03em] text-ink [text-wrap:balance] sm:text-6xl lg:text-[4rem]">{t('register.titleMain')}</h1>
+          <p className="mt-6 text-xl leading-snug text-ink [text-wrap:balance] sm:text-2xl">
+            {EVENT_PLACE
+              ? t('register.inviteLine', { date: '\u0000', place: '\u0001' }).split(/(\u0000|\u0001)/).map((part, i) =>
+                  part === '\u0000' ? <strong key={i} className="whitespace-nowrap font-semibold text-brand-dark">{formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long' })}</strong>
+                    : part === '\u0001' ? <strong key={i} className="font-semibold">{EVENT_PLACE}</strong>
+                    : part)
+              : t('register.inviteLineNoPlace', { date: formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long' }) })}
+          </p>
+          <p className="mt-4 max-w-[52ch] text-lg leading-relaxed text-slate-600 [text-wrap:pretty]">{t('register.subtitle', { rounds: TOTAL_ROUNDS, min: ROUND_MINUTES, n: mandatoryTopics().length })}</p>
 
-        {/* Fecha y lugar integrados en el texto: una línea sencilla, sin tarjeta */}
-        <p className="animate-rise-in mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-base font-semibold text-ink sm:text-lg">
-          <span className="inline-flex items-center gap-2"><CalendarDays aria-hidden className="h-5 w-5 text-brand" /> {formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-          <span aria-hidden className="hidden h-1 w-1 rounded-full bg-slate-300 sm:block" />
-          <span className="inline-flex items-center gap-2"><MapPin aria-hidden className="h-5 w-5 text-brand" /> {EVENT_PLACE || t('register.placeTbc')}</span>
-        </p>
-
-        <Button type="button" onClick={onStart} iconRight={ArrowRight} className="mt-8 w-full py-4 text-base sm:min-w-[300px] sm:self-center sm:px-10 sm:w-auto lg:text-lg">
-          {t(resume ? 'register.landingResume' : 'register.landingCta')}
-        </Button>
-        <p className="mt-3 text-center text-sm text-slate-500">{t(resume ? 'register.landingNote' : 'register.landingHow', { n: stepsOrder().length, min: stepsOrder().length > 4 ? 3 : 2 })}</p>
-        <LoginLink />
-        </div>
+          <Button type="button" onClick={onStart} iconRight={ArrowRight} className="mt-10 h-13 w-full sm:w-auto sm:min-w-[280px] sm:px-10 sm:text-lg">
+            {t(resume ? 'register.landingResume' : 'register.landingCta')}
+          </Button>
+          <p className="mt-3 text-sm text-slate-600">{t(resume ? 'register.landingNote' : 'register.landingHow', { n: stepsOrder().length, min: stepsOrder().length > 4 ? 3 : 2 })}</p>
+          <LoginLink />
+        </section>
       </main>
 
       <PublicFooter />
@@ -450,7 +451,7 @@ function LoginLink() {
   const { navigate } = useApp()
   const { t } = useI18n()
   return (
-    <button type="button" onClick={() => navigate(VIEWS.LOGIN)} className="mt-6 text-center text-sm font-semibold text-brand-dark underline-offset-4 hover:underline">
+    <button type="button" onClick={() => navigate(VIEWS.LOGIN)} className="mt-4 min-h-11 px-2 text-center text-sm font-semibold sm:text-[15px] text-brand-dark underline-offset-4 hover:underline">
       {t('login.landingLink')}
     </button>
   )

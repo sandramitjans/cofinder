@@ -16,10 +16,12 @@ export const DICT = {
 
     register: {
       titleMain: 'Le speed-dating des savoirs',
-      subtitle: 'Avant le jour J, dites-nous en deux minutes où vous en êtes sur les {n} sujets de la journée. Pas d’examen\u00A0: c’est juste pour composer des tables où chacun partage et apprend.',
+      subtitle: 'Avant le jour J, dites-nous en deux minutes où vous en êtes sur les {n}\u00A0sujets de la journée. Pas d’examen\u00A0: c’est juste pour composer des tables où chacun partage et apprend.',
       placeTbc: 'Lieu à confirmer',
       roundsInfo: '{n} tours · {min} min chacun',
       ticketKicker: 'Vous êtes invité·e',
+      inviteLine: 'Vous êtes invité·e le {date}, chez {place}.',
+      inviteLineNoPlace: 'Vous êtes invité·e le {date}.',
       landingStep1: 'Présentez-vous',
       landingStep2: 'Choisissez votre table',
       landingStep3: 'Rendez-vous le jour J',
@@ -568,10 +570,12 @@ export const DICT = {
 
     register: {
       titleMain: 'Knowledge speed dating',
-      subtitle: 'Before the big day, tell us in two minutes where you stand on the day’s {n} topics. It’s not a test: it just helps us build tables where everyone shares and learns.',
+      subtitle: 'Before the big day, tell us in two minutes where you stand on the day’s {n}\u00A0topics. It’s not a test: it just helps us build tables where everyone shares and learns.',
       placeTbc: 'Venue to be confirmed',
       roundsInfo: '{n} rounds · {min} min each',
       ticketKicker: 'You’re invited',
+      inviteLine: 'You’re invited on {date}, at {place}.',
+      inviteLineNoPlace: 'You’re invited on {date}.',
       landingStep1: 'Introduce yourself',
       landingStep2: 'Choose your table',
       landingStep3: 'See you on the day',
