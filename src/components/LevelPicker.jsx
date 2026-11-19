@@ -21,8 +21,12 @@ export default function LevelPicker({ topics, levels, onChange, error }) {
 
   return (
     <div className="mt-6 lg:mt-8">
-      {/* Una sola lista con separadores (sin una tarjeta por tema): menos ruido. Lo que significa cada nivel va en el título de cada botón */}
-      <ul className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
+      {/* Leyenda una sola vez arriba, centrada: qué significa cada nivel */}
+      <p className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-sm text-slate-600 lg:text-base">
+        {LEVELS.map((o) => <span key={o}><span aria-hidden>{LEVEL_EMOJI[o]}</span> <strong className="font-semibold text-ink">{t(`register.level.${o}`)}</strong> · {t(`register.level.${o}Hint`)}</span>)}
+      </p>
+      {/* Una sola lista con separadores (sin una tarjeta por tema): menos ruido */}
+      <ul className="mt-4 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
         {topics.map((id) => {
           const level = levels[id]
           return (

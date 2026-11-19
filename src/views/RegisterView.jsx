@@ -233,7 +233,7 @@ export default function RegisterView({ mode = 'create' }) {
           {editing && <Logo markOnlyOnMobile />}
           </div>
           {/* «Étape 3/4 · Votre niveau» y las barras debajo: se sabe dónde se está y qué viene */}
-          <div className="flex min-w-0 flex-col items-center gap-1.5">
+          <div className="flex min-w-0 flex-col items-center gap-1">
             <span key={screen} className="animate-pop-in min-w-0 truncate text-sm font-semibold text-slate-600 lg:text-base">
               <span className="tabular-nums text-brand-dark"><span className="hidden sm:inline">{t('register.stepWord')} </span>{t('register.stepOf', { n: pos + 1, total: order.length })}</span> · {t(`register.stepNames.${screen}`)}
             </span>
@@ -246,13 +246,13 @@ export default function RegisterView({ mode = 'create' }) {
           <div className="flex justify-end"><LangSwitch /></div>
         </div>
 
-        <form onSubmit={submit} noValidate className="mt-5 flex flex-1 flex-col lg:mt-1">
+        <form onSubmit={submit} noValidate className="mt-8 flex flex-1 flex-col lg:mt-8 [@media(min-width:64rem)_and_(max-height:760px)]:mt-6">
           <header className="text-center">
             {editing && screen === 1 && <p className="mb-1 text-base font-semibold text-brand-dark">{t('register.editKicker')}</p>}
             {/* Ánimo según el paso */}
             {!editing && <p key={screen} className="animate-pop-in mb-1.5 text-sm font-semibold text-brand-dark">{t(`register.cheer${screen}`)}</p>}
-            <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink [text-wrap:balance] lg:text-[2.75rem]">{steps.title}</h1>
-            <p className="mx-auto mt-1.5 max-w-[60ch] text-[17px] leading-relaxed text-slate-600 [text-wrap:pretty] lg:mt-2 lg:text-lg">{steps.sub}</p>
+            <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink [text-wrap:balance] lg:text-[2.75rem] [@media(min-width:64rem)_and_(max-height:760px)]:text-4xl">{steps.title}</h1>
+            <p className="mx-auto mt-1.5 max-w-[60ch] text-[17px] leading-relaxed text-slate-600 [text-wrap:pretty] lg:mt-2 lg:text-lg [@media(min-width:64rem)_and_(max-height:760px)]:mt-1">{steps.sub}</p>
           </header>
 
           {restored && screen === 1 && (
@@ -266,7 +266,7 @@ export default function RegisterView({ mode = 'create' }) {
 
           {/* 1 · Perfil */}
           {screen === 1 && (
-            <div key="profile" className="animate-view-in mt-6 space-y-5 lg:grid lg:grid-cols-[300px_1fr] lg:items-center lg:gap-8 lg:space-y-0">
+            <div key="profile" className="animate-view-in mt-6 space-y-5 lg:mt-5 [@media(min-width:64rem)_and_(max-height:760px)]:mt-4 lg:grid lg:grid-cols-[300px_1fr] lg:items-center lg:gap-8 lg:space-y-0">
               <GuestCard form={form} onPhoto={(v) => set('photo', v)} />
               <div className="space-y-5 lg:space-y-3">
               <div data-field="name">
