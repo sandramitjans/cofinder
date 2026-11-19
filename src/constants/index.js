@@ -47,7 +47,7 @@ export const MIN_TABLE_SIZE = 3
 export const MAX_TABLE_SIZE = 4
 export const MAX_TABLES = 12
 export const MAX_TABLES_PER_TOPIC = 2
-export const PAUSE_AFTER_ROUND = 3
+export const PAUSE_AFTER_ROUND = 2
 export const PAUSE_MINUTES = 10
 // Al empezar cada ronda: minutos para encontrar la mesa antes de que arranque la conversación
 export const FIND_MINUTES = 2
