@@ -53,8 +53,8 @@
   --color-slate-200: #E9E1D8;
   --color-slate-300: #D6CCC3;
   --color-slate-400: #8A7F88; /* 3,8:1 sobre blanco: bordes de campos e iconos (no texto) */
-  --color-slate-500: #6E6470;
-  --color-slate-600: #5C525E;
+  --color-slate-500: #605664; /* texto secundario: 7:1 sobre blanco */
+  --color-slate-600: #514753;
   --color-slate-700: #4A404D;
   --color-slate-800: #372D3B;
   --color-slate-900: #2B2130;
@@ -97,6 +97,17 @@
   ::selection { background: var(--color-brand-soft); color: var(--color-ink); }
   /* Foco visible e inmediato en todo lo que se puede pulsar */
   :focus-visible { outline: 3px solid var(--color-brand); outline-offset: 2px; }
+}
+
+/* Formulario y pantalla final de invitados (público de más de 50 años): todo un paso más grande.
+   Tailwind v4 lee estas variables, así que text-xs/sm/base/lg crecen solo dentro de estas pantallas. */
+.guest-scale {
+  font-size: 18px;
+  line-height: 28px;
+  --text-xs: 0.875rem;  --text-xs--line-height: 1.35rem;
+  --text-sm: 1rem;      --text-sm--line-height: 1.5rem;
+  --text-base: 1.125rem; --text-base--line-height: 1.75rem;
+  --text-lg: 1.25rem;   --text-lg--line-height: 1.8rem;
 }
 
 /* Sobre coral, violeta y verde, el texto siempre en blanco (AA). Fuera de @layer para ganar a text-ink */

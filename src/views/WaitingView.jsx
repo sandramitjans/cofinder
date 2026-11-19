@@ -39,7 +39,7 @@ export default function WaitingView({ onLobby }) {
   const longDate = formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
-    <div className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
+    <div className="guest-scale vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
       {fresh && <Confetti />}
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
         <header className="flex items-center justify-between gap-4">
@@ -54,7 +54,7 @@ export default function WaitingView({ onLobby }) {
             </button>
           )}
           {justUpdated && (
-            <p role="status" className="animate-pop-in mb-4 flex items-center gap-2 rounded-xl bg-mint-soft px-3 py-2.5 text-[15px] font-semibold text-mint-dark">
+            <p role="status" className="animate-pop-in mb-4 flex items-center gap-2 rounded-xl bg-mint-soft px-3 py-2.5 text-[17px] font-semibold text-mint-dark">
               <CheckCircle2 className="h-5 w-5 shrink-0" /> {t('waiting.updated')}
             </p>
           )}
@@ -65,7 +65,7 @@ export default function WaitingView({ onLobby }) {
               <Check aria-hidden className="h-8 w-8 text-mint" strokeWidth={3} />
             </div>
             <h1 className="mt-4 font-display text-[32px] font-medium leading-tight text-ink">{t(fresh ? 'waiting.created' : 'waiting.registered')}</h1>
-            <p className="mx-auto mt-1.5 max-w-sm text-[17px] leading-snug text-slate-500">
+            <p className="mx-auto mt-1.5 max-w-sm text-[19px] leading-snug text-slate-500">
               {t('waiting.seeYou').split('{date}').map((part, i) => (
                 <span key={i}>{i > 0 && <strong className="whitespace-nowrap font-semibold text-ink">{longDate}</strong>}{part}</span>
               ))}
@@ -107,7 +107,7 @@ export default function WaitingView({ onLobby }) {
                   <p className={`${currentUser.superpowers?.length ? 'mt-5' : ''} text-sm font-semibold text-slate-600`}>{t(chosen.length === 1 ? 'waiting.choice' : 'waiting.choices', { n: chosen.length })}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {chosen.map((id) => (
-                      <span key={id} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[15px] font-semibold ${familyTone(familyIn(id, eventTopics)).chip}`}>
+                      <span key={id} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[17px] font-semibold ${familyTone(familyIn(id, eventTopics)).chip}`}>
                         <span aria-hidden>{topicEmoji(id)}</span> {topic(id)}
                         <LevelTag person={currentUser} id={id} />
                       </span>
@@ -261,15 +261,15 @@ function AccessCode({ name, code }) {
             </button>
           </div>
         </div>
-        <p className="mt-3 text-[15px] leading-snug text-slate-500">{t('login.codeHint')}</p>
+        <p className="mt-3 text-[17px] leading-snug text-slate-500">{t('login.codeHint')}</p>
       </div>
       <div className="border-t border-slate-200 bg-brand-soft/40 p-4">
         <p className="text-sm font-semibold text-ink">{t('waiting.keepIt')}</p>
         <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-          <a href={mailHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand px-3 text-[15px] font-semibold text-white transition hover:bg-brand-hover">
+          <a href={mailHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand px-3 text-[17px] font-semibold text-white transition hover:bg-brand-hover">
             <Mail className="h-5 w-5" /> {t('waiting.byEmail')}
           </a>
-          <button type="button" onClick={downloadIcs} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[15px] font-semibold text-ink transition hover:border-slate-300">
+          <button type="button" onClick={downloadIcs} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[17px] font-semibold text-ink transition hover:border-slate-300">
             <CalendarPlus className="h-5 w-5" /> {t('waiting.calendar')}
           </button>
         </div>

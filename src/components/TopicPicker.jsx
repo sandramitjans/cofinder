@@ -97,8 +97,8 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
           <span className="flex min-h-8 items-center gap-2.5">
             {by ? (
               <>
-                <span aria-hidden className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-[13px] font-bold ${selected ? 'bg-brand text-white' : familyTone(family).chip}`}>{initials(by)}</span>
-                <span className="min-w-0 flex-1 truncate text-[15px] text-slate-600 lg:text-base"><strong className="font-semibold text-ink">{by}</strong> {t('register.proposes')}</span>
+                <span aria-hidden className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-[15px] font-bold ${selected ? 'bg-brand text-white' : familyTone(family).chip}`}>{initials(by)}</span>
+                <span className="min-w-0 flex-1 truncate text-[17px] text-slate-600 lg:text-base"><strong className="font-semibold text-ink">{by}</strong> {t('register.proposes')}</span>
               </>
             ) : <span className="flex-1" />}
             {selected ? (
@@ -113,7 +113,7 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
               líneas (el hueco queda abajo): misma altura en todas las tarjetas */}
           <span className="mt-2.5 block min-h-[96px] lg:min-h-[84px]">
             <span className="line-clamp-2 block text-lg font-semibold leading-snug text-ink lg:text-xl">{topic(id)}</span>
-            <span title={description} className="mt-1 line-clamp-2 block text-[15px] leading-snug text-slate-600 lg:text-base">{description}</span>
+            <span title={description} className="mt-1 line-clamp-2 block text-[17px] leading-snug text-slate-600 lg:text-base">{description}</span>
           </span>
         </button>
       </li>
@@ -125,13 +125,13 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
       {/* Filtros por familia: grandes, con emoji y cuántos temas hay en cada una */}
       {families.length > 1 && (
         <>
-          <p className="text-[15px] font-semibold text-ink lg:text-base">{t('register.filterAsk')}</p>
+          <p className="text-[17px] font-semibold text-ink lg:text-base">{t('register.filterAsk')}</p>
           <div className="mt-2.5 flex flex-wrap gap-2" role="group" aria-label={t('register.filterLabel')}>
             {[{ id: 'all', label: t('register.filterAll'), emoji: '', n: ordered.length }, ...families.map((g) => ({ id: g.id, label: t(`register.families.${g.id}`), emoji: FAMILY_EMOJI[g.id], n: counts.get(g.id) }))].map((f) => {
               const on = filter === f.id
               return (
                 <button key={f.id} type="button" onClick={() => setFilter(f.id)} aria-pressed={on}
-                  className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-semibold transition sm:gap-2 sm:px-4 sm:text-[15px] lg:min-h-11 lg:text-base ${
+                  className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-semibold transition sm:gap-2 sm:px-4 sm:text-[17px] lg:min-h-11 lg:text-base ${
                     on ? 'border-ink bg-ink text-white' : `border-transparent ${f.id === 'all' ? 'bg-white text-ink ring-1 ring-slate-200' : familyTone(f.id).chip} hover:brightness-95`
                   }`}>
                   {f.emoji && <span aria-hidden>{f.emoji}</span>} {f.label} <span className={`text-sm font-medium ${on ? 'text-white/70' : 'opacity-70'}`}>{f.n}</span>
@@ -143,7 +143,7 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
       )}
 
       {/* Un consejo para quien no sabe qué elegir */}
-      <p className="mt-4 flex items-start gap-2.5 rounded-xl bg-accent-soft px-4 py-3 text-[15px] text-ink lg:text-base">
+      <p className="mt-4 flex items-start gap-2.5 rounded-xl bg-accent-soft px-4 py-3 text-[17px] text-ink lg:text-base">
         <Lightbulb aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-accent-dark" /> {t('register.pickTip')}
       </p>
       {max > 1 && (

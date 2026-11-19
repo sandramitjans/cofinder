@@ -213,7 +213,7 @@ export default function RegisterView({ mode = 'create' }) {
   }[screen]
 
   return (
-    <main className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
+    <main className="guest-scale vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
       <div className={`mx-auto flex w-full flex-1 flex-col ${WIDTH}`}>
         {/* Volver + progreso «▬▬▬ 2/4», como en el prototipo */}
         <div className="flex min-h-10 items-center justify-between gap-4">
@@ -248,13 +248,13 @@ export default function RegisterView({ mode = 'create' }) {
             {/* Ánimo según el paso */}
             {!editing && <p key={screen} className="animate-pop-in mb-1.5 text-sm font-semibold text-brand-dark">{t(`register.cheer${screen}`)}</p>}
             <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink lg:text-5xl">{steps.title}</h1>
-            <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600 lg:mt-3 lg:text-lg">{steps.sub}</p>
+            <p className="mt-1.5 text-[17px] leading-relaxed text-slate-600 lg:mt-3 lg:text-lg">{steps.sub}</p>
           </header>
 
           {restored && screen === 1 && (
             <div className="mt-5 flex flex-col gap-2 rounded-xl border border-brand/30 bg-brand-soft px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[15px] font-medium text-ink">{t('register.draftRestored')}</p>
-              <button type="button" onClick={resetDraft} className="inline-flex shrink-0 items-center gap-1.5 self-start text-[15px] font-semibold text-brand-dark underline-offset-4 hover:underline sm:self-auto">
+              <p className="text-[17px] font-medium text-ink">{t('register.draftRestored')}</p>
+              <button type="button" onClick={resetDraft} className="inline-flex shrink-0 items-center gap-1.5 self-start text-[17px] font-semibold text-brand-dark underline-offset-4 hover:underline sm:self-auto">
                 <RotateCcw className="h-4 w-4" /> {t('register.draftReset')}
               </button>
             </div>
@@ -327,7 +327,7 @@ export default function RegisterView({ mode = 'create' }) {
               </Button>
               {editing && (
                 <button type="button" onClick={() => navigate(VIEWS.HOME)} disabled={saving}
-                  className="mt-2 w-full rounded-xl py-3 text-[15px] font-semibold text-slate-600 hover:bg-white">
+                  className="mt-2 w-full rounded-xl py-3 text-[17px] font-semibold text-slate-600 hover:bg-white">
                   {t('register.editCancel')}
                 </button>
               )}
@@ -373,7 +373,7 @@ function MandatoryTopics() {
   const { eventTopics } = useApp()
   return (
     <div key="mandatory" className="animate-view-in mt-6">
-      <p className="flex items-center gap-2 text-[15px] font-semibold text-slate-600">
+      <p className="flex items-center gap-2 text-[17px] font-semibold text-slate-600">
         <CalendarDays aria-hidden className="h-4 w-4" /> {t('register.mandatoryList')}
       </p>
       <ol className="mt-3 grid gap-3 sm:grid-cols-2 lg:gap-4">
@@ -386,16 +386,16 @@ function MandatoryTopics() {
               className="animate-rise-in relative flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-4 lg:p-5">
               <span aria-hidden className={`grid h-12 w-12 place-items-center rounded-2xl text-2xl ${familyTone(family).tile}`}>{topicEmoji(id)}</span>
               <span className="mt-3 block text-lg font-semibold leading-snug text-ink lg:text-xl">{topic(id)}</span>
-              {description && <span className="mt-1 block text-[15px] leading-snug text-slate-600 lg:text-base">{description}</span>}
+              {description && <span className="mt-1 block text-[17px] leading-snug text-slate-600 lg:text-base">{description}</span>}
               {/* Sello: ya está reservado para todo el mundo */}
-              <span className="absolute right-3 top-3 -rotate-3 rounded-lg border-2 border-mint px-2 py-0.5 text-sm font-bold text-mint-dark lg:right-4 lg:top-4 lg:text-[15px]">
+              <span className="absolute right-3 top-3 -rotate-3 rounded-lg border-2 border-mint px-2 py-0.5 text-sm font-bold text-mint-dark lg:right-4 lg:top-4 lg:text-[17px]">
                 {t('register.mandatoryBadge')} ✓
               </span>
             </li>
           )
         })}
       </ol>
-      <p className="mt-5 flex items-start gap-2.5 rounded-xl bg-accent-soft px-4 py-3 text-[15px] text-ink lg:text-base">
+      <p className="mt-5 flex items-start gap-2.5 rounded-xl bg-accent-soft px-4 py-3 text-[17px] text-ink lg:text-base">
         <Info aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-accent-dark" /> {t('register.mandatoryNext', { max: MAX_INTERESTS })}
       </p>
     </div>
@@ -413,7 +413,7 @@ const LANDING_WIDTH = 'max-w-xl lg:max-w-[1024px]'
 function Landing({ resume, onStart }) {
   const { t, formatDate } = useI18n()
   return (
-    <div className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
+    <div className="guest-scale vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
       <header className={`mx-auto flex w-full ${LANDING_WIDTH} items-center justify-between gap-4`}>
         <Logo />
         <LangSwitch />
@@ -451,7 +451,7 @@ function LoginLink() {
   const { navigate } = useApp()
   const { t } = useI18n()
   return (
-    <button type="button" onClick={() => navigate(VIEWS.LOGIN)} className="mt-4 min-h-11 px-2 text-center text-sm font-semibold sm:text-[15px] text-brand-dark underline-offset-4 hover:underline">
+    <button type="button" onClick={() => navigate(VIEWS.LOGIN)} className="mt-4 min-h-11 px-2 text-center text-sm font-semibold sm:text-[17px] text-brand-dark underline-offset-4 hover:underline">
       {t('login.landingLink')}
     </button>
   )

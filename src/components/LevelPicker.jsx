@@ -57,7 +57,7 @@ function LevelOption({ on, onClick, emoji, label, hint }) {
       aria-checked={on}
       title={hint}
       onClick={onClick}
-      className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl border-2 px-0.5 py-1.5 text-[14px] sm:min-h-12 sm:flex-row sm:gap-1.5 sm:py-0 font-semibold transition sm:px-3 sm:text-[15px] lg:w-[172px] lg:rounded-full lg:text-base ${
+      className={`flex min-h-16 min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl border-2 px-0.5 py-1.5 text-[15px] sm:min-h-14 sm:flex-row sm:gap-1.5 sm:py-0 font-semibold transition sm:px-3 sm:text-[17px] lg:w-[204px] lg:rounded-full lg:text-base ${
         on ? 'border-brand bg-brand text-white' : 'border-slate-200 bg-white text-ink hover:border-slate-400'
       }`}
     >
