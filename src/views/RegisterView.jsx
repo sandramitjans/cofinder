@@ -417,11 +417,11 @@ function Landing({ resume, onStart }) {
       </header>
 
       <main className={`mx-auto flex w-full ${WIDTH} flex-1 flex-col justify-center py-10`}>
-        <h1 className="font-display text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">{t('register.titleMain')}</h1>
-        <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-600">{t('register.subtitle', { rounds: TOTAL_ROUNDS, min: ROUND_MINUTES })}</p>
+        <h1 className="text-center font-display text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">{t('register.titleMain')}</h1>
+        <p className="mx-auto mt-5 max-w-lg text-center text-lg leading-relaxed text-slate-600">{t('register.subtitle', { rounds: TOTAL_ROUNDS, min: ROUND_MINUTES })}</p>
 
         {/* Invitación: una entrada de evento con la fecha y el lugar */}
-        <div className="animate-rise-in mt-8 flex overflow-hidden rounded-2xl bg-white shadow-lg shadow-brand/10 ring-1 ring-brand/15">
+        <div className="animate-rise-in mt-8 flex overflow-hidden rounded-2xl bg-brand-soft shadow-lg shadow-brand/10 ring-1 ring-brand/20">
           <div className="grid w-28 shrink-0 place-items-center bg-brand px-3 py-5 text-center text-white sm:w-36">
             <span>
               <span className="block text-xs font-bold uppercase tracking-widest text-white/80">{formatDate(EVENT_DATE, { weekday: 'short' })}</span>
@@ -440,16 +440,6 @@ function Landing({ resume, onStart }) {
             <p className="mt-2 flex items-center gap-2 text-[15px] text-slate-600 sm:text-base"><MapPin className="h-4 w-4 shrink-0 text-brand" /> {EVENT_PLACE || t('register.placeTbc')}</p>
           </div>
         </div>
-
-        {/* Los 3 pasos, dibujados */}
-        <ol className="mt-6 grid gap-3 sm:grid-cols-3">
-          {[['👋', 'landingStep1'], ['🎯', 'landingStep2'], ['🥂', 'landingStep3']].map(([emoji, key], i) => (
-            <li key={key} style={{ animationDelay: `${150 + i * 120}ms` }} className="animate-rise-in flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 ring-1 ring-slate-200 sm:flex-col sm:items-start sm:gap-2 sm:py-4">
-              <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-soft text-xl">{emoji}</span>
-              <span className="text-[15px] font-semibold leading-snug text-ink sm:text-base"><span className="text-brand-dark">{i + 1}.</span> {t(`register.${key}`)}</span>
-            </li>
-          ))}
-        </ol>
 
         <Button type="button" onClick={onStart} iconRight={ArrowRight} className="mt-8 w-full py-4 text-base lg:py-5 lg:text-xl">
           {t(resume ? 'register.landingResume' : 'register.landingCta')}
