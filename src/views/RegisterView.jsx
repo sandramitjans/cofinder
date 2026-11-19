@@ -407,21 +407,24 @@ function MandatoryTopics() {
 const WIDTH = 'max-w-xl lg:max-w-[1080px]'
 
 /** Bienvenida (a la que llega el email): título, datos del evento y un único botón */
+// Bienvenida: como mucho 1024px en PC, para que no se vea tan grande
+const LANDING_WIDTH = 'max-w-xl lg:max-w-[1024px]'
+
 function Landing({ resume, onStart }) {
   const { t, formatDate } = useI18n()
   return (
     <div className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
-      <header className={`mx-auto flex w-full ${WIDTH} items-center justify-between gap-4`}>
+      <header className={`mx-auto flex w-full ${LANDING_WIDTH} items-center justify-between gap-4`}>
         <Logo />
         <LangSwitch />
       </header>
 
-      <main className={`mx-auto flex w-full ${WIDTH} flex-1 flex-col justify-center py-10`}>
+      <main className={`mx-auto flex w-full ${LANDING_WIDTH} flex-1 flex-col justify-center py-10`}>
         <h1 className="text-center font-display text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">{t('register.titleMain')}</h1>
         <p className="mx-auto mt-5 max-w-lg text-center text-lg leading-relaxed text-slate-600">{t('register.subtitle', { rounds: TOTAL_ROUNDS, min: ROUND_MINUTES })}</p>
 
         {/* Invitación: una entrada de evento con la fecha y el lugar */}
-        <div className="animate-rise-in mt-8 flex overflow-hidden rounded-2xl bg-brand-soft shadow-lg shadow-brand/10 ring-1 ring-brand/20">
+        <div className="animate-rise-in mt-8 flex overflow-hidden rounded-2xl bg-[#FDF4F0] shadow-lg shadow-brand/10 ring-1 ring-brand/15">
           <div className="grid w-28 shrink-0 place-items-center bg-brand px-3 py-5 text-center text-white sm:w-36">
             <span>
               <span className="block text-xs font-bold uppercase tracking-widest text-white/80">{formatDate(EVENT_DATE, { weekday: 'short' })}</span>
