@@ -3,7 +3,7 @@ import { Check, Lightbulb } from 'lucide-react'
 import { FAMILY_EMOJI, MAX_TAGS, TOPICS, TOPIC_FAMILIES, TOPIC_PROPOSERS } from '../constants'
 import { familyOfTopic, familyTone } from '../lib/familyColors'
 import { useI18n } from '../context/I18nContext'
-import { isCustom, seededOrder, topicOrderSeed } from '../lib/topics'
+import { eventTopicDesc, isCustom, seededOrder, topicOrderSeed } from '../lib/topics'
 
 /**
  * «Choisissez votre table»: cada tema es una mesa de conversación que propone un colega.
@@ -33,7 +33,7 @@ const BAND = {
 const initials = (name) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('')
 
 export default function TopicPicker({ value, topics = [], onChange, error, max = MAX_TAGS }) {
-  const { t, topic } = useI18n()
+  const { t, topic, lang } = useI18n()
   const [notice, setNotice] = useState(false)
   const [filter, setFilter] = useState('all')
   const seed = useMemo(topicOrderSeed, [])
@@ -76,7 +76,7 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
     const family = familyOf(x)
     const selected = value.includes(id)
     const full = !selected && max > 1 && value.length >= max
-    const description = isCustom(id) ? desc : t(`topicDesc.${id}`)
+    const description = isCustom(id) ? eventTopicDesc(id, lang) || desc : t(`topicDesc.${id}`)
     return (
       <li key={id} className="h-full">
         <button

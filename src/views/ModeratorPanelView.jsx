@@ -8,7 +8,7 @@ import { useI18n } from '../context/I18nContext'
 import { FAMILY_EMOJI, FIND_MINUTES, MAX_INTERESTS, PAUSE_AFTER_ROUND, PAUSE_MINUTES, TOPIC_FAMILIES, VIEWS } from '../constants'
 import { familyTone } from '../lib/familyColors'
 import { advancedShortfall, planStats, tableRange } from '../lib/matching'
-import { MAX_CUSTOM_LENGTH, hasTopic, isMandatory, makeEventTopic, myTopics, normalizeText, topicKey } from '../lib/topics'
+import { MAX_CUSTOM_LENGTH, customLabel, hasTopic, isMandatory, makeEventTopic, myTopics, normalizeText, topicKey } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
 import { useConnected } from '../lib/useConnected'
 import Logo from '../components/ui/Logo'
@@ -347,7 +347,7 @@ function EventTopics({ topics, participants, onAdd, onRemove, t, topic }) {
     setEditing(null)
   }
   const edit = (x) => {
-    setForm({ label: topic(x.id), by: x.by ?? '', desc: x.desc ?? '', family: x.family ?? '', mandatory: !!x.mandatory })
+    setForm({ label: customLabel(x.id), by: x.by ?? '', desc: x.desc ?? '', family: x.family ?? '', mandatory: !!x.mandatory })
     setEditing(x.id)
     setExists(false)
     document.getElementById('topic-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })

@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { FIND_MINUTES, REPORT_LANGS, REPORT_LANG_BY_COUNTRY, TOTAL_ROUNDS } from '../constants'
 import { roleOf } from '../lib/matching'
-import { topicKey, topicEmoji } from '../lib/topics'
+import { eventTopicDesc, topicKey, topicEmoji } from '../lib/topics'
 import { icebreakerFor } from '../lib/icebreakers'
 import { useCountdown } from '../lib/useCountdown'
 import { MAX_NOTE_SECONDS, canRecord, extensionOf, getNote, recorderMime } from '../lib/audioNotes'
@@ -186,8 +186,10 @@ function IcebreakerFor({ topicId }) {
 /** Descripción de la mesa (las que añade el admin desde el panel pueden llevarla) */
 function useTopicDesc(topicId) {
   const { eventTopics, eventTopicsLoaded, loadEventTopics } = useApp()
+  const { lang } = useI18n()
   useEffect(() => { if (!eventTopicsLoaded) loadEventTopics() }, [eventTopicsLoaded, loadEventTopics])
-  return eventTopics.find((x) => topicKey(x.id) === topicKey(topicId))?.desc ?? ''
+  const x = eventTopics.find((e) => topicKey(e.id) === topicKey(topicId))
+  return (lang === 'en' && eventTopicDesc(topicId, lang)) || x?.desc || ''
 }
 
 /** «Tú: experto/a…» cuando el plan tiene en cuenta el nivel de cada persona */
