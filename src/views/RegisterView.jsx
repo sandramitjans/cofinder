@@ -243,12 +243,12 @@ export default function RegisterView({ mode = 'create' }) {
         </div>
 
         <form onSubmit={submit} noValidate className="mt-5 flex flex-1 flex-col">
-          <header>
+          <header className="text-center">
             {editing && screen === 1 && <p className="mb-1 text-base font-semibold text-brand-dark">{t('register.editKicker')}</p>}
             {/* Ánimo según el paso */}
             {!editing && <p key={screen} className="animate-pop-in mb-1.5 text-sm font-semibold text-brand-dark">{t(`register.cheer${screen}`)}</p>}
-            <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink lg:text-5xl">{steps.title}</h1>
-            <p className="mt-1.5 text-[17px] leading-relaxed text-slate-600 lg:mt-3 lg:text-lg">{steps.sub}</p>
+            <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink [text-wrap:balance] lg:text-5xl">{steps.title}</h1>
+            <p className="mx-auto mt-1.5 max-w-[60ch] text-[17px] leading-relaxed text-slate-600 [text-wrap:pretty] lg:mt-3 lg:text-lg">{steps.sub}</p>
           </header>
 
           {restored && screen === 1 && (

@@ -56,13 +56,13 @@ export default function WaitingView({ onLobby }) {
             </p>
           )}
 
-          <header className="animate-pop-in">
+          <header className="animate-pop-in text-center">
             {/* El check grande: la señal de que ya está */}
-            <div className="mb-5 grid h-16 w-16 place-items-center rounded-full bg-mint-soft ring-8 ring-mint-soft/50">
+            <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-full bg-mint-soft ring-8 ring-mint-soft/50">
               <Check aria-hidden className="h-8 w-8 text-mint" strokeWidth={3} />
             </div>
             <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink lg:text-5xl">{t(fresh ? 'waiting.created' : 'waiting.registered')}</h1>
-            <p className="mt-1.5 text-[17px] leading-relaxed text-slate-600 lg:mt-3 lg:text-lg">
+            <p className="mx-auto mt-1.5 max-w-[60ch] text-[17px] leading-relaxed text-slate-600 [text-wrap:pretty] lg:mt-3 lg:text-lg">
               {line.split(/(\u0000|\u0001)/).map((part, i) =>
                 part === '\u0000' ? <strong key={i} className="whitespace-nowrap font-semibold text-ink">{longDate}</strong>
                   : part === '\u0001' ? <strong key={i} className="font-semibold text-ink">{EVENT_PLACE}</strong>

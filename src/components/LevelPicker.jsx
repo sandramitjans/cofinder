@@ -22,7 +22,7 @@ export default function LevelPicker({ topics, levels, onChange, error }) {
   return (
     <div className="mt-6">
       {/* Leyenda una sola vez arriba: así las opciones pueden ser botones pequeños */}
-      <p className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-600 lg:text-base">
+      <p className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-sm text-slate-600 lg:text-base">
         {LEVELS.map((o) => <span key={o}><span aria-hidden>{LEVEL_EMOJI[o]}</span> <strong className="font-semibold text-ink">{t(`register.level.${o}`)}</strong> · {t(`register.level.${o}Hint`)}</span>)}
       </p>
       <ul className="mt-4 space-y-3">
