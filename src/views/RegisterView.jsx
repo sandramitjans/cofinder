@@ -420,20 +420,21 @@ function Landing({ resume, onStart }) {
       </header>
 
       <main className={`mx-auto flex w-full ${LANDING_WIDTH} flex-1 flex-col justify-center py-10`}>
+        <div className="mx-auto flex w-full max-w-[720px] flex-col">
         <h1 className="text-center font-display text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">{t('register.titleMain')}</h1>
         <p className="mx-auto mt-5 max-w-lg text-center text-lg leading-relaxed text-slate-600">{t('register.subtitle', { rounds: TOTAL_ROUNDS, min: ROUND_MINUTES })}</p>
 
         {/* Invitación: una entrada de evento con la fecha y el lugar */}
-        <div className="animate-rise-in mt-8 flex overflow-hidden rounded-2xl bg-[#FDF4F0] shadow-lg shadow-brand/10 ring-1 ring-brand/15">
-          <div className="grid w-28 shrink-0 place-items-center bg-brand px-3 py-5 text-center text-white sm:w-36">
+        <div className="animate-rise-in mt-8 flex overflow-hidden rounded-2xl border border-brand/15 bg-[#FDF4F0]">
+          <div className="grid w-28 shrink-0 place-items-center bg-brand-soft px-3 py-5 text-center text-brand-dark sm:w-36">
             <span>
-              <span className="block text-xs font-bold uppercase tracking-widest text-white/80">{formatDate(EVENT_DATE, { weekday: 'short' })}</span>
+              <span className="block text-xs font-bold uppercase tracking-widest text-brand-dark/70">{formatDate(EVENT_DATE, { weekday: 'short' })}</span>
               <span className="block font-display text-5xl font-medium leading-none sm:text-6xl">{formatDate(EVENT_DATE, { day: 'numeric' })}</span>
               <span className="block text-sm font-bold uppercase tracking-widest">{formatDate(EVENT_DATE, { month: 'short' })}</span>
             </span>
           </div>
           {/* Borde troquelado, como el de una entrada */}
-          <div aria-hidden className="relative w-0 border-l-2 border-dashed border-brand/30">
+          <div aria-hidden className="relative w-0 border-l-2 border-dashed border-brand/25">
             <span className="absolute -left-2.5 -top-2.5 h-5 w-5 rounded-full bg-paper" />
             <span className="absolute -bottom-2.5 -left-2.5 h-5 w-5 rounded-full bg-paper" />
           </div>
@@ -444,11 +445,12 @@ function Landing({ resume, onStart }) {
           </div>
         </div>
 
-        <Button type="button" onClick={onStart} iconRight={ArrowRight} className="mt-8 w-full py-4 text-base lg:py-5 lg:text-xl">
+        <Button type="button" onClick={onStart} iconRight={ArrowRight} className="mt-8 w-full py-4 text-base sm:min-w-[300px] sm:self-center sm:px-10 sm:w-auto lg:text-lg">
           {t(resume ? 'register.landingResume' : 'register.landingCta')}
         </Button>
         <p className="mt-3 text-center text-sm text-slate-500">{t(resume ? 'register.landingNote' : 'register.landingHow', { n: stepsOrder().length, min: stepsOrder().length > 4 ? 3 : 2 })}</p>
         <LoginLink />
+        </div>
       </main>
 
       <PublicFooter />
