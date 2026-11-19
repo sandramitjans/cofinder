@@ -34,6 +34,8 @@
   --color-glow-lilac: rgb(236 228 255 / 0.8);
   --color-sheen: rgb(255 251 248 / 0.35);
   --color-paper: #F7F3EE;
+  /* Naranja claro para resúmenes no pulsables: algo más que el papel, muy lejos del coral del botón (textos de 5:1 a 12:1) */
+  --color-peach: #FCDDC0;
   --color-cloud: #EFE8E0;
 
   /* Pasteles por familia de temas (fondo + su texto) */
