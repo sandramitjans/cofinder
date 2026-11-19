@@ -79,6 +79,15 @@ const formFromProfile = (p) => {
 
 // Pantallas: 0 = bienvenida, 1 = perfil, 2 = temas obligatorios (informativa), 3 = nivel en los obligatorios,
 // 4 = mesa elegida, 5 = nivel en la mesa elegida, 6 = arma secreta
+// Pantallas: 1 perfil · 2 temas obligatorios · 3 su nivel · 4 elegir tema · 5 su nivel · 6 arma secreta.
+// Sin temas «au choix» (lo normal ahora) no salen la 4 ni la 5; sin obligatorios no salen la 2 ni la 3.
+// La gestión de temas «au choix» sigue en el panel #admin: si se añaden, las pantallas 4 y 5 vuelven solas.
+const stepsOrder = () => [
+  1,
+  ...(mandatoryTopics().length ? [2, 3] : []),
+  ...(optionalTopics().length ? [4, 5] : []),
+  6,
+]
 const LAST = 6
 
 export default function RegisterView({ mode = 'create' }) {
@@ -128,12 +137,14 @@ export default function RegisterView({ mode = 'create' }) {
     return () => clearTimeout(timer)
   }, [form, saving, editing])
 
+  const order = stepsOrder()
+  const pos = order.indexOf(screen) // posición en el progreso (0 = perfil)
   const goTo = (n) => {
-    // Sin temas obligatorios (el Admin no ha marcado ninguno), las pantallas 2 y 3 se saltan
-    if ((n === 2 || n === 3) && !mandatoryTopics().length) n = screen > 3 ? 1 : 4
     setScreen(n)
     window.scrollTo({ top: 0 })
   }
+  const goNext = () => goTo(order[pos + 1] ?? LAST)
+  const goBack = () => goTo(pos > 0 ? order[pos - 1] : 0)
 
   const resetDraft = () => {
     try { localStorage.removeItem(DRAFT_KEY) } catch { /* noop */ }
@@ -166,9 +177,9 @@ export default function RegisterView({ mode = 'create' }) {
   const submit = async (e) => {
     e.preventDefault()
     if (saving || !validate()) return
-    if (screen < LAST) return goTo(screen + 1)
+    if (screen < LAST) return goNext()
     // Nivel de cada tema (obligatorios + elegido) → `offers` / `needs`. Las mesas del panel (`custom:…`) también en `customTopics`
-    const chosen = form.needs.filter((id) => !isMandatory(id)).slice(0, MAX_INTERESTS)
+    const chosen = optionalTopics().length ? form.needs.filter((id) => !isMandatory(id)).slice(0, MAX_INTERESTS) : []
     const { levels, ...rest } = form
     const data = {
       ...rest,
@@ -202,14 +213,14 @@ export default function RegisterView({ mode = 'create' }) {
   }[screen]
 
   return (
-    <main className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
+    <main className="guest-scale vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
       <div className={`mx-auto flex w-full flex-1 flex-col ${WIDTH}`}>
         {/* Volver + progreso «▬▬▬ 2/4», como en el prototipo */}
         <div className="flex min-h-10 items-center justify-between gap-4">
           {(screen > 1 || !editing) ? (
             <button
               type="button"
-              onClick={() => (screen === 1 && editing ? navigate(VIEWS.HOME) : goTo(screen - 1))}
+              onClick={() => (screen === 1 && editing ? navigate(VIEWS.HOME) : goBack())}
               disabled={saving}
               aria-label={t('register.back')}
               className="-ml-2 grid h-10 w-10 place-items-center rounded-full text-slate-600 transition hover:bg-white hover:text-ink disabled:opacity-50"
@@ -219,31 +230,31 @@ export default function RegisterView({ mode = 'create' }) {
           ) : <span />}
           <div className="flex min-w-0 items-center gap-3">
             <div className="hidden gap-1 sm:flex" aria-hidden>
-              {Array.from({ length: LAST }, (_, i) => (
-                <span key={i} className={`h-1.5 w-6 rounded-full transition-colors ${i < screen ? 'bg-brand' : 'bg-slate-200'}`} />
+              {order.map((_, i) => (
+                <span key={i} className={`h-1.5 w-6 rounded-full transition-colors ${i <= pos ? 'bg-brand' : 'bg-slate-200'}`} />
               ))}
             </div>
             {/* «Étape 3/6 · Votre niveau»: se sabe dónde se está y qué viene */}
             <span key={screen} className="animate-pop-in min-w-0 truncate text-sm font-semibold text-slate-600 lg:text-base">
-              <span className="tabular-nums text-brand-dark"><span className="hidden sm:inline">{t('register.stepWord')} </span>{t('register.stepOf', { n: screen, total: LAST })}</span> · {t(`register.stepNames.${screen}`)}
+              <span className="tabular-nums text-brand-dark"><span className="hidden sm:inline">{t('register.stepWord')} </span>{t('register.stepOf', { n: pos + 1, total: order.length })}</span> · {t(`register.stepNames.${screen}`)}
             </span>
             <LangSwitch />
           </div>
         </div>
 
         <form onSubmit={submit} noValidate className="mt-5 flex flex-1 flex-col">
-          <header>
-            {editing && screen === 1 && <p className="mb-1 text-sm font-bold uppercase tracking-wider text-brand-dark">{t('register.editKicker')}</p>}
+          <header className="text-center">
+            {editing && screen === 1 && <p className="mb-1 text-base font-semibold text-brand-dark">{t('register.editKicker')}</p>}
             {/* Ánimo según el paso */}
             {!editing && <p key={screen} className="animate-pop-in mb-1.5 text-sm font-semibold text-brand-dark">{t(`register.cheer${screen}`)}</p>}
-            <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink lg:text-5xl">{steps.title}</h1>
-            <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600 lg:mt-3 lg:text-lg">{steps.sub}</p>
+            <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink [text-wrap:balance] lg:text-5xl">{steps.title}</h1>
+            <p className="mx-auto mt-1.5 max-w-[60ch] text-[17px] leading-relaxed text-slate-600 [text-wrap:pretty] lg:mt-3 lg:text-lg">{steps.sub}</p>
           </header>
 
           {restored && screen === 1 && (
             <div className="mt-5 flex flex-col gap-2 rounded-xl border border-brand/30 bg-brand-soft px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[15px] font-medium text-ink">{t('register.draftRestored')}</p>
-              <button type="button" onClick={resetDraft} className="inline-flex shrink-0 items-center gap-1.5 self-start text-[15px] font-semibold text-brand-dark underline-offset-4 hover:underline sm:self-auto">
+              <p className="text-[17px] font-medium text-ink">{t('register.draftRestored')}</p>
+              <button type="button" onClick={resetDraft} className="inline-flex shrink-0 items-center gap-1.5 self-start text-[17px] font-semibold text-brand-dark underline-offset-4 hover:underline sm:self-auto">
                 <RotateCcw className="h-4 w-4" /> {t('register.draftReset')}
               </button>
             </div>
@@ -316,7 +327,7 @@ export default function RegisterView({ mode = 'create' }) {
               </Button>
               {editing && (
                 <button type="button" onClick={() => navigate(VIEWS.HOME)} disabled={saving}
-                  className="mt-2 w-full rounded-xl py-3 text-[15px] font-semibold text-slate-600 hover:bg-white">
+                  className="mt-2 w-full rounded-xl py-3 text-[17px] font-semibold text-slate-600 hover:bg-white">
                   {t('register.editCancel')}
                 </button>
               )}
@@ -341,12 +352,12 @@ function GuestCard({ form, onPhoto }) {
   const place = country(form.country.trim())
   const complete = !!(name && role && place)
   return (
-    <div className={`flex items-center gap-4 rounded-2xl border-2 bg-white p-4 transition-all duration-300 ${complete ? 'border-brand/30 shadow-md shadow-brand/10' : 'border-dashed border-slate-300'}`}>
+    <div className={`flex items-center gap-4 rounded-2xl border-2 bg-white p-4 transition-[border-color,box-shadow] duration-300 ${complete ? 'border-brand/30 shadow-md shadow-brand/10' : 'border-dashed border-slate-300'}`}>
       <div className="shrink-0">
         <PhotoPicker compact value={form.photo} name={form.name} onChange={onPhoto} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-brand-dark">{t('register.guestCard')}</p>
+        <p className="text-sm font-semibold text-brand-dark">{t('register.guestCard')}</p>
         <p className={`mt-0.5 truncate font-display text-xl font-medium leading-tight ${name ? 'text-ink' : 'text-slate-500'}`}>{name || t('register.guestName')}</p>
         <p className={`truncate text-sm ${role ? 'text-slate-600' : 'text-slate-500'}`}>{role || t('register.guestRole')}</p>
         {place && <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-slate-600"><MapPin className="h-3.5 w-3.5 shrink-0" /> {place}</p>}
@@ -362,7 +373,7 @@ function MandatoryTopics() {
   const { eventTopics } = useApp()
   return (
     <div key="mandatory" className="animate-view-in mt-6">
-      <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500">
+      <p className="flex items-center gap-2 text-[17px] font-semibold text-slate-600">
         <CalendarDays aria-hidden className="h-4 w-4" /> {t('register.mandatoryList')}
       </p>
       <ol className="mt-3 grid gap-3 sm:grid-cols-2 lg:gap-4">
@@ -375,76 +386,57 @@ function MandatoryTopics() {
               className="animate-rise-in relative flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-4 lg:p-5">
               <span aria-hidden className={`grid h-12 w-12 place-items-center rounded-2xl text-2xl ${familyTone(family).tile}`}>{topicEmoji(id)}</span>
               <span className="mt-3 block text-lg font-semibold leading-snug text-ink lg:text-xl">{topic(id)}</span>
-              {description && <span className="mt-1 block text-[15px] leading-snug text-slate-600 lg:text-base">{description}</span>}
+              {description && <span className="mt-1 block text-[17px] leading-snug text-slate-600 lg:text-base">{description}</span>}
               {/* Sello: ya está reservado para todo el mundo */}
-              <span className="absolute right-3 top-3 -rotate-3 rounded-lg border-2 border-mint px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-mint-dark lg:right-4 lg:top-4 lg:text-sm">
+              <span className="absolute right-3 top-3 -rotate-3 rounded-lg border-2 border-mint px-2 py-0.5 text-sm font-bold text-mint-dark lg:right-4 lg:top-4 lg:text-[17px]">
                 {t('register.mandatoryBadge')} ✓
               </span>
             </li>
           )
         })}
       </ol>
-      <p className="mt-5 flex items-start gap-2.5 rounded-xl bg-accent-soft px-4 py-3 text-[15px] text-ink lg:text-base">
+      <p className="mt-5 flex items-start gap-2.5 rounded-xl bg-accent-soft px-4 py-3 text-[17px] text-ink lg:text-base">
         <Info aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-accent-dark" /> {t('register.mandatoryNext', { max: MAX_INTERESTS })}
       </p>
     </div>
   )
 }
 
-// Ancho del formulario: columna de móvil; en PC, una sola columna de hasta 1080 px (casi todos se registran desde el PC).
-// Solo el registro: la pantalla del código y el resto de la app vuelven al ancho de móvil
-const WIDTH = 'max-w-xl lg:max-w-[1080px]'
+// Ancho de todas las pantallas del invitado en PC: 1024 px (bienvenida, pasos y pantalla final, ver WaitingView). En móvil, una columna.
+const WIDTH = 'max-w-xl lg:max-w-[1024px]'
 
 /** Bienvenida (a la que llega el email): título, datos del evento y un único botón */
+const LANDING_WIDTH = WIDTH
+
 function Landing({ resume, onStart }) {
   const { t, formatDate } = useI18n()
   return (
-    <div className="vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
-      <header className={`mx-auto flex w-full ${WIDTH} items-center justify-between gap-4`}>
+    <div className="guest-scale vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
+      <header className={`mx-auto flex w-full ${LANDING_WIDTH} items-center justify-between gap-4`}>
         <Logo />
         <LangSwitch />
       </header>
 
-      <main className={`mx-auto flex w-full ${WIDTH} flex-1 flex-col justify-center py-10`}>
-        <h1 className="font-display text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">{t('register.titleMain')}</h1>
-        <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-600">{t('register.subtitle', { rounds: TOTAL_ROUNDS, min: ROUND_MINUTES })}</p>
+      {/* Hallmark · Corridor: una sola columna centrada; la fecha y el lugar van dentro de la frase de invitación */}
+      <main className={`mx-auto flex w-full ${LANDING_WIDTH} flex-1 flex-col justify-center py-12`}>
+        <section className="mx-auto flex w-full max-w-[640px] flex-1 flex-col items-center justify-center text-center">
+          <h1 className="font-display text-5xl font-medium leading-[1.02] tracking-[-0.03em] text-ink [text-wrap:balance] sm:text-6xl lg:text-[4rem]">{t('register.titleMain')}</h1>
+          <p className="mt-6 text-xl leading-snug text-ink [text-wrap:balance] sm:text-2xl">
+            {EVENT_PLACE
+              ? t('register.inviteLine', { date: '\u0000', place: '\u0001' }).split(/(\u0000|\u0001)/).map((part, i) =>
+                  part === '\u0000' ? <strong key={i} className="whitespace-nowrap font-semibold text-brand-dark">{formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long' })}</strong>
+                    : part === '\u0001' ? <strong key={i} className="font-semibold">{EVENT_PLACE}</strong>
+                    : part)
+              : t('register.inviteLineNoPlace', { date: formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long' }) })}
+          </p>
+          <p className="mt-4 max-w-[52ch] text-lg leading-relaxed text-slate-600 [text-wrap:pretty]">{t('register.subtitle', { rounds: TOTAL_ROUNDS, min: ROUND_MINUTES, n: mandatoryTopics().length })}</p>
 
-        {/* Invitación: una entrada de evento con la fecha y el lugar */}
-        <div className="animate-rise-in mt-8 flex overflow-hidden rounded-2xl bg-white shadow-lg shadow-brand/10 ring-1 ring-brand/15">
-          <div className="grid w-28 shrink-0 place-items-center bg-brand px-3 py-5 text-center text-white sm:w-36">
-            <span>
-              <span className="block text-xs font-bold uppercase tracking-widest text-white/80">{formatDate(EVENT_DATE, { weekday: 'short' })}</span>
-              <span className="block font-display text-5xl font-medium leading-none sm:text-6xl">{formatDate(EVENT_DATE, { day: 'numeric' })}</span>
-              <span className="block text-sm font-bold uppercase tracking-widest">{formatDate(EVENT_DATE, { month: 'short' })}</span>
-            </span>
-          </div>
-          {/* Borde troquelado, como el de una entrada */}
-          <div aria-hidden className="relative w-0 border-l-2 border-dashed border-brand/30">
-            <span className="absolute -left-2.5 -top-2.5 h-5 w-5 rounded-full bg-paper" />
-            <span className="absolute -bottom-2.5 -left-2.5 h-5 w-5 rounded-full bg-paper" />
-          </div>
-          <div className="min-w-0 flex-1 p-5 sm:p-6">
-            <p className="text-xs font-bold uppercase tracking-widest text-brand-dark">{t('register.ticketKicker')}</p>
-            <p className="mt-1 font-display text-xl font-medium leading-tight text-ink sm:text-2xl">{formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-            <p className="mt-2 flex items-center gap-2 text-[15px] text-slate-600 sm:text-base"><MapPin className="h-4 w-4 shrink-0 text-brand" /> {EVENT_PLACE || t('register.placeTbc')}</p>
-          </div>
-        </div>
-
-        {/* Los 3 pasos, dibujados */}
-        <ol className="mt-6 grid gap-3 sm:grid-cols-3">
-          {[['👋', 'landingStep1'], ['🎯', 'landingStep2'], ['🥂', 'landingStep3']].map(([emoji, key], i) => (
-            <li key={key} style={{ animationDelay: `${150 + i * 120}ms` }} className="animate-rise-in flex items-center gap-3 rounded-xl bg-white/70 px-4 py-3 ring-1 ring-slate-200 sm:flex-col sm:items-start sm:gap-2 sm:py-4">
-              <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-soft text-xl">{emoji}</span>
-              <span className="text-[15px] font-semibold leading-snug text-ink sm:text-base"><span className="text-brand-dark">{i + 1}.</span> {t(`register.${key}`)}</span>
-            </li>
-          ))}
-        </ol>
-
-        <Button type="button" onClick={onStart} iconRight={ArrowRight} className="mt-8 w-full py-4 text-base lg:py-5 lg:text-xl">
-          {t(resume ? 'register.landingResume' : 'register.landingCta')}
-        </Button>
-        <p className="mt-3 text-center text-sm text-slate-500">{t(resume ? 'register.landingNote' : 'register.landingHow')}</p>
-        <LoginLink />
+          <Button type="button" onClick={onStart} iconRight={ArrowRight} className="mt-10 h-13 w-full sm:w-auto sm:min-w-[280px] sm:px-10 sm:text-lg">
+            {t(resume ? 'register.landingResume' : 'register.landingCta')}
+          </Button>
+          <p className="mt-3 text-sm text-slate-600">{t(resume ? 'register.landingNote' : 'register.landingHow', { n: stepsOrder().length, min: stepsOrder().length > 4 ? 3 : 2 })}</p>
+          <LoginLink />
+        </section>
       </main>
 
       <PublicFooter />
@@ -457,7 +449,7 @@ function LoginLink() {
   const { navigate } = useApp()
   const { t } = useI18n()
   return (
-    <button type="button" onClick={() => navigate(VIEWS.LOGIN)} className="mt-6 text-center text-sm font-semibold text-brand-dark underline-offset-4 hover:underline">
+    <button type="button" onClick={() => navigate(VIEWS.LOGIN)} className="mt-4 min-h-11 px-2 text-center text-sm font-semibold sm:text-[17px] text-brand-dark underline-offset-4 hover:underline">
       {t('login.landingLink')}
     </button>
   )

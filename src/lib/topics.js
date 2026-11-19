@@ -1,4 +1,4 @@
-import { FAMILY_EMOJI, MANDATORY_TOPICS, MAX_INTERESTS, TOPICS, TOPIC_EMOJI } from '../constants'
+import { FAMILY_EMOJI, MANDATORY_TOPICS, MAX_INTERESTS, TOPIC_EMOJI } from '../constants'
 
 /**
  * Temas: los de la lista (`TOPICS`, identificadores estables) más los temas propios
@@ -64,9 +64,11 @@ export function seededOrder(items, seed, keyOf = (x) => x) {
 
 /* ---------- Lista de temas del evento ----------
    Si el Admin ha añadido temas en el panel, mandan esos: los marcados como obligatorios y los «au choix».
-   Si no hay ninguno, se usan los provisionales de constants (MANDATORY_TOPICS y TOPICS).
+   Si no hay ninguno, solo hay temas obligatorios (MANDATORY_TOPICS) y ningún tema «au choix»:
+   el formulario no muestra la pantalla de elegir tema. Si el Admin añade temas no obligatorios
+   en el panel, esa pantalla vuelve a salir (ver RegisterView → stepsOrder).
    AppContext (y el worker del plan) llaman a `configureEventTopics` con la lista del panel. */
-let EVENT = { mandatory: MANDATORY_TOPICS, optional: TOPICS, family: {}, panel: false }
+let EVENT = { mandatory: MANDATORY_TOPICS, optional: [], family: {}, panel: false }
 export function configureEventTopics(list = []) {
   EVENT = list.length
     ? {
@@ -75,7 +77,7 @@ export function configureEventTopics(list = []) {
         family: Object.fromEntries(list.map((x) => [topicKey(x.id), x.family || ''])),
         panel: true,
       }
-    : { mandatory: MANDATORY_TOPICS, optional: TOPICS, family: {}, panel: false }
+    : { mandatory: MANDATORY_TOPICS, optional: [], family: {}, panel: false }
 }
 /** Temas obligatorios del evento (ids) */
 export const mandatoryTopics = () => EVENT.mandatory

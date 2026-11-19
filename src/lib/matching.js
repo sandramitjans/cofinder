@@ -1,5 +1,5 @@
-import { TOPICS, TOTAL_ROUNDS, MIN_TABLE_SIZE, MAX_TABLE_SIZE, MAX_TABLES, MAX_TABLES_PER_TOPIC } from '../constants'
-import { chosenTopics, hasTopic, isCustom, mandatoryTopics, topicKey } from './topics'
+import { TOTAL_ROUNDS, MIN_TABLE_SIZE, MAX_TABLE_SIZE, MAX_TABLES, MAX_TABLES_PER_TOPIC } from '../constants'
+import { chosenTopics, hasTopic, isCustom, mandatoryTopics, topicKey, optionalTopics } from './topics'
 
 /**
  * Algoritmo de multi-match de Cofinder.
@@ -87,12 +87,12 @@ const prepare = (people) =>
 
 /**
  * Temas candidatos. Si la moderadora ha añadido mesas desde el panel (`topics`), solo esas.
- * Si no: los 20 de la lista + temas propios compartidos por ≥ 2 personas.
+ * Si no: los obligatorios (+ temas «au choix», si los hubiera) + temas propios compartidos por ≥ 2 personas.
  */
 function candidateTopics(people, topics = []) {
   const mandatory = mandatoryTopics().map((id) => ({ id, key: topicKey(id) }))
   if (topics.length) return [...mandatory, ...topics.filter((id) => !mandatory.some((m) => m.key === topicKey(id))).map((id) => ({ id, key: topicKey(id) }))]
-  const list = [...mandatory, ...TOPICS.map((id) => ({ id, key: id }))]
+  const list = [...mandatory, ...optionalTopics().map((id) => ({ id, key: topicKey(id) }))]
   const custom = new Map() // clave → { id original, personas }
   for (const p of people) {
     const mine = new Set(chosenTopics(p).filter(isCustom))

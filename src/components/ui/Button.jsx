@@ -8,7 +8,7 @@ const VARIANTS = {
 export default function Button({ variant = 'primary', icon: Icon, iconRight: IconRight, className = '', children, ...props }) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition-[background-color,border-color,color,transform] duration-200 focus-visible:outline-none focus-visible:ring-4 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${VARIANTS[variant]} ${className}`}
       {...props}
     >
       {Icon && <Icon className="h-4 w-4" />}
