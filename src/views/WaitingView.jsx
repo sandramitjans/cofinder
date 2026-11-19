@@ -1,28 +1,22 @@
 import { useEffect, useState } from 'react'
-import { CalendarDays, CalendarPlus, Check, CheckCircle2, Copy, KeyRound, Lock, Mail, MapPin, PencilLine } from 'lucide-react'
+import { CalendarPlus, Check, CheckCircle2, Copy, KeyRound, Mail, PencilLine } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { EVENT_DATE, EVENT_PLACE, VIEWS } from '../constants'
-import { useTimeLeft } from '../lib/useTimeLeft'
-import { isMandatory, levelOfTopic, myTopics, optionalTopics, topicEmoji } from '../lib/topics'
-import { familyIn, familyTone } from '../lib/familyColors'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
 import LangSwitch from '../components/ui/LangSwitch'
 import PublicFooter from '../components/layout/PublicFooter'
-import { SuperpowerChips } from '../components/ui/SuperpowerPicker'
 import Confetti from '../components/ui/Confetti'
-import { LEVEL_EMOJI } from '../components/LevelPicker'
 
 /**
  * Pantalla final del registro (y la que ve al volver antes del día del evento):
- * «Profil créé !» con la fecha y confeti, el código de acceso para el día J (con calendario y email),
- * la credencial de invitado (persona, arma secreta, tema elegido y los 4 obligatorios, con el nivel)
- * y la fecha con la cuenta atrás. Desde la credencial se edita el perfil.
+ * misma estructura que los pasos: «Profil créé !» con la fecha y el lugar, el código de acceso para el día J
+ * (copiar, email, calendario) y una línea con la persona y el enlace para editar el perfil. Nada más.
  */
 export default function WaitingView({ onLobby }) {
-  const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt, eventTopics } = useApp()
-  const { t, topic, country, formatDate } = useI18n()
+  const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt } = useApp()
+  const { t, country, formatDate } = useI18n()
   const [justUpdated, setJustUpdated] = useState(() => Date.now() - profileUpdatedAt < 3000)
   useEffect(() => {
     if (!justUpdated) return
@@ -31,129 +25,62 @@ export default function WaitingView({ onLobby }) {
   }, [justUpdated])
   if (!currentUser) return null
 
-  const tables = myTopics(currentUser)
-  const chosen = tables.filter((id) => !isMandatory(id))
-  const mandatory = tables.filter((id) => isMandatory(id))
   // Recién registrado (últimos 30 min) → «Profil créé !»; si vuelve más tarde → «Vous êtes inscrit·e !»
   const fresh = Date.now() - (currentUser.createdAt ?? 0) < 30 * 60 * 1000
   const longDate = formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long' })
+  const line = EVENT_PLACE ? t('waiting.seeYouPlace', { date: '\u0000', place: '\u0001' }) : t('waiting.seeYou', { date: '\u0000' })
 
   return (
     <div className="guest-scale vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
       {fresh && <Confetti />}
+      {/* Mismo ancho y misma estructura que los pasos del formulario: frase de ánimo, título, una línea, un bloque */}
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col lg:max-w-[1024px]">
         <header className="flex items-center justify-between gap-4">
           <Logo />
           <LangSwitch />
         </header>
 
-        <main className="flex flex-1 flex-col py-6">
+        <main className="flex flex-1 flex-col pb-8 pt-5">
           {onLobby && (
             <button type="button" onClick={onLobby} className="mb-4 self-start text-sm font-semibold text-brand-dark underline-offset-4 hover:underline">
               ← {t('lobby.back')}
             </button>
           )}
           {justUpdated && (
-            <p role="status" className="animate-pop-in mb-4 flex items-center gap-2 rounded-xl bg-mint-soft px-3 py-2.5 text-[17px] font-semibold text-mint-dark">
-              <CheckCircle2 className="h-5 w-5 shrink-0" /> {t('waiting.updated')}
+            <p role="status" className="animate-pop-in mb-4 flex items-center gap-2 self-start rounded-xl bg-mint-soft px-3 py-2.5 text-[17px] font-semibold text-mint-dark">
+              <CheckCircle2 aria-hidden className="h-5 w-5 shrink-0" /> {t('waiting.updated')}
             </p>
           )}
 
-          {/* En PC, dos columnas dentro de los mismos 1024 px que el formulario: a la izquierda confirmación, código y fecha; a la derecha la acreditación.
-              En móvil, una columna en el mismo orden: confirmación, código, acreditación, fecha. */}
-          <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-12">
-          {/* 1. Confirmación */}
-          <section className="animate-pop-in text-center lg:col-start-1">
-            <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-mint-soft ring-8 ring-mint-soft/50">
-              <Check aria-hidden className="h-8 w-8 text-mint" strokeWidth={3} />
-            </div>
-            <h1 className="mt-4 font-display text-[32px] font-medium leading-tight text-ink">{t(fresh ? 'waiting.created' : 'waiting.registered')}</h1>
-            <p className="mx-auto mt-1.5 max-w-sm text-[19px] leading-snug text-slate-500">
-              {t('waiting.seeYou').split('{date}').map((part, i) => (
-                <span key={i}>{i > 0 && <strong className="whitespace-nowrap font-semibold text-ink">{longDate}</strong>}{part}</span>
-              ))}
+          <header className="animate-pop-in">
+            <p className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-mint-dark"><CheckCircle2 aria-hidden className="h-4 w-4" /> {t('waiting.kicker')}</p>
+            <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink lg:text-5xl">{t(fresh ? 'waiting.created' : 'waiting.registered')}</h1>
+            <p className="mt-1.5 text-[17px] leading-relaxed text-slate-600 lg:mt-3 lg:text-lg">
+              {line.split(/(\u0000|\u0001)/).map((part, i) =>
+                part === '\u0000' ? <strong key={i} className="whitespace-nowrap font-semibold text-ink">{longDate}</strong>
+                  : part === '\u0001' ? <strong key={i} className="font-semibold text-ink">{EVENT_PLACE}</strong>
+                  : part)}
             </p>
-          </section>
+          </header>
 
-          {/* 2. Código de acceso: lo único que hay que guardar */}
-          {currentUser.accessCode && <div className="lg:col-start-1"><AccessCode name={currentUser.name} code={currentUser.accessCode} /></div>}
+          {/* Lo único que hay que guardar */}
+          {currentUser.accessCode && <AccessCode name={currentUser.name} code={currentUser.accessCode} />}
 
-          {/* 3. Credencial de invitado: persona, arma secreta y temas */}
-          <div className="relative mt-8 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:mt-5">
-            {/* Cordón y ranura: se lee como la acreditación del evento */}
-            <span aria-hidden className="absolute -top-5 left-1/2 h-8 w-3 -translate-x-1/2 rounded-full bg-brand/70" />
-          <section aria-label={t('waiting.yourFile')} className="animate-rise-in relative overflow-hidden rounded-3xl bg-white shadow-xl shadow-ink/10 ring-1 ring-slate-200 [animation-delay:200ms]">
-            <div className="flex items-center justify-between gap-3 bg-brand px-5 pb-2.5 pt-4 text-white">
-              <span className="text-base font-semibold">{t('waiting.badgeKicker')}</span>
-              <span aria-hidden className="h-2.5 w-14 rounded-full bg-white/40" />
-              <span className="text-sm font-semibold">{formatDate(EVENT_DATE, { day: 'numeric', month: 'short' })}</span>
+          {/* Quién es, en una línea, y el único enlace para cambiar algo */}
+          <section aria-label={t('waiting.yourFile')} className="mt-4 flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 lg:px-6">
+            <Avatar name={currentUser.name} photo={currentUser.photo} size="md" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-lg font-semibold leading-tight text-ink">{currentUser.name}</p>
+              <p className="truncate text-sm text-slate-600">{[currentUser.role, country(currentUser.country)].filter(Boolean).join(', ')}</p>
             </div>
-            <div className="flex items-center gap-4 bg-ink p-5 text-white">
-              <Avatar name={currentUser.name} photo={currentUser.photo} size="lg" tone="bg-brand text-white" className="!ring-white/30" />
-              <div className="min-w-0">
-                <p className="truncate font-display text-2xl font-medium leading-tight">{currentUser.name}</p>
-                <p className="truncate text-sm text-white/80">{currentUser.role}</p>
-                <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-white/80"><MapPin className="h-3.5 w-3.5" /> {country(currentUser.country)}</p>
-              </div>
-            </div>
-
-            <div className="p-5">
-              {!!currentUser.superpowers?.length && (
-                <>
-                  <p className="text-sm font-semibold text-slate-600">{t('waiting.superpowers')}</p>
-                  <SuperpowerChips ids={currentUser.superpowers} className="mt-2" />
-                </>
-              )}
-
-              {chosen.length ? (
-                <>
-                  <p className={`${currentUser.superpowers?.length ? 'mt-5' : ''} text-sm font-semibold text-slate-600`}>{t(chosen.length === 1 ? 'waiting.choice' : 'waiting.choices', { n: chosen.length })}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {chosen.map((id) => (
-                      <span key={id} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[17px] font-semibold ${familyTone(familyIn(id, eventTopics)).chip}`}>
-                        <span aria-hidden>{topicEmoji(id)}</span> {topic(id)}
-                        <LevelTag person={currentUser} id={id} />
-                      </span>
-                    ))}
-                  </div>
-                </>
-              ) : optionalTopics().length > 0 && (
-                <p className={`${currentUser.superpowers?.length ? 'mt-5' : ''} rounded-xl bg-brand-soft px-3.5 py-3 text-sm text-brand-dark`}>{t('waiting.noTables')}</p>
-              )}
-
-              {!!mandatory.length && (
-                <>
-                  <p className="mt-5 flex items-center gap-1.5 text-sm font-semibold text-slate-600"><Lock aria-hidden className="h-3.5 w-3.5" /> {t('waiting.forEveryone')}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {mandatory.map((id) => (
-                      <span key={id} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-ink">
-                        <span aria-hidden>{topicEmoji(id)}</span> {topic(id)}
-                        <LevelTag person={currentUser} id={id} />
-                      </span>
-                    ))}
-                  </div>
-                </>
-              )}
-              <p className="mt-4 text-sm text-slate-500">{t('waiting.tablesLater')}</p>
-            </div>
-
             {canEditProfile && (
-              <button
-                type="button"
-                onClick={() => navigate(VIEWS.EDIT)}
-                className="flex min-h-12 w-full items-center justify-center gap-2 border-t border-slate-200 text-base font-semibold text-ink transition hover:bg-slate-50"
-              >
-                <PencilLine className="h-5 w-5" /> {t('waiting.edit')}
+              <button type="button" onClick={() => navigate(VIEWS.EDIT)} aria-label={t('waiting.edit')} className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl text-base font-semibold text-brand-dark transition-colors hover:bg-brand-soft sm:px-3">
+                <PencilLine aria-hidden className="h-5 w-5" /> <span className="hidden sm:inline">{t('waiting.edit')}</span>
               </button>
             )}
           </section>
-          </div>
 
-
-          {/* 4. Fecha, lugar y cuenta atrás */}
-          <div className="lg:col-start-1"><DateBlock /></div>
-          </div>
-
+          <p className="mt-4 text-sm text-slate-600">{t('waiting.tablesLater')}</p>
         </main>
 
         <PublicFooter className="!py-3">
@@ -166,35 +93,7 @@ export default function WaitingView({ onLobby }) {
   )
 }
 
-/** Días naturales hasta el evento, contando el día de hoy */
-const daysUntil = (left) => left.days + (left.hours || left.minutes || left.seconds ? 1 : 0)
-
-/** Fecha, lugar y cuánto falta */
-function DateBlock() {
-  const { t, formatDate } = useI18n()
-  const left = useTimeLeft(EVENT_DATE)
-  const n = daysUntil(left)
-  const headline = left.done ? t('waiting.jToday') : n === 1 ? t('waiting.tomorrow') : t('waiting.inDays', { n })
-
-  return (
-    <section className="mt-4 flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4">
-      <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-brand-soft text-center leading-none text-brand-dark">
-        <span>
-          <span className="block font-display text-2xl font-medium">{formatDate(EVENT_DATE, { day: 'numeric' })}</span>
-          <span className="block text-xs font-semibold">{formatDate(EVENT_DATE, { month: 'short' })}</span>
-        </span>
-      </div>
-      <div className="min-w-0">
-        <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-600"><CalendarDays aria-hidden className="h-3.5 w-3.5" /> {t('waiting.kicker')}</p>
-        <p className="font-display text-xl font-medium text-ink">{headline}</p>
-        <p className="flex items-center gap-1 truncate text-sm text-slate-500"><MapPin className="h-3.5 w-3.5 shrink-0" /> {EVENT_PLACE || t('register.placeTbc')}</p>
-      </div>
-    </section>
-  )
-}
-
-/** Nombre + código de 4 cifras para conectar el móvil el día del evento (QR del proyector),
- *  con dos formas de guardarlo: evento de calendario (.ics) o email a la dirección que quiera */
+/** Código de acceso para el día J: el código grande, copiar, y guardarlo por email o en el calendario */
 function AccessCode({ name, code }) {
   const { t, formatDate } = useI18n()
   const firstName = name.split(' ')[0]
@@ -241,43 +140,21 @@ function AccessCode({ name, code }) {
     setTimeout(() => URL.revokeObjectURL(link.href), 1000)
   }
 
+  const secondary = 'inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-[17px] font-semibold text-ink transition-colors hover:border-brand hover:text-brand-dark'
   return (
-    <section className="animate-pop-in mt-6 overflow-hidden rounded-2xl border-2 border-dashed border-brand/40 bg-white">
-      <div className="p-5">
-        <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-600"><KeyRound aria-hidden className="h-3.5 w-3.5" /> {t('login.codeTitle')}</p>
-        <div className="mt-3 flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs text-slate-500">{t('waiting.firstName')}</p>
-            <p className="truncate text-xl font-semibold text-ink">{firstName}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-slate-500">{t('waiting.code')}</p>
-            <p className="font-mono text-4xl font-bold tracking-[0.25em] text-brand-dark">{code}</p>
-            <button
-              type="button"
-              onClick={copyCode}
-              className={`mt-1.5 inline-flex min-h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition ${
-                copied ? 'border-mint bg-mint-soft text-mint-dark' : 'border-slate-400 bg-white text-ink hover:border-brand hover:text-brand-dark'
-              }`}
-            >
-              {copied ? <Check className="h-4 w-4" strokeWidth={3} /> : <Copy className="h-4 w-4" />}
-              <span aria-live="polite">{copied ? t('waiting.copied') : t('waiting.copy')}</span>
-            </button>
-          </div>
-        </div>
-        <p className="mt-3 text-[17px] leading-snug text-slate-500">{t('login.codeHint')}</p>
+    <section className="animate-pop-in mt-8 rounded-2xl border-2 border-brand/30 bg-white p-5 lg:flex lg:items-center lg:justify-between lg:gap-10 lg:p-7">
+      <div className="min-w-0">
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-600"><KeyRound aria-hidden className="h-4 w-4" /> {t('login.codeTitle')}</p>
+        <p className="mt-1 font-mono text-5xl font-bold tracking-[0.2em] text-brand-dark">{code}</p>
+        <p className="mt-2 max-w-[44ch] text-[17px] leading-snug text-slate-600">{t('login.codeHint')}</p>
       </div>
-      <div className="border-t border-slate-200 bg-brand-soft/40 p-4">
-        <p className="text-sm font-semibold text-ink">{t('waiting.keepIt')}</p>
-        <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-          <a href={mailHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand px-3 text-[17px] font-semibold text-white transition hover:bg-brand-hover">
-            <Mail className="h-5 w-5" /> {t('waiting.byEmail')}
-          </a>
-          <button type="button" onClick={downloadIcs} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[17px] font-semibold text-ink transition hover:border-slate-300">
-            <CalendarPlus className="h-5 w-5" /> {t('waiting.calendar')}
-          </button>
-        </div>
-        <p className="mt-2.5 text-center text-sm text-slate-500">{t('waiting.orScreenshot')}</p>
+      <div className="mt-5 grid shrink-0 gap-2.5 sm:grid-cols-3 lg:mt-0 lg:grid-cols-1 lg:w-[240px]">
+        <button type="button" onClick={copyCode} className={copied ? `${secondary} !border-mint !bg-mint-soft !text-mint-dark` : secondary}>
+          {copied ? <Check aria-hidden className="h-5 w-5" strokeWidth={3} /> : <Copy aria-hidden className="h-5 w-5" />}
+          <span aria-live="polite">{copied ? t('waiting.copied') : t('waiting.copy')}</span>
+        </button>
+        <a href={mailHref} className={secondary}><Mail aria-hidden className="h-5 w-5" /> {t('waiting.byEmail')}</a>
+        <button type="button" onClick={downloadIcs} className={secondary}><CalendarPlus aria-hidden className="h-5 w-5" /> {t('waiting.calendar')}</button>
       </div>
     </section>
   )
@@ -301,12 +178,4 @@ function icsFor({ title, place, body, url }) {
     `URL:${url}`,
     'END:VEVENT', 'END:VCALENDAR', '',
   ].join('\r\n')
-}
-
-/** Nivel que la persona indicó en el tema: «· Avancé», «· Intermédiaire» o «· Découverte» */
-function LevelTag({ person, id }) {
-  const { t } = useI18n()
-  const level = levelOfTopic(person, id)
-  if (!level) return null
-  return <span className="whitespace-nowrap font-normal opacity-75">· {LEVEL_EMOJI[level]} {t(`register.level.${level}`)}</span>
 }
