@@ -174,6 +174,7 @@ En el SQL Editor de Supabase, ejecutar en este orden (cada script se puede repet
 11. `supabase/2026-11-esperas.sql`: «14 de 20 preparados / notas enviadas» en las esperas del móvil
 12. `supabase/2026-11-nota-escrita.sql`: opción «Prefiero escribirla» en vez de grabar la nota
 13. `supabase/2026-11-valoracion.sql`: valoración del evento (1–5 y comentario) en la pantalla final; se ve en #resum
+14. `supabase/2026-11-login-por-persona.sql`: los códigos erróneos bloquean solo a esa persona (10 en 10 min), no a toda la sala
 
 Antes de abrir las inscripciones reales: `supabase/2026-11-limpiar-pruebas.sql` borra de verdad las
 inscripciones, las notas y el plan (conserva las mesas y el PIN). «Eliminar» desde el panel, en cambio,
