@@ -1,5 +1,5 @@
-import { MAX_INTERESTS, TOPICS } from '../constants'
-import { LEVELS, isMandatory, listsFromLevels, mandatoryTopics } from './topics'
+import { MAX_INTERESTS } from '../constants'
+import { LEVELS, isMandatory, listsFromLevels, mandatoryTopics, optionalTopics } from './topics'
 
 // 12 directores ficticios (de las filiales del grupo, cargos en FR/EN) para ensayar la dinámica desde el panel de moderadora.
 // Como en el formulario, cada uno elige 1 tema (además de los obligatorios, que cuentan para todos):
@@ -25,7 +25,7 @@ export const demoParticipants = (eventTopics = []) =>
     const pool = eventTopics.filter((id) => !isMandatory(id))
     const mine = pool.length
       ? [...pool].sort(() => Math.random() - 0.5).slice(0, MAX_INTERESTS)
-      : topics.filter((id) => TOPICS.includes(id)).slice(0, MAX_INTERESTS)
+      : topics.filter((id) => optionalTopics().includes(id)).slice(0, MAX_INTERESTS)
     return {
       id: crypto.randomUUID(), createdAt: Date.now(), demo: true, name, role, country,
       ...listsFromLevels([...mandatoryTopics(), ...mine], Object.fromEntries([...mandatoryTopics(), ...mine].map((id) => [id, LEVELS[Math.floor(Math.random() * LEVELS.length)]]))),

@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
 import { EVENT_DATE, EVENT_PLACE, VIEWS } from '../constants'
 import { useTimeLeft } from '../lib/useTimeLeft'
-import { isMandatory, levelOfTopic, myTopics, topicEmoji } from '../lib/topics'
+import { isMandatory, levelOfTopic, myTopics, optionalTopics, topicEmoji } from '../lib/topics'
 import { familyIn, familyTone } from '../lib/familyColors'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
@@ -114,7 +114,7 @@ export default function WaitingView({ onLobby }) {
                     ))}
                   </div>
                 </>
-              ) : (
+              ) : optionalTopics().length > 0 && (
                 <p className={`${currentUser.superpowers?.length ? 'mt-5' : ''} rounded-xl bg-brand-soft px-3.5 py-3 text-sm text-brand-dark`}>{t('waiting.noTables')}</p>
               )}
 
@@ -304,5 +304,5 @@ function LevelTag({ person, id }) {
   const { t } = useI18n()
   const level = levelOfTopic(person, id)
   if (!level) return null
-  return <span className="font-normal opacity-75">· {LEVEL_EMOJI[level]} {t(`register.level.${level}`)}</span>
+  return <span className="whitespace-nowrap font-normal opacity-75">· {LEVEL_EMOJI[level]} {t(`register.level.${level}`)}</span>
 }

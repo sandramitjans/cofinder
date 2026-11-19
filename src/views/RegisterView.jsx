@@ -79,6 +79,15 @@ const formFromProfile = (p) => {
 
 // Pantallas: 0 = bienvenida, 1 = perfil, 2 = temas obligatorios (informativa), 3 = nivel en los obligatorios,
 // 4 = mesa elegida, 5 = nivel en la mesa elegida, 6 = arma secreta
+// Pantallas: 1 perfil · 2 temas obligatorios · 3 su nivel · 4 elegir tema · 5 su nivel · 6 arma secreta.
+// Sin temas «au choix» (lo normal ahora) no salen la 4 ni la 5; sin obligatorios no salen la 2 ni la 3.
+// La gestión de temas «au choix» sigue en el panel #admin: si se añaden, las pantallas 4 y 5 vuelven solas.
+const stepsOrder = () => [
+  1,
+  ...(mandatoryTopics().length ? [2, 3] : []),
+  ...(optionalTopics().length ? [4, 5] : []),
+  6,
+]
 const LAST = 6
 
 export default function RegisterView({ mode = 'create' }) {
@@ -128,12 +137,14 @@ export default function RegisterView({ mode = 'create' }) {
     return () => clearTimeout(timer)
   }, [form, saving, editing])
 
+  const order = stepsOrder()
+  const pos = order.indexOf(screen) // posición en el progreso (0 = perfil)
   const goTo = (n) => {
-    // Sin temas obligatorios (el Admin no ha marcado ninguno), las pantallas 2 y 3 se saltan
-    if ((n === 2 || n === 3) && !mandatoryTopics().length) n = screen > 3 ? 1 : 4
     setScreen(n)
     window.scrollTo({ top: 0 })
   }
+  const goNext = () => goTo(order[pos + 1] ?? LAST)
+  const goBack = () => goTo(pos > 0 ? order[pos - 1] : 0)
 
   const resetDraft = () => {
     try { localStorage.removeItem(DRAFT_KEY) } catch { /* noop */ }
@@ -166,9 +177,9 @@ export default function RegisterView({ mode = 'create' }) {
   const submit = async (e) => {
     e.preventDefault()
     if (saving || !validate()) return
-    if (screen < LAST) return goTo(screen + 1)
+    if (screen < LAST) return goNext()
     // Nivel de cada tema (obligatorios + elegido) → `offers` / `needs`. Las mesas del panel (`custom:…`) también en `customTopics`
-    const chosen = form.needs.filter((id) => !isMandatory(id)).slice(0, MAX_INTERESTS)
+    const chosen = optionalTopics().length ? form.needs.filter((id) => !isMandatory(id)).slice(0, MAX_INTERESTS) : []
     const { levels, ...rest } = form
     const data = {
       ...rest,
@@ -209,7 +220,7 @@ export default function RegisterView({ mode = 'create' }) {
           {(screen > 1 || !editing) ? (
             <button
               type="button"
-              onClick={() => (screen === 1 && editing ? navigate(VIEWS.HOME) : goTo(screen - 1))}
+              onClick={() => (screen === 1 && editing ? navigate(VIEWS.HOME) : goBack())}
               disabled={saving}
               aria-label={t('register.back')}
               className="-ml-2 grid h-10 w-10 place-items-center rounded-full text-slate-600 transition hover:bg-white hover:text-ink disabled:opacity-50"
@@ -219,13 +230,13 @@ export default function RegisterView({ mode = 'create' }) {
           ) : <span />}
           <div className="flex min-w-0 items-center gap-3">
             <div className="hidden gap-1 sm:flex" aria-hidden>
-              {Array.from({ length: LAST }, (_, i) => (
-                <span key={i} className={`h-1.5 w-6 rounded-full transition-colors ${i < screen ? 'bg-brand' : 'bg-slate-200'}`} />
+              {order.map((_, i) => (
+                <span key={i} className={`h-1.5 w-6 rounded-full transition-colors ${i <= pos ? 'bg-brand' : 'bg-slate-200'}`} />
               ))}
             </div>
             {/* «Étape 3/6 · Votre niveau»: se sabe dónde se está y qué viene */}
             <span key={screen} className="animate-pop-in min-w-0 truncate text-sm font-semibold text-slate-600 lg:text-base">
-              <span className="tabular-nums text-brand-dark"><span className="hidden sm:inline">{t('register.stepWord')} </span>{t('register.stepOf', { n: screen, total: LAST })}</span> · {t(`register.stepNames.${screen}`)}
+              <span className="tabular-nums text-brand-dark"><span className="hidden sm:inline">{t('register.stepWord')} </span>{t('register.stepOf', { n: pos + 1, total: order.length })}</span> · {t(`register.stepNames.${screen}`)}
             </span>
             <LangSwitch />
           </div>
@@ -443,7 +454,7 @@ function Landing({ resume, onStart }) {
         <Button type="button" onClick={onStart} iconRight={ArrowRight} className="mt-8 w-full py-4 text-base lg:py-5 lg:text-xl">
           {t(resume ? 'register.landingResume' : 'register.landingCta')}
         </Button>
-        <p className="mt-3 text-center text-sm text-slate-500">{t(resume ? 'register.landingNote' : 'register.landingHow')}</p>
+        <p className="mt-3 text-center text-sm text-slate-500">{t(resume ? 'register.landingNote' : 'register.landingHow', { n: stepsOrder().length, min: stepsOrder().length > 4 ? 3 : 2 })}</p>
         <LoginLink />
       </main>
 
