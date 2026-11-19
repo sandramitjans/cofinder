@@ -17,6 +17,8 @@ export const MOD_HASH = '#admin'
 export const isModHash = (h) => h === MOD_HASH || h === '#moderadora'
 // El QR del proyector abre la app con este enlace: …/#entrar → pantalla de acceso
 export const JOIN_HASH = '#entrar'
+// Ventana aparte del proyector, abierta desde el panel (comparte el PIN de la pestaña que la abre)
+export const PROJ_HASH = '#proyector'
 // Página de resúmenes: transcripciones de las notas de audio (pide el PIN de Admin)
 export const RESUM_HASH = '#resum'
 // Dirección que codifica el QR. Por defecto, la de la propia página; en pruebas en red local

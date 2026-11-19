@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
-  AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Coffee, Eraser, Flag, LayoutGrid, Loader2, Lock, Monitor,
-  MessagesSquare, PencilLine, Plus, RefreshCcw, RotateCcw, Search, Shuffle, Sparkles, TimerReset, Trash2, UserPlus, Users,
+  AlertTriangle, CheckCircle2, ChevronRight, Coffee, Eraser, Flag, LayoutGrid, Lock, Monitor,
+  MessagesSquare, PencilLine, Plus, RefreshCcw, RotateCcw, Search, Shuffle, TimerReset, Trash2, UserPlus, Users,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { FAMILY_EMOJI, FIND_MINUTES, MAX_INTERESTS, PAUSE_AFTER_ROUND, PAUSE_MINUTES, TOPIC_FAMILIES, VIEWS } from '../constants'
+import { FAMILY_EMOJI, FIND_MINUTES, MAX_INTERESTS, PAUSE_AFTER_ROUND, PAUSE_MINUTES, PROJ_HASH, TOPIC_FAMILIES, VIEWS } from '../constants'
 import { familyTone } from '../lib/familyColors'
-import { advancedShortfall, planStats, tableRange } from '../lib/matching'
+import { advancedShortfall, isAdvanced, planStats, tableRange } from '../lib/matching'
 import { MAX_CUSTOM_LENGTH, customLabel, hasTopic, isMandatory, makeEventTopic, myTopics, normalizeText, topicKey } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
 import { useConnected } from '../lib/useConnected'
@@ -20,6 +20,8 @@ import { SUPERPOWERS } from '../constants'
 // Objetivo de temas del evento (los contadores solo avisan)
 const MANDATORY_TARGET = 4
 const OPTIONAL_TARGET = 13
+// Pestaña abierta del panel (Jour J / Préparation), recordada en esta pestaña del navegador
+const TAB_KEY = 'cofinder:admin-tab'
 
 export default function ModeratorPanelView() {
   const {
@@ -47,19 +49,6 @@ export default function ModeratorPanelView() {
   const findTimer = useCountdown(r?.startedAt && !r.pauseStartedAt ? r.startedAt - FIND_MINUTES * 60_000 : null, FIND_MINUTES)
   const phase = !r ? null : r.pauseStartedAt ? 'pause' : r.startedAt ? (findTimer.done ? 'talk' : 'find') : r.revealed ? 'reveal' : 'intro'
   const pauseTimer = useCountdown(phase === 'pause' ? r.pauseStartedAt : null, PAUSE_MINUTES)
-  const shownTimer = phase === 'pause' ? pauseTimer : phase === 'find' ? findTimer : timer
-
-  // Qué hará el botón «Suivant»
-  let nextLabel = t('panel.launch')
-  if (event.finished) nextLabel = null
-  else if (r) {
-    if (!r.startedAt) nextLabel = t('panel.nextTimer')
-    else if (phase === 'find') nextLabel = t('panel.skipFind')
-    else if (phase === 'talk' && !timer.done) nextLabel = t('panel.endTalk')
-    else if (event.round === PAUSE_AFTER_ROUND && event.round < total && !r.pauseStartedAt) nextLabel = t('panel.nextPause')
-    else if (event.round < total) nextLabel = t('panel.nextRound', { n: event.round + 1 })
-    else nextLabel = t('panel.finish')
-  }
 
   // Personas inscritas después de generar el plan (sin mesa en los tours que faltan)
   const planned = new Set(event.rounds.slice(Math.max(0, event.round)).flatMap((x) => x.plan.flatMap((tb) => tb.members)))
@@ -74,10 +63,6 @@ export default function ModeratorPanelView() {
   const unplanned = hasPlan && !event.finished && event.round < total ? participants.filter((p) => !planned.has(p.id)) : []
 
   const confirmThen = (msg, fn) => () => window.confirm(msg) && fn()
-  const status = event.finished ? t('panel.statusDone')
-    : live ? t(`panel.phase.${phase}`, { n: event.round, k: r.revealed, total: r.plan.length })
-      : hasPlan ? t('panel.statusPlanned') : t('panel.statusReady')
-
   // Bloques del panel, ordenados por fases más abajo
   const topicsSection = (
     <EventTopics
@@ -176,103 +161,64 @@ export default function ModeratorPanelView() {
     />
   )
 
+  // Ventanas de confirmación grandes (en vez del aviso del navegador)
+  const [ask, setAsk] = useState(null) // { title, body, yes, onYes }
+  const [tab, setTab] = useState(() => { try { return sessionStorage.getItem(TAB_KEY) || 'day' } catch { return 'day' } })
+  const pickTab = (x) => { setTab(x); try { sessionStorage.setItem(TAB_KEY, x) } catch { /* noop */ } ; window.scrollTo({ top: 0 }) }
+
+  // El proyector se abre en otra ventana (para llevarla a la pantalla de la sala); el panel sigue aquí
+  const [projWin, setProjWin] = useState(null)
+  const [projOpen, setProjOpen] = useState(false)
+  useEffect(() => {
+    if (!projWin) return
+    setProjOpen(!projWin.closed)
+    const id = setInterval(() => setProjOpen(!projWin.closed), 1500)
+    return () => clearInterval(id)
+  }, [projWin])
+  const openProjector = () => {
+    const w = window.open(`${window.location.pathname}${PROJ_HASH}`, 'cofinder-projector', 'popup,width=1280,height=760')
+    if (w) { setProjWin(w); w.focus() } else navigate(VIEWS.PROJECTOR) // ventanas bloqueadas: como antes, en esta pestaña
+  }
+
+  const header = (
+    <header className="z-20 border-b border-slate-200 bg-white/95 backdrop-blur sm:sticky sm:top-0">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Logo />
+          <span className="hidden rounded-full bg-brand-soft px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brand-dark sm:inline">{t('panel.badge')}</span>
+        </div>
+        <div role="tablist" className="order-last flex w-full gap-1 rounded-2xl bg-slate-100 p-1 sm:order-none sm:w-auto">
+          {['day', 'prep'].map((x) => (
+            <button key={x} role="tab" aria-selected={tab === x} onClick={() => pickTab(x)}
+              className={`flex-1 rounded-xl px-5 py-2.5 text-base font-bold transition sm:flex-none ${tab === x ? 'bg-white text-ink shadow-sm' : 'text-slate-500 hover:text-ink'}`}>
+              {t(x === 'day' ? 'day.tabDay' : 'day.tabPrep')}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <LangSwitch />
+          <Button variant="outline" icon={Monitor} onClick={openProjector} className="py-2">{t('panel.projector')}</Button>
+          <button onClick={lockModerator} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-ink">
+            <Lock className="h-4 w-4" /> <span className="hidden sm:inline">{t('panel.lock')}</span>
+          </button>
+        </div>
+      </div>
+    </header>
+  )
+
   return (
     <div className="min-h-dvh bg-paper">
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Logo />
-            <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brand-dark">{t('panel.badge')}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <LangSwitch />
-            <Button icon={Monitor} onClick={() => navigate(VIEWS.PROJECTOR)} className="py-2">{t('panel.projector')}</Button>
-            <button onClick={lockModerator} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-ink">
-              <Lock className="h-4 w-4" /> <span className="hidden sm:inline">{t('panel.lock')}</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
-        {/* Control de la soirée */}
-        <section className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-          <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-brand-dark">{t('panel.control')}</p>
-                <h1 className="mt-1 text-2xl font-bold tracking-tight">{status}</h1>
-              </div>
-              {(phase === 'talk' || phase === 'pause' || phase === 'find') && (
-                <div className={`rounded-xl px-4 py-2 text-right ${shownTimer.done ? 'bg-brand' : 'bg-brand-soft text-brand-dark'}`}>
-                  <p className="font-mono text-3xl font-bold tabular-nums">{shownTimer.label}</p>
-                  <p className="text-[11px] font-medium opacity-70">{shownTimer.done ? t('panel.timeUp') : phase === 'pause' ? t('panel.pauseLeft') : phase === 'find' ? t('panel.findLeft') : t('panel.remaining')}</p>
-                </div>
-              )}
-            </div>
-
-            {hasPlan && (
-              <ol className="mt-6 grid grid-cols-4 gap-2 sm:grid-cols-8">
-                {event.rounds.map((_, i) => {
-                  const n = i + 1
-                  const done = n < event.round || (event.finished && n <= event.round)
-                  const current = n === event.round && !event.finished
-                  return (
-                    <li key={n} className={`relative rounded-xl border-2 px-2 py-2 text-center text-sm ${
-                      current ? 'border-brand bg-brand-soft' : done ? 'border-transparent bg-slate-100' : 'border-dashed border-slate-200'
-                    }`}>
-                      <span className="font-semibold">{n}</span>
-                      {done && <CheckCircle2 className="absolute right-1 top-1 h-3.5 w-3.5 text-slate-400" />}
-                      {current && <span className="absolute right-1.5 top-1.5 h-2 w-2 animate-pulse rounded-full bg-brand" />}
-                      {n === PAUSE_AFTER_ROUND && n < total && <Coffee className="absolute -right-2 top-1/2 z-10 h-4 w-4 -translate-y-1/2 rounded-full bg-white text-accent-dark" aria-label={t('panel.pauseMark')} />}
-                    </li>
-                  )
-                })}
-              </ol>
-            )}
-
-            {hasPlan && !event.round && !event.finished && readyTotal > 0 && (
-              <p className="mt-5 flex items-center gap-2 rounded-xl bg-mint-soft px-3.5 py-2.5 text-sm font-semibold text-mint-dark">
-                <CheckCircle2 className="h-4 w-4 shrink-0" /> {t('panel.readyCount', { n: readyCount, total: readyTotal })}
-              </p>
-            )}
-
-            {phase === 'talk' && timer.done && notedTotal > 0 && (
-              <p className="mt-5 flex items-center gap-2 rounded-xl bg-mint-soft px-3.5 py-2.5 text-sm font-semibold text-mint-dark">
-                <CheckCircle2 className="h-4 w-4 shrink-0" /> {t('panel.notesCount', { n: notedCount, total: notedTotal })}
-              </p>
-            )}
-
-            <div className="mt-6 flex flex-wrap gap-2">
-              {!hasPlan && (
-                <Button icon={planning ? Loader2 : Sparkles} onClick={generatePlan} disabled={planning || participants.length < 2} className={planning ? '[&>svg]:animate-spin' : ''}>
-                  {planning ? t('panel.planning') : t('panel.generate')}
-                </Button>
-              )}
-              {hasPlan && nextLabel && (
-                <Button icon={ChevronRight} onClick={event.round === total && phase === 'talk' && timer.done ? confirmThen(t('panel.confirmFinish'), advance) : advance}>{nextLabel}</Button>
-              )}
-              {event.round > 0 && (
-                <Button variant="outline" icon={ChevronLeft} onClick={stepBack}>{t('panel.back')}</Button>
-              )}
-              {(phase === 'talk' || phase === 'pause') && (
-                <Button variant="outline" icon={TimerReset} onClick={restartTimer}>{t('panel.restartTimer')}</Button>
-              )}
-              {live && event.round < total && (
-                <Button variant="ghost" icon={Flag} onClick={confirmThen(t('panel.confirmFinish'), finishEvent)}>{t('panel.finish')}</Button>
-              )}
-              {event.round > 0 && (
-                <Button variant="ghost" icon={RotateCcw} onClick={confirmThen(t('panel.confirmReset'), resetEvent)}>{t('panel.reset')}</Button>
-              )}
-            </div>
-            {hasPlan && !event.finished && <p className="mt-3 text-xs text-slate-500">{t('panel.keysHint')}</p>}
-
-            {!hasPlan && participants.length > 0 && participants.length < 6 && <Notice>{t('panel.fewPeople')}</Notice>}
-            {unplanned.length > 0 && <Notice>{t('panel.unplanned', { n: unplanned.length })}</Notice>}
-            {shortAdvanced.length > 0 && <Notice>{t('panel.shortAdvanced', { topics: shortAdvanced.map((x) => `${topic(x.topic)} (${x.advanced}/${x.needed})`).join(', '), n: shortAdvanced[0].needed })}</Notice>}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+      {header}
+      {tab === 'day' ? (
+        <DayGuide
+          {...{ t, topic, participants, byId, event, r, phase, hasPlan, total, planning, generatePlan, advance, stepBack, restartTimer,
+            readyCount, readyTotal, notedCount, notedTotal, eventTopics, shortAdvanced, hasDemo, unplanned, isOn,
+            timer, findTimer, pauseTimer, projOpen, openProjector, setAsk }}
+        />
+      ) : (
+        <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+          <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 ring-1 ring-amber-200">⚙️ {t('day.prepNote')}</p>
+          <section className="grid gap-3 sm:grid-cols-3">
             <Stat icon={Users} label={t('panel.registered')} value={participants.length} />
             <Stat
               icon={LayoutGrid}
@@ -281,7 +227,7 @@ export default function ModeratorPanelView() {
               hint={participants.length >= 2 ? t('panel.tableSizes') : null}
             />
             {stats && (
-              <div className="col-span-2 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 lg:col-span-1">
+              <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('panel.quality')}</p>
                 <ul className="mt-2 space-y-1 text-sm">
                   <Quality ok={stats.chosenPct >= 80} label={t('panel.chosen')} value={`${stats.chosenPct} %`} />
@@ -292,27 +238,317 @@ export default function ModeratorPanelView() {
                 </ul>
               </div>
             )}
-          </div>
-        </section>
+          </section>
+          {topicsSection}
+          {participantsSection}
+          {planSection}
+          {(live || event.round > 0 || event.finished) && (
+            <section className="rounded-xl bg-white p-4 shadow-sm ring-2 ring-brand-soft">
+              <h2 className="flex items-center gap-2 text-lg font-bold">🛑 {t('day.dangerTitle')}</h2>
+              <p className="mt-0.5 text-sm text-slate-500">{t('day.dangerSub')}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {live && (
+                  <Button variant="outline" icon={Flag} onClick={() => setAsk({ title: t('panel.confirmFinish'), body: t('day.confirmFinishBody'), yes: t('day.finishYes'), onYes: finishEvent })}>{t('panel.finish')}</Button>
+                )}
+                {(event.round > 0 || event.finished) && (
+                  <Button variant="outline" icon={RotateCcw} onClick={() => setAsk({ title: t('panel.reset') + ' ?', body: t('day.confirmResetBody'), yes: t('day.resetYes'), onYes: resetEvent })}>{t('panel.reset')}</Button>
+                )}
+              </div>
+            </section>
+          )}
+        </main>
+      )}
+      {ask && <ConfirmDialog {...ask} no={t('day.no')} onClose={() => setAsk(null)} />}
+    </div>
+  )
+}
 
-        {/* Por fases: antes del evento se prepara (mesas → inscripciones → plan); durante, el plan y las personas van primero */}
-        {live || event.finished ? (
+/**
+ * Pestaña «Jour J»: un paso cada vez, con una frase que dice qué pasa, un cronómetro grande
+ * y un único botón grande con la siguiente acción. Lo avanzado vive en «Préparation».
+ */
+function DayGuide({
+  t, topic, participants, byId, event, r, phase, hasPlan, total, planning, generatePlan, advance, stepBack, restartTimer,
+  readyCount, readyTotal, notedCount, notedTotal, eventTopics, shortAdvanced, hasDemo, unplanned, isOn,
+  timer, findTimer, pauseTimer, projOpen, openProjector, setAsk,
+}) {
+  // Barra de pasos: Préparer · Accueil · Tour 1 · Tour 2 · Pause · Tour 3 · … · Fin
+  const nRounds = hasPlan ? total : 4
+  const steps = [{ key: 'prep', label: t('day.steps.prep') }, { key: 'welcome', label: t('day.steps.welcome') }]
+  for (let n = 1; n <= nRounds; n++) {
+    steps.push({ key: `r${n}`, label: t('day.steps.round', { n }) })
+    if (n === PAUSE_AFTER_ROUND && n < nRounds) steps.push({ key: 'pause', label: `☕ ${t('day.steps.pause')}` })
+  }
+  steps.push({ key: 'end', label: t('day.steps.end') })
+  const cur = !hasPlan ? 'prep' : event.finished ? 'end' : !event.round ? 'welcome' : r?.pauseStartedAt ? 'pause' : `r${event.round}`
+  const curIdx = steps.findIndex((s) => s.key === cur)
+
+  const n = event.round
+  const talkDone = phase === 'talk' && timer.done
+  const mandatoryCount = eventTopics.filter((x) => x.mandatory).length
+
+  // Contenido de la tarjeta principal según el momento
+  let title, what, timerBox = null, extra = null, go = null
+  const big = (label, onClick, { tone = 'brand', hint, disabled } = {}) => (
+    <button type="button" onClick={onClick} disabled={disabled}
+      className={`mt-6 flex w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-2xl px-6 py-6 text-center text-xl font-extrabold text-white transition active:translate-y-1 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-2xl ${
+        tone === 'mint' ? 'bg-mint shadow-[0_6px_0_var(--color-mint-dark)] hover:bg-mint-dark' : 'bg-brand shadow-[0_6px_0_var(--color-brand-dark)] hover:bg-brand-hover'}`}>
+      {label} {hint ? <span className="text-base font-medium opacity-85">{hint}</span> : <ChevronRight className="h-7 w-7" />}
+    </button>
+  )
+  const clock = (tm, label) => (
+    <div className="my-4 text-center">
+      <p className={`font-mono text-7xl font-extrabold tabular-nums sm:text-8xl ${tm.done ? 'text-mint-dark' : 'text-brand-dark'}`}>{tm.label}</p>
+      <p className="mt-1 text-lg text-slate-500">{tm.done ? t('day.timeUp') : label}</p>
+    </div>
+  )
+
+  if (cur === 'prep') {
+    title = t('day.prepTitle')
+    what = t('day.prepWhat')
+    const people = participants.length
+    extra = (
+      <ul className="mt-6 grid gap-3">
+        <Check ok={people >= 6} title={t(people >= 6 ? 'day.checkPeople' : 'day.checkPeopleLow', { n: people })} sub={t('day.checkPeopleSub')} />
+        <Check ok={mandatoryCount === 4} title={t(mandatoryCount === 4 ? 'day.checkTopics' : 'day.checkTopicsMissing', { n: mandatoryCount })}
+          sub={t(mandatoryCount === 4 ? 'day.checkTopicsSub' : 'day.checkTopicsMissingSub')} />
+        {shortAdvanced.length
+          ? shortAdvanced.map((x) => <Check key={x.topic} ok={false} title={t('day.checkAdvanced', { topic: topic(x.topic), missing: x.needed - x.advanced })} sub={t('day.checkAdvancedSub')} />)
+          : people >= 6 && <Check ok title={t('day.checkAdvancedOk')} />}
+        {hasDemo && <Check ok={false} title={t('day.checkDemo')} sub={t('day.checkDemoSub')} />}
+      </ul>
+    )
+    go = big(planning ? t('panel.planning') : t('day.prepGo'), generatePlan, { disabled: planning || people < 2 })
+  } else if (cur === 'welcome') {
+    title = t('day.welcomeTitle')
+    what = t('day.welcomeWhat')
+    const firstRound = new Set(event.rounds[0]?.plan.flatMap((tb) => tb.members) ?? [])
+    const waiting = participants.filter((p) => !p.demo && firstRound.has(p.id) && !p.readyAt).map((p) => shortName(p.name))
+    timerBox = (
+      <div className={`mb-6 flex flex-col gap-4 rounded-2xl p-5 ring-2 sm:flex-row sm:items-center ${projOpen ? 'bg-mint-soft ring-mint/30' : 'bg-blue-50 ring-blue-200'}`}>
+        <Monitor className={`h-10 w-10 shrink-0 ${projOpen ? 'text-mint-dark' : 'text-blue-700'}`} />
+        <div className="flex-1">
+          <p className="text-xl font-extrabold">{projOpen ? `✓ ${t('day.projOpen')}` : t('day.projTitle')}</p>
+          {!projOpen && <p className="mt-1 text-base text-slate-600">{t('day.projWhat')}</p>}
+        </div>
+        <button type="button" onClick={openProjector}
+          className={`shrink-0 rounded-xl px-5 py-4 text-lg font-extrabold transition ${projOpen ? 'bg-white text-mint-dark ring-1 ring-mint/30' : 'bg-blue-700 text-white shadow-[0_5px_0_#1e3a8a] hover:bg-blue-800'}`}>
+          {projOpen ? t('day.projAgain') : t('day.openProjector')}
+        </button>
+      </div>
+    )
+    extra = (
+      <div className="mt-6">
+        {readyTotal > 0 && (
           <>
-            <PhaseHeading>{t('panel.phaseDuring')}</PhaseHeading>
-            {planSection}
-            {participantsSection}
-            <PhaseHeading>{t('panel.phasePrep')}</PhaseHeading>
-            {topicsSection}
-          </>
-        ) : (
-          <>
-            <PhaseHeading>{t('panel.phaseBefore')}</PhaseHeading>
-            {topicsSection}
-            {participantsSection}
-            {planSection}
+            <p className="text-lg font-bold">{t('day.readyOf', { n: readyCount, total: readyTotal })}</p>
+            <Progress value={readyCount} max={readyTotal} />
+            {waiting.length > 0 && <p className="text-base text-slate-500">{t('day.notReady', { names: waiting.join(', ') })}</p>}
           </>
         )}
-      </main>
+        {unplanned.length > 0 && (
+          <div className="mt-5 rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200">
+            <p className="text-lg font-bold text-amber-900">⚠️ {t('day.lateTitle', { n: unplanned.length })}</p>
+            <p className="mt-1 text-base text-amber-900/80">{t('day.lateWhat')} ({unplanned.map((p) => shortName(p.name)).join(', ')})</p>
+            <Button variant="outline" icon={Shuffle} className="mt-3" disabled={planning}
+              onClick={() => setAsk({ title: t('day.confirmRedo'), body: t('day.confirmRedoBody'), yes: t('day.redoYes'), onYes: generatePlan })}>
+              {t('day.lateGo')}
+            </Button>
+          </div>
+        )}
+      </div>
+    )
+    go = big(t('day.welcomeGo'), advance)
+  } else if (cur === 'end') {
+    title = t('day.endTitle')
+    what = t('day.endWhat')
+  } else if (phase === 'pause') {
+    title = t('day.pauseTitle')
+    what = t('day.pauseWhat')
+    timerBox = clock(pauseTimer, t('day.pauseLeft'))
+    go = big(t('day.pauseGo', { n: n + 1 }), advance)
+  } else if (phase === 'talk' && !talkDone) {
+    title = t('day.talkTitle', { n })
+    what = n >= total ? t('day.talkWhatLast') : n === PAUSE_AFTER_ROUND ? t('day.talkWhatPause') : t('day.talkWhatNext', { next: n + 1 })
+    timerBox = clock(timer, t('day.talkLeft'))
+    const left = `${Math.ceil(timer.remaining / 60_000)} min`
+    go = big(t('day.talkGo'), () => setAsk({ title: t('day.confirmStop', { n }), body: t('day.confirmStopBody', { left }), yes: t('day.stopYes'), onYes: advance }),
+      { tone: 'mint', hint: t('day.talkGoHint') })
+  } else if (talkDone) {
+    title = t('day.notesTitle')
+    what = t('day.notesWhat')
+    if (notedTotal > 0) {
+      extra = (
+        <div className="mt-6">
+          <p className="text-lg font-bold">{t('day.notesOf', { n: notedCount, total: notedTotal })}</p>
+          <Progress value={notedCount} max={notedTotal} />
+        </div>
+      )
+    }
+    if (n >= total) go = big(t('day.notesGoEnd'), () => setAsk({ title: t('panel.confirmFinish'), body: t('day.endWhat'), yes: t('day.finishYes'), onYes: advance }))
+    else if (n === PAUSE_AFTER_ROUND) go = big(t('day.notesGoPause'), advance)
+    else go = big(t('day.notesGoNext', { n: n + 1 }), advance)
+  } else {
+    // Buscando mesa (o pantalla de apertura de la ronda)
+    title = t('day.findTitle', { n })
+    what = t('day.findWhat')
+    if (phase === 'find') timerBox = clock(findTimer, t('day.findLeft'))
+    go = big(t('day.findGo'), advance)
+  }
+
+  return (
+    <main className="mx-auto max-w-5xl space-y-5 px-4 py-6">
+      <ol className="flex gap-1.5 overflow-x-auto pb-1">
+        {steps.map((s, i) => (
+          <li key={s.key} className={`min-w-[4.5rem] flex-1 whitespace-nowrap rounded-xl px-2 py-2.5 text-center text-sm font-semibold ${
+            i === curIdx ? 'bg-brand-soft text-brand-dark ring-2 ring-brand' : i < curIdx ? 'bg-slate-200/70 text-slate-500' : 'border-2 border-dashed border-slate-200 bg-white text-slate-400'}`}>
+            {i < curIdx && '✓ '}{s.label}
+          </li>
+        ))}
+      </ol>
+
+      <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-10">
+        <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-brand-dark">{t('day.step', { n: curIdx + 1, total: steps.length })} · {steps[curIdx]?.label}</p>
+        {cur === 'welcome' && <div className="mt-4">{timerBox}</div>}
+        <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
+        <p className="mt-3 max-w-3xl text-lg leading-relaxed text-slate-600 sm:text-xl">{what}</p>
+        {cur !== 'welcome' && timerBox}
+        {extra}
+        {go}
+        {(event.round > 0 || event.finished || (cur === 'welcome')) && (
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-base text-slate-500">
+            {(event.round > 0 || event.finished)
+              ? <button type="button" onClick={stepBack} className="inline-flex items-center gap-1.5 underline underline-offset-4 hover:text-ink" title={t('day.undoHint')}><RotateCcw className="h-4 w-4" /> {t('day.undo')}</button>
+              : <span />}
+            {((phase === 'talk' && !talkDone) || phase === 'pause') && !event.finished
+              ? <button type="button" onClick={restartTimer} className="inline-flex items-center gap-1.5 underline underline-offset-4 hover:text-ink"><TimerReset className="h-4 w-4" /> {t('day.restartTimer')}</button>
+              : cur === 'welcome' && <span>{t('day.onlyButton')}</span>}
+          </div>
+        )}
+      </section>
+
+      {hasPlan && <TablesNow key={event.round} event={event} byId={byId} t={t} topic={topic} />}
+      {participants.length > 0 && <LostCode participants={participants} isOn={isOn} t={t} />}
+    </main>
+  )
+}
+
+function Check({ ok, title, sub }) {
+  return (
+    <li className={`flex items-start gap-3 rounded-2xl p-4 ${ok ? 'bg-mint-soft' : 'bg-amber-50 ring-1 ring-amber-200'}`}>
+      <span className="text-2xl leading-none" aria-hidden>{ok ? '✅' : '⚠️'}</span>
+      <div>
+        <p className="text-lg font-bold">{title}</p>
+        {sub && <p className="text-base text-slate-600">{sub}</p>}
+      </div>
+    </li>
+  )
+}
+
+function Progress({ value, max }) {
+  return (
+    <div className="my-2 h-5 overflow-hidden rounded-full bg-slate-100">
+      <div className="h-full rounded-full bg-mint transition-all" style={{ width: `${max ? Math.round((value / max) * 100) : 0}%` }} />
+    </div>
+  )
+}
+
+// Mesas de un tour con nombres completos y ⭐ para quien tiene nivel avanzado en el tema de la mesa
+function TablesNow({ event, byId, t, topic }) {
+  const now = Math.min(Math.max(event.round, 1), event.rounds.length)
+  const [pick, setPick] = useState(null)
+  const shownRound = pick ?? now
+  const plan = event.rounds[shownRound - 1]?.plan ?? []
+  return (
+    <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold">🗂 {t('day.tablesTitle')} · {t('panel.round', { n: shownRound })}</h2>
+          <p className="mt-1 text-sm text-slate-500">{t('day.tablesSub')}</p>
+        </div>
+        <div className="flex gap-1">
+          {event.rounds.map((_, i) => (
+            <button key={i} type="button" onClick={() => setPick(i + 1)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-bold ${shownRound === i + 1 ? 'bg-ink text-white' : 'bg-slate-100 text-slate-500 hover:text-ink'}`}>
+              {t('panel.round', { n: i + 1 })}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {plan.map((tb) => {
+          const key = topicKey(tb.topic)
+          const people = tb.members.map((id) => byId.get(id)).filter(Boolean)
+          const anyAdv = people.some((p) => isAdvanced(p, key))
+          return (
+            <div key={tb.id} className="rounded-2xl bg-paper p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{t('panel.table', { n: tb.id })}</p>
+              <p className="mt-0.5 text-base font-extrabold leading-snug">{topic(tb.topic)}</p>
+              <ul className="mt-2 space-y-1 text-base">
+                {people.map((p) => <li key={p.id}>{isAdvanced(p, key) ? '⭐ ' : ''}{p.name}</li>)}
+              </ul>
+              {!anyAdv && <p className="mt-2 inline-block rounded-lg bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">⚠️ {t('day.noAdvanced')}</p>}
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+// «Quelqu’un a perdu son code ?»: buscar por nombre y ver el código (sin botones de borrar cerca)
+function LostCode({ participants, isOn, t }) {
+  const [q, setQ] = useState('')
+  const norm = normalizeText(q)
+  const found = norm ? participants.filter((p) => normalizeText(p.name).includes(norm)).slice(0, 4) : []
+  const online = isOn ? participants.filter((p) => isOn(p.id)).length : null
+  return (
+    <section className="grid gap-5 sm:grid-cols-2">
+      <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <h2 className="text-lg font-bold">🔑 {t('day.lostTitle')}</h2>
+        <label className="relative mt-3 block">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('day.lostPh')} aria-label={t('day.lostTitle')}
+            className="w-full rounded-xl border-2 border-slate-200 bg-white py-3 pl-11 pr-3 text-lg focus:border-brand focus:outline-none" />
+        </label>
+        {norm && !found.length && <p className="mt-3 text-base text-slate-500">{t('day.lostNone')}</p>}
+        <ul className="mt-2 divide-y divide-slate-100">
+          {found.map((p) => (
+            <li key={p.id} className="flex items-center justify-between gap-3 py-2.5">
+              <span className="text-lg">{p.name}</span>
+              <span className="rounded-lg bg-mint-soft px-3 py-1 font-mono text-2xl font-extrabold tracking-[0.2em] text-mint-dark">{p.accessCode ?? '—'}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {online !== null && (
+        <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+          <h2 className="text-lg font-bold">📱 {t('day.onlineTitle')}</h2>
+          <p className="mt-2 text-4xl font-extrabold">{online} / {participants.length}</p>
+          <p className="mt-1 text-base text-slate-500">{t('day.onlineHint')}</p>
+        </div>
+      )}
+    </section>
+  )
+}
+
+// Ventana de confirmación: «Non, continuer» destacado; «Oui» al lado, en contorno
+function ConfirmDialog({ title, body, yes, no, onYes, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+  return (
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 grid place-items-center bg-ink/60 p-4" onClick={onClose}>
+      <div className="w-full max-w-lg rounded-3xl bg-white p-7 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-2xl font-bold">{title}</h2>
+        {body && <p className="mt-3 text-lg leading-relaxed text-slate-600">{body}</p>}
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <button type="button" autoFocus onClick={onClose} className="rounded-2xl bg-ink px-5 py-4 text-lg font-bold text-white hover:bg-black">{no}</button>
+          <button type="button" onClick={() => { onClose(); onYes() }} className="rounded-2xl px-5 py-4 text-lg font-bold text-brand-dark ring-2 ring-brand hover:bg-brand-soft">{yes}</button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -581,14 +817,4 @@ function Quality({ ok, label, value }) {
   )
 }
 
-function PhaseHeading({ children }) {
-  return <h2 className="pt-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">{children}</h2>
-}
 
-function Notice({ children }) {
-  return (
-    <p className="mt-4 flex items-start gap-2 rounded-xl bg-brand-soft p-3 text-sm text-slate-700">
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-brand-dark" /> {children}
-    </p>
-  )
-}

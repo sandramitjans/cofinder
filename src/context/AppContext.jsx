@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { VIEWS, MODERATOR_VIEWS, isModHash, JOIN_HASH, MOD_PIN, PAUSE_AFTER_ROUND, FIND_MINUTES, ROUND_MINUTES } from '../constants'
+import { VIEWS, MODERATOR_VIEWS, isModHash, JOIN_HASH, PROJ_HASH, MOD_PIN, PAUSE_AFTER_ROUND, FIND_MINUTES, ROUND_MINUTES } from '../constants'
 import { demoParticipants } from '../lib/demo'
 import { configureEventTopics } from '../lib/topics'
 import * as api from '../lib/backend'
@@ -64,9 +64,10 @@ export function AppProvider({ children }) {
   const [profileUpdatedAt, setProfileUpdatedAt] = useState(0)
   const [modPin, setModPin] = useState(() => read(sessionStorage, MOD_KEY, null)) // remoto: PIN; local: true
   const modUnlocked = !!modPin
-  const [gateOpen, setGateOpen] = useState(() => isModHash(window.location.hash))
+  const [gateOpen, setGateOpen] = useState(() => isModHash(window.location.hash)
+    || (window.location.hash === PROJ_HASH && !read(sessionStorage, MOD_KEY, null)))
   const [view, setView] = useState(() => {
-    if (read(sessionStorage, MOD_KEY, null)) return VIEWS.MOD_PANEL
+    if (read(sessionStorage, MOD_KEY, null)) return window.location.hash === PROJ_HASH ? VIEWS.PROJECTOR : VIEWS.MOD_PANEL
     if (read(localStorage, ME_KEY, null)) return VIEWS.HOME
     return window.location.hash === JOIN_HASH ? VIEWS.LOGIN : VIEWS.REGISTER
   })
@@ -420,7 +421,7 @@ export function AppProvider({ children }) {
     if (res !== 'ok') return res
     setModPin(REMOTE ? pin : true)
     setGateOpen(false)
-    setView(VIEWS.MOD_PANEL)
+    setView(window.location.hash === PROJ_HASH ? VIEWS.PROJECTOR : VIEWS.MOD_PANEL)
     if (isModHash(window.location.hash)) window.history.replaceState(null, '', window.location.pathname)
     return 'ok'
   }, [])
