@@ -14,7 +14,7 @@ import SuperpowerPicker from '../components/ui/SuperpowerPicker'
 import PhotoPicker from '../components/ui/PhotoPicker'
 import LangSwitch from '../components/ui/LangSwitch'
 import PublicFooter from '../components/layout/PublicFooter'
-import { chosenTopics, isCustom, isMandatory, levelOfTopic, listsFromLevels, mandatoryTopics, myTopics, optionalTopics, topicEmoji } from '../lib/topics'
+import { chosenTopics, eventTopicDesc, isCustom, isMandatory, levelOfTopic, listsFromLevels, mandatoryTopics, myTopics, optionalTopics, topicEmoji } from '../lib/topics'
 import { familyOfTopic, familyTone } from '../lib/familyColors'
 import { CELEBRATE_KEY } from '../components/ui/Confetti'
 
@@ -376,7 +376,7 @@ function GuestCard({ form, onPhoto }) {
 
 /** Paso 2: los temas obligatorios como un programa: tarjetas con el sello «Déjà réservé ✓». Solo para informar. */
 function MandatoryTopics() {
-  const { t, topic } = useI18n()
+  const { t, topic, lang } = useI18n()
   const { eventTopics } = useApp()
   return (
     <div key="mandatory" className="animate-view-in mt-6">
@@ -387,7 +387,7 @@ function MandatoryTopics() {
         {mandatoryTopics().map((id, i) => {
           const fromPanel = eventTopics.find((x) => x.id === id)
           const family = familyOfTopic(id, fromPanel?.family)
-          const description = isCustom(id) ? fromPanel?.desc ?? '' : t(`topicDesc.${id}`)
+          const description = isCustom(id) ? eventTopicDesc(id, lang) : t(`topicDesc.${id}`)
           return (
             <li key={id} style={{ animationDelay: `${i * 90}ms` }}
               className="animate-rise-in relative flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-4 lg:p-5">

@@ -1,4 +1,4 @@
-import { isCustom, customLabel } from './topics'
+import { isCustom, eventTopicLabel } from './topics'
 
 /**
  * «Pour briser la glace» / «Icebreakers»: contexto, 3 preguntas y una pista para cada tema de la lista.
@@ -229,6 +229,6 @@ const GENERIC = {
 export function icebreakerFor(topicId, lang, desc = '') {
   const dict = lang === 'en' ? EN : FR
   if (!isCustom(topicId) && dict[topicId]) return dict[topicId]
-  const name = isCustom(topicId) ? customLabel(topicId) : String(topicId)
+  const name = isCustom(topicId) ? eventTopicLabel(topicId, lang) : String(topicId)
   return GENERIC[lang === 'en' ? 'en' : 'fr'](name, desc)
 }

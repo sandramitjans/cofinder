@@ -68,16 +68,17 @@ export function seededOrder(items, seed, keyOf = (x) => x) {
    el formulario no muestra la pantalla de elegir tema. Si el Admin añade temas no obligatorios
    en el panel, esa pantalla vuelve a salir (ver RegisterView → stepsOrder).
    AppContext (y el worker del plan) llaman a `configureEventTopics` con la lista del panel. */
-let EVENT = { mandatory: MANDATORY_TOPICS, optional: [], family: {}, panel: false }
+let EVENT = { mandatory: MANDATORY_TOPICS, optional: [], family: {}, desc: {}, panel: false }
 export function configureEventTopics(list = []) {
   EVENT = list.length
     ? {
         mandatory: list.filter((x) => x.mandatory).map((x) => x.id),
         optional: list.filter((x) => !x.mandatory).map((x) => x.id),
         family: Object.fromEntries(list.map((x) => [topicKey(x.id), x.family || ''])),
+        desc: Object.fromEntries(list.map((x) => [topicKey(x.id), x.desc || ''])),
         panel: true,
       }
-    : { mandatory: MANDATORY_TOPICS, optional: [], family: {}, panel: false }
+    : { mandatory: MANDATORY_TOPICS, optional: [], family: {}, desc: {}, panel: false }
 }
 /** Temas obligatorios del evento (ids) */
 export const mandatoryTopics = () => EVENT.mandatory
@@ -85,6 +86,20 @@ export const mandatoryTopics = () => EVENT.mandatory
 export const optionalTopics = () => EVENT.optional
 /** Familia de un tema del panel ('' si no tiene o no es del panel) */
 export const eventFamilyOf = (id) => EVENT.family[topicKey(id)] ?? ''
+/* ---------- Temas del panel en inglés ----------
+   El panel guarda los temas en francés. Aquí va su traducción, por el título normalizado
+   (mayúsculas, acentos y espacios dan igual). Un tema que no está aquí se muestra en francés. */
+const PANEL_EN = Object.fromEntries([
+  ['Croissance rentable', 'Profitable growth', 'How do we steer and control our growth levers?'],
+  ['Valeur client', 'Customer value', 'Which approach? What end goal?'],
+  ['Développement de produits non consommateurs de fonds propres', 'Developing capital-light products', 'How do we launch profitable products without tying up our own capital?'],
+  ['Développement de produits non consommateurs de fond propre', 'Developing capital-light products', 'How do we launch profitable products without tying up our own capital?'],
+  ['Stratégie App', 'App strategy', 'What role for the app in the customer journey, and how do we drive its adoption?'],
+].map(([fr, label, desc]) => [CUSTOM_PREFIX + normalizeText(fr), { label, desc }]))
+/** Título de un tema del panel en el idioma pedido: en inglés, su traducción si la hay */
+export const eventTopicLabel = (id, lang) => (lang === 'en' && PANEL_EN[topicKey(id)]?.label) || customLabel(id)
+/** Descripción de un tema del panel en el idioma pedido ('' si no tiene) */
+export const eventTopicDesc = (id, lang) => (lang === 'en' && PANEL_EN[topicKey(id)]?.desc) || EVENT.desc[topicKey(id)] || ''
 /** Icono de un tema: el suyo si es de la lista; si es del panel, el de su familia */
 export const topicEmoji = (id) => TOPIC_EMOJI[id] ?? FAMILY_EMOJI[eventFamilyOf(id)] ?? '💬'
 
