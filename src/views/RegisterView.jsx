@@ -421,29 +421,16 @@ function Landing({ resume, onStart }) {
 
       <main className={`mx-auto flex w-full ${LANDING_WIDTH} flex-1 flex-col justify-center py-10`}>
         <div className="mx-auto flex w-full max-w-[720px] flex-col">
-        <h1 className="text-center font-display text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">{t('register.titleMain')}</h1>
+        <p className="text-center text-sm font-bold uppercase tracking-[0.2em] text-brand-dark">{t('register.ticketKicker')}</p>
+        <h1 className="mt-3 text-center font-display text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">{t('register.titleMain')}</h1>
         <p className="mx-auto mt-5 max-w-lg text-center text-lg leading-relaxed text-slate-600">{t('register.subtitle', { rounds: TOTAL_ROUNDS, min: ROUND_MINUTES, n: mandatoryTopics().length })}</p>
 
-        {/* Invitación: una entrada de evento con la fecha y el lugar */}
-        <div className="animate-rise-in mt-8 flex overflow-hidden rounded-2xl border border-brand/15 bg-[#FDF4F0]">
-          <div className="grid w-28 shrink-0 place-items-center bg-brand-soft px-3 py-5 text-center text-brand-dark sm:w-36">
-            <span>
-              <span className="block text-xs font-bold uppercase tracking-widest text-brand-dark/70">{formatDate(EVENT_DATE, { weekday: 'short' })}</span>
-              <span className="block font-display text-5xl font-medium leading-none sm:text-6xl">{formatDate(EVENT_DATE, { day: 'numeric' })}</span>
-              <span className="block text-sm font-bold uppercase tracking-widest">{formatDate(EVENT_DATE, { month: 'short' })}</span>
-            </span>
-          </div>
-          {/* Borde troquelado, como el de una entrada */}
-          <div aria-hidden className="relative w-0 border-l-2 border-dashed border-brand/25">
-            <span className="absolute -left-2.5 -top-2.5 h-5 w-5 rounded-full bg-paper" />
-            <span className="absolute -bottom-2.5 -left-2.5 h-5 w-5 rounded-full bg-paper" />
-          </div>
-          <div className="min-w-0 flex-1 p-5 sm:p-6">
-            <p className="text-xs font-bold uppercase tracking-widest text-brand-dark">{t('register.ticketKicker')}</p>
-            <p className="mt-1 font-display text-xl font-medium leading-tight text-ink sm:text-2xl">{formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-            <p className="mt-2 flex items-center gap-2 text-[15px] text-slate-600 sm:text-base"><MapPin className="h-4 w-4 shrink-0 text-brand" /> {EVENT_PLACE || t('register.placeTbc')}</p>
-          </div>
-        </div>
+        {/* Fecha y lugar integrados en el texto: una línea sencilla, sin tarjeta */}
+        <p className="animate-rise-in mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-base font-semibold text-ink sm:text-lg">
+          <span className="inline-flex items-center gap-2"><CalendarDays aria-hidden className="h-5 w-5 text-brand" /> {formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+          <span aria-hidden className="hidden h-1 w-1 rounded-full bg-slate-300 sm:block" />
+          <span className="inline-flex items-center gap-2"><MapPin aria-hidden className="h-5 w-5 text-brand" /> {EVENT_PLACE || t('register.placeTbc')}</span>
+        </p>
 
         <Button type="button" onClick={onStart} iconRight={ArrowRight} className="mt-8 w-full py-4 text-base sm:min-w-[300px] sm:self-center sm:px-10 sm:w-auto lg:text-lg">
           {t(resume ? 'register.landingResume' : 'register.landingCta')}
