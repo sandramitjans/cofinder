@@ -115,6 +115,9 @@ export const SUPERPOWERS = [
 ]
 export const MAX_SUPERPOWERS = 1
 
+// Largo máximo de nombre, puesto y filial: el mismo límite que la base de datos (00-esquema-base.sql)
+export const MAX_TEXT = 120
+
 // Filiales que se sugieren en el formulario (países del grupo Cofidis). Los textos están en lib/i18n.js,
 // que guarda también otros países por si algún perfil antiguo los tiene.
 export const COUNTRIES = ['fr', 'be', 'es', 'pt', 'it', 'cz', 'sk', 'hu', 'pl']

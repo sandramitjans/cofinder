@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, ArrowRight, Briefcase, CalendarDays, CheckCircle2, Clock, Info, MapPin, RotateCcw, User } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { COUNTRIES, EVENT_DATE, EVENT_PLACE, MAX_INTERESTS, MAX_SUPERPOWERS, ROUND_MINUTES, TOTAL_ROUNDS, VIEWS } from '../constants'
+import { COUNTRIES, EVENT_DATE, EVENT_PLACE, MAX_INTERESTS, MAX_SUPERPOWERS, MAX_TEXT, ROUND_MINUTES, TOTAL_ROUNDS, VIEWS } from '../constants'
 import { DICT } from '../lib/i18n'
 import Logo from '../components/ui/Logo'
 import Button from '../components/ui/Button'
@@ -184,7 +184,9 @@ export default function RegisterView({ mode = 'create' }) {
     const data = {
       ...rest,
       ...listsFromLevels([...mandatoryTopics(), ...chosen], levels),
-      customTopics: chosen.filter(isCustom), name: form.name.trim(), role: form.role.trim(), country: normalizeBranch(form.country),
+      // Recortado al límite de la base por si un borrador antiguo trae un texto más largo
+      customTopics: chosen.filter(isCustom), name: form.name.trim().slice(0, MAX_TEXT), role: form.role.trim().slice(0, MAX_TEXT),
+      country: normalizeBranch(form.country).slice(0, MAX_TEXT),
     }
     setSaveError(false)
     setSaving(true)
@@ -270,10 +272,10 @@ export default function RegisterView({ mode = 'create' }) {
               <GuestCard form={form} onPhoto={(v) => set('photo', v)} />
               <div className="space-y-5 lg:space-y-3">
               <div data-field="name">
-                <Field label={t('register.name')} name="name" icon={User} placeholder={t('register.namePh')} autoComplete="name" value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} />
+                <Field label={t('register.name')} name="name" maxLength={MAX_TEXT} icon={User} placeholder={t('register.namePh')} autoComplete="name" value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} />
               </div>
               <div data-field="role">
-                <Field label={t('register.role')} name="role" icon={Briefcase} placeholder={t('register.rolePh')} autoComplete="organization-title" value={form.role} onChange={(e) => set('role', e.target.value)} error={errors.role} />
+                <Field label={t('register.role')} name="role" maxLength={MAX_TEXT} icon={Briefcase} placeholder={t('register.rolePh')} autoComplete="organization-title" value={form.role} onChange={(e) => set('role', e.target.value)} error={errors.role} />
               </div>
               <div data-field="country">
                 <CountryPicker value={form.country} onChange={(v) => set('country', v)} error={errors.country} />

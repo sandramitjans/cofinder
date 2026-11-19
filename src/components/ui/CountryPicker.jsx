@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Building2, Check, ChevronDown, PenLine } from 'lucide-react'
-import { COUNTRIES } from '../../constants'
+import { COUNTRIES, MAX_TEXT } from '../../constants'
 import { useI18n } from '../../context/I18nContext'
 
 const OTHER = '__other'
@@ -126,7 +126,7 @@ export default function CountryPicker({ value, onChange, error }) {
         <div className="animate-view-in">
           <label htmlFor="country-other" className="sr-only">{t('register.countryOtherLabel')}</label>
           <input
-            ref={otherRef} id="country-other" type="text" autoComplete="off" value={value} onChange={(e) => onChange(e.target.value)}
+            ref={otherRef} id="country-other" type="text" autoComplete="off" maxLength={MAX_TEXT} value={value} onChange={(e) => onChange(e.target.value)}
             placeholder={t('register.countryPh')} aria-invalid={!!error}
             className={`w-full rounded-xl border bg-white px-4 py-3.5 text-base text-slate-900 placeholder:text-slate-500 transition focus:outline-none focus:ring-4 lg:py-4 lg:text-lg ${border}`}
           />
