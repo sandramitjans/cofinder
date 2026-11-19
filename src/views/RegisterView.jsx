@@ -354,7 +354,8 @@ function GuestCard({ form, onPhoto }) {
   const place = country(form.country.trim())
   const complete = !!(name && role && place)
   return (
-    <div className={`relative flex items-center gap-4 rounded-2xl border-2 bg-white p-4 lg:flex-col lg:py-5 lg:text-center transition-[border-color,box-shadow] duration-300 ${complete ? 'border-brand/30 shadow-md shadow-brand/10' : 'border-dashed border-slate-300'}`}>
+    // Resumen, no un botón: fondo naranja claro sin borde ni sombra (todo el texto ≥ 5:1). Lo único que se pulsa aquí es la foto
+    <div className="relative flex items-center gap-4 rounded-2xl bg-peach p-4 lg:flex-col lg:py-5 lg:text-center">
       <div className="shrink-0">
         <PhotoPicker compact value={form.photo} name={form.name} onChange={onPhoto} />
       </div>
