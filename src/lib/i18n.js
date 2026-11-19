@@ -46,7 +46,7 @@ export const DICT = {
       yourChoice: 'Votre choix',
       continueWith: 'Continuer avec « {topic} »',
       levelMandatoryTitle: 'Votre niveau sur chaque sujet',
-      levelMandatorySub: 'Pas de bonne ou de mauvaise réponse. Dites-nous simplement où vous en êtes\u00A0: ça nous aide à mettre à chaque table quelqu’un qui a de l’expérience.',
+      levelMandatorySub: 'Pas de bonne ou de mauvaise réponse, juste où vous en êtes.',
       levelChosenTitle: 'Votre niveau sur ce sujet',
       levelChosenSub: 'Dernière précision sur la table que vous avez choisie.',
       level: {
@@ -603,7 +603,7 @@ export const DICT = {
       yourChoice: 'Your choice',
       continueWith: 'Continue with “{topic}”',
       levelMandatoryTitle: 'Your level on each topic',
-      levelMandatorySub: 'No right or wrong answers. Just tell us where you stand: it helps us put someone experienced at every table.',
+      levelMandatorySub: 'No right or wrong answers, just where you stand.',
       levelChosenTitle: 'Your level on this topic',
       levelChosenSub: 'One last detail about the table you chose.',
       level: {
