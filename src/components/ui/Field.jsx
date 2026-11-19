@@ -10,7 +10,7 @@ export default function Field({ label, icon: Icon, error, as = 'input', children
         <Control
           id={id}
           aria-invalid={!!error}
-          className={`w-full appearance-none rounded-xl border bg-white py-3.5 pr-4 text-base text-slate-900 placeholder:text-slate-500 transition focus:outline-none focus:ring-4 lg:py-4 lg:text-lg ${Icon ? 'pl-11 lg:pl-13' : 'pl-4'} ${
+          className={`w-full appearance-none rounded-xl border bg-white py-3.5 pr-4 text-base text-slate-900 placeholder:text-slate-500 transition focus:outline-none focus:ring-4 lg:py-3.5 lg:text-lg ${Icon ? 'pl-11 lg:pl-13' : 'pl-4'} ${
             error ? 'border-brand focus:ring-brand/20' : 'border-slate-400 focus:border-brand focus:ring-brand/15'
           }`}
           {...props}
