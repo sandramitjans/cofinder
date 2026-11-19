@@ -422,7 +422,7 @@ function Landing({ resume, onStart }) {
       <main className={`mx-auto flex w-full ${LANDING_WIDTH} flex-1 flex-col justify-center py-10`}>
         <div className="mx-auto flex w-full max-w-[720px] flex-col">
         <h1 className="text-center font-display text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">{t('register.titleMain')}</h1>
-        <p className="mx-auto mt-5 max-w-lg text-center text-lg leading-relaxed text-slate-600">{t('register.subtitle', { rounds: TOTAL_ROUNDS, min: ROUND_MINUTES })}</p>
+        <p className="mx-auto mt-5 max-w-lg text-center text-lg leading-relaxed text-slate-600">{t('register.subtitle', { rounds: TOTAL_ROUNDS, min: ROUND_MINUTES, n: mandatoryTopics().length })}</p>
 
         {/* Invitación: una entrada de evento con la fecha y el lugar */}
         <div className="animate-rise-in mt-8 flex overflow-hidden rounded-2xl border border-brand/15 bg-[#FDF4F0]">
