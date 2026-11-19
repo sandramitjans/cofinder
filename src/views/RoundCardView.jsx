@@ -671,8 +671,7 @@ function Companions({ table, title }) {
  */
 function NoteRecorder({ table, intro, footer }) {
   const { event, submitNote } = useApp()
-  const { t, lang: uiLang } = useI18n()
-  const [lang, setLang] = useState(uiLang === 'en' ? 'en' : 'fr') // idioma en que se habla: Whisper transcribe en ese
+  const { t } = useI18n()
   const [state, setState] = useState(() => (canRecord() ? 'idle' : 'unsupported')) // idle · recording · review · sending · error · unsupported · write
   const [text, setText] = useState('')
   const [writing, setWriting] = useState(() => !canRecord()) // sin micrófono: directamente a escribirla
@@ -723,7 +722,7 @@ function NoteRecorder({ table, intro, footer }) {
 
   const send = async () => {
     setState('sending')
-    const res = await submitNote({ round: event.round, tableId: table.id, topic: table.topic, blob, lang })
+    const res = await submitNote({ round: event.round, tableId: table.id, topic: table.topic, blob })
     if (api.isRemote && !res.uploaded) { setFailed(true); setState('review') }
     // si ha ido bien, la pantalla cambia sola a la espera
   }
@@ -804,18 +803,7 @@ function NoteRecorder({ table, intro, footer }) {
       )}
       <NoteGuide />
       <p className="mt-3 text-xs text-slate-500">{t('note.noiseTip')}</p>
-      <div className="mt-5 w-full">
-        <p className="text-sm font-semibold text-slate-600">{t('note.langQ')}</p>
-        <div role="radiogroup" aria-label={t('note.langQ')} className="mt-2 grid grid-cols-2 gap-2">
-          {[['fr', '🇫🇷 Français'], ['en', '🇬🇧 English']].map(([k, label]) => (
-            <button key={k} type="button" role="radio" aria-checked={lang === k} onClick={() => setLang(k)}
-              className={`rounded-xl border-2 px-3 py-2.5 text-base font-semibold transition ${lang === k ? 'border-brand bg-brand-soft text-brand-dark' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <Button type="button" onClick={start} icon={Mic} className="mt-5 w-full py-4 text-base">{t(intro ? 'reporter.record' : 'round.record')}</Button>
+      <Button type="button" onClick={start} icon={Mic} className="mt-6 w-full py-4 text-base">{t(intro ? 'reporter.record' : 'round.record')}</Button>
       {state === 'error' && <p role="alert" className="mt-3 text-sm font-semibold text-brand-dark">{t('round.micError')}</p>}
       <Button type="button" variant="outline" onClick={() => setWriting(true)} icon={PencilLine} className="mt-2 w-full py-3.5 text-base">{t('note.write')}</Button>
       {footer}

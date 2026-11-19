@@ -318,11 +318,11 @@ export function AppProvider({ children }) {
   const [notesOverride, setNotesOverride] = useState([]) // rondas enviadas en este dispositivo, antes de que lo confirme el servidor
   const myNotes = REMOTE ? [...(myTable?.notes ?? []), ...notesOverride] : (currentUser?.notedRounds ?? [])
   const noteSent = !!event.round && myNotes.includes(event.round)
-  const submitNote = useCallback(async ({ round, tableId, topic, blob, text, lang }) => {
+  const submitNote = useCallback(async ({ round, tableId, topic, blob, text }) => {
     if (!currentUserId) return { uploaded: false }
     const res = text != null
       ? await saveTextNote({ userId: currentUserId, round, tableId, topic, text })
-      : await saveNote({ userId: currentUserId, round, tableId, topic, blob, lang })
+      : await saveNote({ userId: currentUserId, round, tableId, topic, blob })
     if (REMOTE) {
       if (!res.uploaded) return res
       setNotesOverride((prev) => [...prev, round])

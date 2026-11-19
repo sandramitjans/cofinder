@@ -51,7 +51,7 @@ self.onmessage = async ({ data }) => {
   } else if (data.type === 'run') {
     try {
       await loading
-      const out = await asr(data.audio, { task: 'transcribe', chunk_length_s: 30, stride_length_s: 5, ...(data.language ? { language: data.language === 'en' ? 'english' : 'french' } : {}) })
+      const out = await asr(data.audio, { task: 'transcribe', chunk_length_s: 30, stride_length_s: 5, ...(data.language ? { language: data.language } : {}) })
       self.postMessage({ type: 'result', id: data.id, text: String(out?.text ?? '').trim() })
     } catch (err) {
       self.postMessage({ type: 'error', id: data.id, message: String(err?.message ?? err) })

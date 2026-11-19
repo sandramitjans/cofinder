@@ -1,5 +1,4 @@
 import * as api from './backend'
-import { langOfPath } from './audioNotes'
 
 /**
  * Transcriptor del navegador para la página #resum: busca las notas sin texto, descarga su audio
@@ -55,11 +54,10 @@ export function createTranscriber({ pin, model = 'small', onStatus }) {
   })
   ready.catch(() => {})
 
-  // language: 'fr' | 'en' (lo elige quien graba). Sin él, Whisper lo detecta solo.
-  const run = (audio, language) => new Promise((resolve, reject) => {
+  const run = (audio) => new Promise((resolve, reject) => {
     const id = ++seq
     pending.set(id, { resolve, reject })
-    worker.postMessage({ type: 'run', id, audio, language }, [audio.buffer])
+    worker.postMessage({ type: 'run', id, audio }, [audio.buffer])
   })
 
   /** Transcribe todo lo pendiente. Devuelve cuántas ha hecho (para refrescar la lista). */
@@ -76,7 +74,7 @@ export function createTranscriber({ pin, model = 'small', onStatus }) {
         emit({ phase: 'working', current: note, left: notes.length - n })
         try {
           const { blob, path } = await api.modGetAudio(pin, note.id, note.round)
-          const text = await run(await toPcm16k(blob), langOfPath(path))
+          const text = await run(await toPcm16k(blob))
           await api.modSaveTranscript(pin, { id: note.id, round: note.round, path, text })
           n++
           emit({ done: status.done + 1 })
