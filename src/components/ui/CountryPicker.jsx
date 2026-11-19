@@ -89,7 +89,7 @@ export default function CountryPicker({ value, onChange, error }) {
           aria-labelledby="country-label country"
           onClick={() => (open ? setOpen(false) : openList())}
           onKeyDown={(e) => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); openList() } }}
-          className={`flex w-full items-center rounded-xl border bg-white py-3.5 pl-11 pr-11 text-left text-base transition focus:outline-none focus:ring-4 lg:py-4 lg:pl-13 lg:text-lg ${border} ${open ? 'border-brand ring-4 ring-brand/15' : ''}`}
+          className={`flex w-full items-center rounded-xl border bg-white py-3.5 pl-11 pr-11 text-left text-base transition focus:outline-none focus:ring-4 lg:py-3.5 lg:pl-13 lg:text-lg ${border} ${open ? 'border-brand ring-4 ring-brand/15' : ''}`}
         >
           <span className={`truncate ${selected ? 'text-slate-900' : 'text-slate-500'}`}>{selected ? label(selected) : t('register.countryChoose')}</span>
         </button>

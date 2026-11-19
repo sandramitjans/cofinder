@@ -38,14 +38,14 @@ export const EVENT_DATE = Number.isNaN(EVENT_DATE_RAW) ? new Date('2026-11-24T00
 // Lugar del evento (VITE_EVENT_PLACE en el .env); vacío = Cofidis España
 export const EVENT_PLACE = import.meta.env?.VITE_EVENT_PLACE || 'Cofidis España'
 
-// Sesión: 4 rondas de 15 minutos, mesas de 3 a 4 personas y como mucho 5 mesas por ronda.
-// Un mismo tema puede estar en 2 mesas de la misma ronda (sobre todo los obligatorios).
+// Sesión: 4 rondas de 15 minutos, mesas de 3 a 4 personas (nunca más de 4: con 13 personas, 4 mesas de 4+3+3+3).
+// MAX_TABLES solo es un tope de seguridad. Un mismo tema puede estar en 2 mesas de la misma ronda.
 // Tras la ronda 3 hay una pausa de 10 minutos con su propia pantalla en el proyector.
 export const TOTAL_ROUNDS = 4
 export const ROUND_MINUTES = 15
 export const MIN_TABLE_SIZE = 3
 export const MAX_TABLE_SIZE = 4
-export const MAX_TABLES = 5
+export const MAX_TABLES = 12
 export const MAX_TABLES_PER_TOPIC = 2
 export const PAUSE_AFTER_ROUND = 3
 export const PAUSE_MINUTES = 10

@@ -242,13 +242,13 @@ export default function RegisterView({ mode = 'create' }) {
           </div>
         </div>
 
-        <form onSubmit={submit} noValidate className="mt-5 flex flex-1 flex-col">
+        <form onSubmit={submit} noValidate className="mt-5 flex flex-1 flex-col lg:mt-1">
           <header className="text-center">
             {editing && screen === 1 && <p className="mb-1 text-base font-semibold text-brand-dark">{t('register.editKicker')}</p>}
             {/* Ánimo según el paso */}
             {!editing && <p key={screen} className="animate-pop-in mb-1.5 text-sm font-semibold text-brand-dark">{t(`register.cheer${screen}`)}</p>}
-            <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink [text-wrap:balance] lg:text-5xl">{steps.title}</h1>
-            <p className="mx-auto mt-1.5 max-w-[60ch] text-[17px] leading-relaxed text-slate-600 [text-wrap:pretty] lg:mt-3 lg:text-lg">{steps.sub}</p>
+            <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink [text-wrap:balance] lg:text-[2.75rem]">{steps.title}</h1>
+            <p className="mx-auto mt-1.5 max-w-[60ch] text-[17px] leading-relaxed text-slate-600 [text-wrap:pretty] lg:mt-2 lg:text-lg">{steps.sub}</p>
           </header>
 
           {restored && screen === 1 && (
@@ -262,8 +262,9 @@ export default function RegisterView({ mode = 'create' }) {
 
           {/* 1 · Perfil */}
           {screen === 1 && (
-            <div key="profile" className="animate-view-in mt-6 space-y-5">
+            <div key="profile" className="animate-view-in mt-6 space-y-5 lg:grid lg:grid-cols-[300px_1fr] lg:items-center lg:gap-8 lg:space-y-0">
               <GuestCard form={form} onPhoto={(v) => set('photo', v)} />
+              <div className="space-y-5 lg:space-y-3">
               <div data-field="name">
                 <Field label={t('register.name')} name="name" icon={User} placeholder={t('register.namePh')} autoComplete="name" value={form.name} onChange={(e) => set('name', e.target.value)} error={errors.name} />
               </div>
@@ -272,6 +273,7 @@ export default function RegisterView({ mode = 'create' }) {
               </div>
               <div data-field="country">
                 <CountryPicker value={form.country} onChange={(v) => set('country', v)} error={errors.country} />
+              </div>
               </div>
             </div>
           )}
@@ -320,9 +322,9 @@ export default function RegisterView({ mode = 'create' }) {
           )}
 
           {/* Botón siempre a la vista, también con la lista larga de mesas */}
-          <div className="sticky bottom-0 z-10 mt-auto pt-6">
+          <div className="sticky bottom-0 z-10 mt-auto pt-6 lg:pt-8">
             <div className="-mx-5 bg-gradient-to-t from-paper via-paper to-paper/0 px-5 pb-4 pt-4 sm:-mx-8 sm:px-8">
-              <Button type="submit" iconRight={ArrowRight} disabled={saving} className="w-full py-4 text-base lg:py-5 lg:text-xl">
+              <Button type="submit" iconRight={ArrowRight} disabled={saving} className="w-full py-4 text-base lg:text-lg">
                 {saving ? t('register.saving') : screen === 2 ? t('register.continue') : screen === 4 && form.needs.length ? t('register.continueWith', { topic: topic(form.needs[0]) }) : screen < LAST ? t('register.next') : t(editing ? 'register.editSave' : 'register.submit')}
               </Button>
               {editing && (
@@ -352,17 +354,17 @@ function GuestCard({ form, onPhoto }) {
   const place = country(form.country.trim())
   const complete = !!(name && role && place)
   return (
-    <div className={`flex items-center gap-4 rounded-2xl border-2 bg-white p-4 transition-[border-color,box-shadow] duration-300 ${complete ? 'border-brand/30 shadow-md shadow-brand/10' : 'border-dashed border-slate-300'}`}>
+    <div className={`relative flex items-center gap-4 rounded-2xl border-2 bg-white p-4 lg:flex-col lg:py-5 lg:text-center transition-[border-color,box-shadow] duration-300 ${complete ? 'border-brand/30 shadow-md shadow-brand/10' : 'border-dashed border-slate-300'}`}>
       <div className="shrink-0">
         <PhotoPicker compact value={form.photo} name={form.name} onChange={onPhoto} />
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 lg:w-full">
         <p className="text-sm font-semibold text-brand-dark">{t('register.guestCard')}</p>
         <p className={`mt-0.5 truncate font-display text-xl font-medium leading-tight ${name ? 'text-ink' : 'text-slate-500'}`}>{name || t('register.guestName')}</p>
         <p className={`truncate text-sm ${role ? 'text-slate-600' : 'text-slate-500'}`}>{role || t('register.guestRole')}</p>
-        {place && <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-slate-600"><MapPin className="h-3.5 w-3.5 shrink-0" /> {place}</p>}
+        {place && <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-slate-600 lg:justify-center"><MapPin className="h-3.5 w-3.5 shrink-0" /> {place}</p>}
       </div>
-      {complete && <CheckCircle2 aria-hidden className="animate-pop-in h-6 w-6 shrink-0 self-start text-mint" />}
+      {complete && <CheckCircle2 aria-hidden className="animate-pop-in h-6 w-6 shrink-0 self-start text-mint lg:absolute lg:right-4 lg:top-4" />}
     </div>
   )
 }
