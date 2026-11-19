@@ -392,8 +392,8 @@ function MandatoryTopics() {
             <li key={id} style={{ animationDelay: `${i * 90}ms` }}
               className="animate-rise-in relative flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-4 lg:p-5">
               <span aria-hidden className={`grid h-12 w-12 place-items-center rounded-2xl text-2xl ${familyTone(family).tile}`}>{topicEmoji(id)}</span>
-              <span className="mt-3 block text-lg font-semibold leading-snug text-ink lg:text-xl">{topic(id)}</span>
-              {description && <span className="mt-1 block text-[17px] leading-snug text-slate-600 lg:text-base">{description}</span>}
+              <span className="mt-3 block text-xl font-bold leading-snug text-ink lg:text-2xl">{topic(id)}</span>
+              {description && <span className="mt-1.5 block text-[17px] leading-snug text-slate-600 lg:text-base">{description}</span>}
               {/* Sello: ya está reservado para todo el mundo */}
               <span className="absolute right-3 top-3 -rotate-3 rounded-lg border-2 border-mint px-2 py-0.5 text-sm font-bold text-mint-dark lg:right-4 lg:top-4 lg:text-[17px]">
                 {t('register.mandatoryBadge')} ✓
