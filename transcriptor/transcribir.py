@@ -95,9 +95,9 @@ def make_transcriber():
     model = WhisperModel(MODEL, device="auto", compute_type="int8", cpu_threads=THREADS)
     log("Modelo listo.")
 
-    def transcribe(file):
+    def transcribe(file, language=None):
         # vad_filter: se salta los silencios (menos tiempo y menos frases inventadas)
-        segments, info = model.transcribe(file, language=LANGUAGE, beam_size=5, vad_filter=True)
+        segments, info = model.transcribe(file, language=language or LANGUAGE, beam_size=5, vad_filter=True)
         return " ".join(seg.text.strip() for seg in segments).strip()
     return transcribe
 
@@ -123,7 +123,9 @@ def main():
                     tmp = f.name
                 try:
                     start = time.time()
-                    text = transcribe(tmp)
+                    # Idioma elegido en el móvil, en el nombre del archivo (…-123.fr.webm / …-123.en.webm)
+                    lang = Path(note["path"]).with_suffix("").suffix.lstrip(".")
+                    text = transcribe(tmp, lang if lang in ("fr", "en") else None)
                 finally:
                     os.unlink(tmp)
                 save_transcript(note, text)

@@ -1,11 +1,11 @@
 import * as api from './backend'
 
 /**
- * Notas de audio al acabar cada ronda («lo que te llevas de esta conversación», máx. 1 minuto).
+ * Notas de audio al acabar cada ronda («lo que te llevas de esta conversación», máx. 2 minutos).
  * Cada nota se guarda siempre en este dispositivo (IndexedDB) para poder escucharla y descargarla
  * en el cierre. Con Supabase además se sube al bucket privado `audio-notes` (ver supabase/README).
  */
-export const MAX_NOTE_SECONDS = 60
+export const MAX_NOTE_SECONDS = 120
 
 const DB = 'cofinder-notes'
 const STORE = 'notes'
@@ -38,11 +38,11 @@ export async function getNote(userId, round) {
  * Guarda la nota en el dispositivo y, si hay servidor, la sube y la registra como enviada
  * (para que el panel sepa quién ha terminado). Devuelve { uploaded } (false = solo en este dispositivo).
  */
-export async function saveNote({ userId, round, tableId, topic, blob }) {
+export async function saveNote({ userId, round, tableId, topic, blob, lang }) {
   const note = { blob, mime: blob.type, createdAt: Date.now(), uploaded: false }
   if (api.isRemote) {
     try {
-      const path = await api.uploadAudioNote({ userId, round, tableId, blob })
+      const path = await api.uploadAudioNote({ userId, round, tableId, blob, lang })
       await api.submitAudioNote({ id: userId, round, tableId, topic, path, blob })
       note.uploaded = true
     } catch { /* sin red o sin el SQL de notas: queda en el dispositivo */ }
@@ -76,5 +76,8 @@ export function recorderMime() {
 }
 
 export const canRecord = () => !!navigator.mediaDevices?.getUserMedia && recorderMime() !== null
+
+/** Idioma de la nota según su archivo (…-123.fr.webm): 'fr' | 'en' | null (notas antiguas: Whisper lo detecta) */
+export const langOfPath = (path = '') => path.match(/\.(fr|en)\.\w+$/)?.[1] ?? null
 
 export const extensionOf = (mime = '') => (mime.includes('text') ? 'txt' : mime.includes('mp4') ? 'm4a' : mime.includes('ogg') ? 'ogg' : 'webm')

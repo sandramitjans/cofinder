@@ -304,9 +304,11 @@ export const modRemoveTopic = (pin, id) =>
 
 /* ---------- Notas de audio ----------
    Bucket privado `audio-notes`: el público solo puede subir (no listar ni descargar). */
-export async function uploadAudioNote({ userId, round, tableId, blob }) {
+// `lang` ('fr' | 'en'): idioma en que se habla; va en el nombre del archivo (…-123.fr.webm) para que
+// Whisper transcriba en ese idioma sin adivinarlo (sin tocar la base de datos)
+export async function uploadAudioNote({ userId, round, tableId, blob, lang }) {
   const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm'
-  const path = `ronda-${round}/mesa-${tableId ?? 'x'}/${userId}-${Date.now()}.${ext}`
+  const path = `ronda-${round}/mesa-${tableId ?? 'x'}/${userId}-${Date.now()}${lang === 'fr' || lang === 'en' ? `.${lang}` : ''}.${ext}`
   const { error } = await supabase.storage.from('audio-notes').upload(path, blob, { contentType: (blob.type || 'audio/webm').split(';')[0], upsert: false })
   if (error) throw error
   return path

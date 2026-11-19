@@ -74,7 +74,7 @@ sesión sigue aunque el transcriptor vaya con retraso o esté apagado (se pone a
 | Variable | Por defecto | Para qué |
 |---|---|---|
 | `WHISPER_MODEL` | `small` | `tiny`/`base` más rápidos y menos precisos; `medium`/`turbo`/`large-v3` más precisos y más lentos sin GPU |
-| `WHISPER_LANGUAGE` | (vacío) | Vacío = detecta el idioma de cada audio; o fija `es`, `fr`, `en` |
+| `WHISPER_LANGUAGE` | (vacío) | Solo para notas antiguas: las nuevas llevan el idioma (francés o inglés) que eligió quien grabó |
 | `INTERVALO_SEGUNDOS` | `10` | Cada cuánto busca notas nuevas |
 | `WHISPER_HILOS` | `0` | Núcleos de CPU que usa (0 = todos) |
 

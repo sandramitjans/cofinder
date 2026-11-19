@@ -4,7 +4,7 @@
 --
 -- Whisper (código abierto) se ejecuta en el navegador del ordenador que tiene abierta …/#resum:
 -- sin servidor propio, sin Python y gratis. Para eso el móvil guarda también una copia del audio
--- aquí (unos 250 KB por nota de 1 minuto), y la página #resum, con el PIN de Admin, la lee,
+-- aquí (unos 500 KB por nota de 2 minutos), y la página #resum, con el PIN de Admin, la lee,
 -- la transcribe y guarda el texto. Nadie sin el PIN puede leer los audios.
 
 alter table public.audio_notes add column if not exists audio bytea;
