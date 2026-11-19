@@ -20,17 +20,13 @@ export default function LevelPicker({ topics, levels, onChange, error }) {
   const choose = (id, level) => onChange({ levels: { ...levels, [id]: level } })
 
   return (
-    <div className="mt-6">
-      {/* Leyenda una sola vez arriba: así las opciones pueden ser botones pequeños */}
-      <p className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-sm text-slate-600 lg:text-base">
-        {LEVELS.map((o) => <span key={o}><span aria-hidden>{LEVEL_EMOJI[o]}</span> <strong className="font-semibold text-ink">{t(`register.level.${o}`)}</strong> · {t(`register.level.${o}Hint`)}</span>)}
-      </p>
-      <ul className="mt-4 space-y-3">
+    <div className="mt-6 lg:mt-8">
+      {/* Una sola lista con separadores (sin una tarjeta por tema): menos ruido. Lo que significa cada nivel va en el título de cada botón */}
+      <ul className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
         {topics.map((id) => {
           const level = levels[id]
           return (
-            <li key={id} className={`rounded-2xl border-2 bg-white p-4 transition-colors lg:flex lg:items-center lg:gap-6 lg:px-6 lg:py-5 ${level ? 'border-brand/40' : 'border-slate-200'}`}>
-              {/* El tema, bien visible: es lo que se valora */}
+            <li key={id} className="p-4 lg:flex lg:items-center lg:gap-6 lg:px-6 lg:py-4">
               <p className="min-w-0 flex-1 text-lg font-semibold leading-snug text-ink lg:text-xl">{topic(id)}</p>
               <div role="radiogroup" aria-label={topic(id)} className="mt-3 grid grid-cols-3 gap-1.5 sm:gap-2 lg:mt-0 lg:flex lg:shrink-0">
                 {LEVELS.map((o) => (
