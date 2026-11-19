@@ -728,13 +728,16 @@ export function AppProvider({ children }) {
   // Resúmenes de audio de la ronda en pantalla: uno por mesa. Cuando todas las mesas con alguna persona
   // real tienen el suyo, se pasa solo a la siguiente (pausa tras la ronda 3, o el final)
   const realIds = new Set(participants.filter((p) => !p.demo).map((p) => p.id))
-  const realTables = currentRound && !event.finished
-    ? currentRound.tables.map((t) => t.members.filter((id) => realIds.has(id))).filter((m) => m.length)
+  const realTableList = currentRound && !event.finished
+    ? currentRound.tables.map((t) => ({ id: t.id, members: t.members.filter((id) => realIds.has(id)) })).filter((t) => t.members.length)
     : []
+  const realTables = realTableList.map((t) => t.members)
   const notedIds = new Set(REMOTE
     ? (modState?.notes ?? []).filter((n) => n.round === event.round).map((n) => n.id)
     : participants.filter((p) => p.notedRounds?.includes(event.round)).map((p) => p.id))
   const notedCount = realTables.filter((m) => m.some((id) => notedIds.has(id))).length
+  // Mesas que aún no han enviado su resumen (el panel no deja pasar sin ellas salvo por el enlace de emergencia)
+  const missingTables = realTableList.filter((t) => !t.members.some((id) => notedIds.has(id))).map((t) => t.id)
   // Lo que ve el móvil en las esperas (solo números). Con Supabase lo calcula el servidor (get_my_table).
   const progress = REMOTE
     ? (myTable?.progress ?? null)
@@ -747,14 +750,14 @@ export function AppProvider({ children }) {
     view, navigate,
     participants, currentUser, event, currentRound, seatedEver,
     modLoading: REMOTE && modUnlocked && !modState,
-    register, login, joinedLive, myPlan, ready, setReady, progress, saveReport, readyCount, readyTotal: realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, notedTotal: realTables.length, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, joinedLive, myPlan, ready, setReady, progress, saveReport, readyCount, readyTotal: realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, notedTotal: realTables.length, missingTables, forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     modUnlocked, gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
   }), [view, navigate, participants, currentUser, event, currentRound, seatedEver, modUnlocked, modState,
-    register, login, joinedLive, myPlan, ready, setReady, progress, saveReport, readyCount, realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, realTables.length, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, joinedLive, myPlan, ready, setReady, progress, saveReport, readyCount, realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, realTables.length, missingTables.join(), forgetMe, removeParticipant, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     gateOpen, openGate, closeGate, unlockModerator, lockModerator,

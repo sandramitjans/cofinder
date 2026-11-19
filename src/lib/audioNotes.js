@@ -1,11 +1,11 @@
 import * as api from './backend'
 
 /**
- * Notas de audio al acabar cada ronda («lo que te llevas de esta conversación», máx. 1 minuto).
+ * Notas de audio al acabar cada ronda («lo que te llevas de esta conversación», máx. 2 minutos).
  * Cada nota se guarda siempre en este dispositivo (IndexedDB) para poder escucharla y descargarla
  * en el cierre. Con Supabase además se sube al bucket privado `audio-notes` (ver supabase/README).
  */
-export const MAX_NOTE_SECONDS = 60
+export const MAX_NOTE_SECONDS = 120
 
 const DB = 'cofinder-notes'
 const STORE = 'notes'

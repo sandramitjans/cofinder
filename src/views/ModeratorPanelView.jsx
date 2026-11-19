@@ -28,7 +28,7 @@ export default function ModeratorPanelView() {
     navigate, lockModerator, participants, currentUser, event, currentRound,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
-    removeParticipant, seedDemo, clearDemo, readyCount, readyTotal, notedCount, notedTotal,
+    removeParticipant, seedDemo, clearDemo, readyCount, readyTotal, notedCount, notedTotal, missingTables,
     eventTopics, addEventTopic, removeEventTopic,
   } = useApp()
   const { t, topic, country, superpower } = useI18n()
@@ -212,7 +212,7 @@ export default function ModeratorPanelView() {
       {tab === 'day' ? (
         <DayGuide
           {...{ t, topic, participants, byId, event, r, phase, hasPlan, total, planning, generatePlan, advance, stepBack, restartTimer,
-            readyCount, readyTotal, notedCount, notedTotal, eventTopics, shortAdvanced, hasDemo, unplanned, isOn,
+            readyCount, readyTotal, notedCount, notedTotal, missingTables, eventTopics, shortAdvanced, hasDemo, unplanned, isOn,
             timer, findTimer, pauseTimer, projOpen, openProjector, setAsk }}
         />
       ) : (
@@ -269,7 +269,7 @@ export default function ModeratorPanelView() {
  */
 function DayGuide({
   t, topic, participants, byId, event, r, phase, hasPlan, total, planning, generatePlan, advance, stepBack, restartTimer,
-  readyCount, readyTotal, notedCount, notedTotal, eventTopics, shortAdvanced, hasDemo, unplanned, isOn,
+  readyCount, readyTotal, notedCount, notedTotal, missingTables, eventTopics, shortAdvanced, hasDemo, unplanned, isOn,
   timer, findTimer, pauseTimer, projOpen, openProjector, setAsk,
 }) {
   // Barra de pasos: Préparer · Accueil · Tour 1 · Tour 2 · Pause · Tour 3 · … · Fin
@@ -385,9 +385,28 @@ function DayGuide({
         </div>
       )
     }
-    if (n >= total) go = big(t('day.notesGoEnd'), () => setAsk({ title: t('panel.confirmFinish'), body: t('day.endWhat'), yes: t('day.finishYes'), onYes: advance }))
-    else if (n === PAUSE_AFTER_ROUND) go = big(t('day.notesGoPause'), advance)
-    else go = big(t('day.notesGoNext', { n: n + 1 }), advance)
+    const nextLabel = n >= total ? t('day.notesGoEnd') : n === PAUSE_AFTER_ROUND ? t('day.notesGoPause') : t('day.notesGoNext', { n: n + 1 })
+    const goNext = n >= total
+      ? () => setAsk({ title: t('panel.confirmFinish'), body: t('day.endWhat'), yes: t('day.finishYes'), onYes: advance })
+      : advance
+    if (missingTables.length) {
+      // Siempre tiene que haber un resumen por mesa: sin botón grande mientras falte alguno.
+      // Solo un enlace de emergencia (móvil sin batería, sin red…), con aviso de qué mesas faltan.
+      const tables = missingTables.map((k) => t('day.tableN', { n: k })).join(', ')
+      extra = (
+        <>
+          {extra}
+          <div className="mt-6 rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200">
+            <p className="text-lg font-bold text-amber-900">⏳ {t('day.notesMissing', { tables })}</p>
+            <p className="mt-1 text-base text-amber-900/80">{t('day.notesMissingSub')}</p>
+          </div>
+          <button type="button" className="mt-5 text-base text-slate-500 underline underline-offset-4 hover:text-ink"
+            onClick={() => setAsk({ title: t('day.skipTitle'), body: t('day.skipBody', { tables }), yes: t('day.skipYes'), onYes: advance })}>
+            {t('day.skipLink')}
+          </button>
+        </>
+      )
+    } else go = big(nextLabel, goNext)
   } else {
     // Buscando mesa (o pantalla de apertura de la ronda)
     title = t('day.findTitle', { n })
