@@ -16,7 +16,7 @@ export const DICT = {
 
     register: {
       titleMain: 'Le speed-dating des savoirs',
-      subtitle: '{rounds} tours de {min} minutes pour échanger avec d’autres directeurs et directrices marketing sur {n} grands sujets. Un sujet par tour, avec des collègues différents à chaque fois.',
+      subtitle: 'Avant le jour J, dites-nous en deux minutes où vous en êtes sur les {n} sujets de la journée. Pas d’examen\u00A0: c’est juste pour composer des tables où chacun partage et apprend.',
       placeTbc: 'Lieu à confirmer',
       roundsInfo: '{n} tours · {min} min chacun',
       ticketKicker: 'Vous êtes invité·e',
@@ -33,7 +33,7 @@ export const DICT = {
       step1: 'Présentez-vous',
       step1Sub: 'Pour que vos voisins de table vous reconnaissent.',
       mandatoryTitle: 'Les {n} sujets de la journée',
-      mandatorySub: 'À chaque tour, vous changez de sujet et de collègues. Vous êtes déjà inscrit·e, rien à choisir\u00A0: c’est juste pour que vous sachiez à quoi vous attendre.',
+      mandatorySub: 'Le jour J, vous passerez d’un sujet à l’autre avec des collègues différents. Rien à choisir ici\u00A0: c’est juste pour que vous sachiez à quoi vous attendre.',
       mandatoryBadge: 'Déjà réservé',
       mandatoryList: 'Au programme',
       mandatoryNext: 'À l’étape suivante, vous indiquerez votre niveau sur chacun de ces sujets.',
@@ -44,7 +44,7 @@ export const DICT = {
       yourChoice: 'Votre choix',
       continueWith: 'Continuer avec « {topic} »',
       levelMandatoryTitle: 'Votre niveau sur chaque sujet',
-      levelMandatorySub: 'Indiquez votre niveau pour chaque sujet. Cela nous aide à composer des tables équilibrées, avec toujours quelqu’un d’expérimenté.',
+      levelMandatorySub: 'Pas de bonne ou de mauvaise réponse. Dites-nous simplement où vous en êtes\u00A0: ça nous aide à mettre à chaque table quelqu’un qui a de l’expérience.',
       levelChosenTitle: 'Votre niveau sur ce sujet',
       levelChosenSub: 'Dernière précision sur la table que vous avez choisie.',
       level: {
@@ -568,7 +568,7 @@ export const DICT = {
 
     register: {
       titleMain: 'Knowledge speed dating',
-      subtitle: '{rounds} rounds of {min} minutes to talk with fellow marketing directors about {n} key topics. One topic per round, with different colleagues each time.',
+      subtitle: 'Before the big day, tell us in two minutes where you stand on the day’s {n} topics. It’s not a test: it just helps us build tables where everyone shares and learns.',
       placeTbc: 'Venue to be confirmed',
       roundsInfo: '{n} rounds · {min} min each',
       ticketKicker: 'You’re invited',
@@ -585,7 +585,7 @@ export const DICT = {
       step1: 'Tell us who you are',
       step1Sub: 'So your tablemates can recognise you.',
       mandatoryTitle: 'The day’s {n} topics',
-      mandatorySub: 'Each round, you switch topic and colleagues. You’re already signed up, nothing to choose: it’s just so you know what to expect.',
+      mandatorySub: 'On the day, you’ll move from topic to topic with different colleagues. Nothing to choose here: it’s just so you know what to expect.',
       mandatoryBadge: 'Already booked',
       mandatoryList: 'On the agenda',
       mandatoryNext: 'In the next step, you’ll set your level on each of these topics.',
@@ -596,7 +596,7 @@ export const DICT = {
       yourChoice: 'Your choice',
       continueWith: 'Continue with “{topic}”',
       levelMandatoryTitle: 'Your level on each topic',
-      levelMandatorySub: 'Set your level for each topic. It helps us build balanced tables, always with someone experienced.',
+      levelMandatorySub: 'No right or wrong answers. Just tell us where you stand: it helps us put someone experienced at every table.',
       levelChosenTitle: 'Your level on this topic',
       levelChosenSub: 'One last detail about the table you chose.',
       level: {
