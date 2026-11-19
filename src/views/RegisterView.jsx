@@ -215,10 +215,10 @@ export default function RegisterView({ mode = 'create' }) {
   return (
     <main className="guest-scale vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
       <div className={`mx-auto flex w-full flex-1 flex-col ${WIDTH}`}>
-        {/* Volver + progreso «▬▬▬ 2/4», como en el prototipo */}
-        <div className="flex min-h-10 items-center justify-between gap-4">
+        {/* Cabecera en tres partes: volver (y logo al modificar) · progreso centrado · idioma */}
+        <div className="grid min-h-10 grid-cols-[1fr_auto_1fr] items-center gap-3">
           {/* Al modificar el perfil se entra desde la pantalla final: se mantiene el logo arriba a la izquierda */}
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex items-center gap-2">
           {(screen > 1 || !editing) && (
             <button
               type="button"
@@ -232,18 +232,18 @@ export default function RegisterView({ mode = 'create' }) {
           )}
           {editing && <Logo markOnlyOnMobile />}
           </div>
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="hidden gap-1 sm:flex" aria-hidden>
+          {/* «Étape 3/4 · Votre niveau» y las barras debajo: se sabe dónde se está y qué viene */}
+          <div className="flex min-w-0 flex-col items-center gap-1.5">
+            <span key={screen} className="animate-pop-in min-w-0 truncate text-sm font-semibold text-slate-600 lg:text-base">
+              <span className="tabular-nums text-brand-dark"><span className="hidden sm:inline">{t('register.stepWord')} </span>{t('register.stepOf', { n: pos + 1, total: order.length })}</span> · {t(`register.stepNames.${screen}`)}
+            </span>
+            <div className="flex gap-1" aria-hidden>
               {order.map((_, i) => (
                 <span key={i} className={`h-1.5 w-6 rounded-full transition-colors ${i <= pos ? 'bg-brand' : 'bg-slate-200'}`} />
               ))}
             </div>
-            {/* «Étape 3/6 · Votre niveau»: se sabe dónde se está y qué viene */}
-            <span key={screen} className="animate-pop-in min-w-0 truncate text-sm font-semibold text-slate-600 lg:text-base">
-              <span className="tabular-nums text-brand-dark"><span className="hidden sm:inline">{t('register.stepWord')} </span>{t('register.stepOf', { n: pos + 1, total: order.length })}</span> · {t(`register.stepNames.${screen}`)}
-            </span>
-            <LangSwitch />
           </div>
+          <div className="flex justify-end"><LangSwitch /></div>
         </div>
 
         <form onSubmit={submit} noValidate className="mt-5 flex flex-1 flex-col lg:mt-1">
