@@ -416,7 +416,7 @@ export function planStats(rounds, byId) {
 }
 
 /** ¿Nivel Avancé en el tema? (lo ofrece y no lo necesita, ver listsFromLevels en lib/topics.js) */
-const isAdvanced = (p, key) => !!p && (p.offers ?? []).some((x) => topicKey(x) === key) && !(p.needs ?? []).some((x) => topicKey(x) === key)
+export const isAdvanced = (p, key) => !!p && (p.offers ?? []).some((x) => topicKey(x) === key) && !(p.needs ?? []).some((x) => topicKey(x) === key)
 
 /**
  * Temas con menos personas Avancé que mesas: ahí es imposible que todas las mesas tengan a alguien avanzado.
