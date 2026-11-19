@@ -1,7 +1,8 @@
-/* Hallmark · redesign: full · scope: landing (RegisterView → Landing) · genre: editorial · theme: brand (Cofinder coral, warm neutrals, Bricolage Grotesque + Inter) · posture: restrained · hero: Corridor, centred by request · signature: the invitation sentence carrying the date and the place · v2.0.0
+/* Hallmark · redesign: full · scope: landing (full) + form steps and final screen (polish, app scope) · genre: editorial · theme: brand (Cofinder coral, warm neutrals, Bricolage Grotesque + Inter) · posture: restrained · hero: Corridor, centred by request · signature: the invitation sentence carrying the date and the place · v2.0.0
  * pre-emit critique: P4 H5 E4 S4 R5 V3 · weakest: V, one-screen entry to a form; kept to one column on purpose because the owner asked for a simple, centred page
  * waive 77: the landing is the entry to a four-step form, not a marketing page; the owner asked for one screen and no extra sections
  * waive 6b: centred by the owner's request
+ * waive 30a (LevelPicker): the level emoji 🔝 👍 🌱 were chosen by the owner for the level buttons
  * waive 74: the slate-* classes are this project's warm tinted tokens redefined in @theme, not Tailwind's default palette */
 @import "tailwindcss";
 

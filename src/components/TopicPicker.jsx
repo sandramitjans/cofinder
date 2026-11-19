@@ -85,7 +85,7 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
           onClick={() => toggle(id)}
           aria-pressed={selected}
           aria-disabled={full || undefined}
-          className={`relative block h-full w-full overflow-hidden rounded-2xl border-2 p-4 pl-6 text-left transition-all duration-150 active:scale-[0.99] lg:p-5 lg:pl-8 ${
+          className={`relative block h-full w-full overflow-hidden rounded-2xl border-2 p-4 pl-6 text-left transition-[background-color,border-color,box-shadow,transform] duration-150 active:scale-[0.99] lg:p-5 lg:pl-8 ${
             selected ? 'border-brand bg-brand-soft shadow-lg shadow-brand/15'
               : full ? 'border-slate-200 bg-white opacity-60'
               : 'border-transparent bg-white shadow-sm hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md'
@@ -127,14 +127,14 @@ export default function TopicPicker({ value, topics = [], onChange, error, max =
         <>
           <p className="text-[15px] font-semibold text-ink lg:text-base">{t('register.filterAsk')}</p>
           <div className="mt-2.5 flex flex-wrap gap-2" role="group" aria-label={t('register.filterLabel')}>
-            {[{ id: 'all', label: t('register.filterAll'), emoji: '✨', n: ordered.length }, ...families.map((g) => ({ id: g.id, label: t(`register.families.${g.id}`), emoji: FAMILY_EMOJI[g.id], n: counts.get(g.id) }))].map((f) => {
+            {[{ id: 'all', label: t('register.filterAll'), emoji: '', n: ordered.length }, ...families.map((g) => ({ id: g.id, label: t(`register.families.${g.id}`), emoji: FAMILY_EMOJI[g.id], n: counts.get(g.id) }))].map((f) => {
               const on = filter === f.id
               return (
                 <button key={f.id} type="button" onClick={() => setFilter(f.id)} aria-pressed={on}
                   className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-semibold transition sm:gap-2 sm:px-4 sm:text-[15px] lg:min-h-11 lg:text-base ${
                     on ? 'border-ink bg-ink text-white' : `border-transparent ${f.id === 'all' ? 'bg-white text-ink ring-1 ring-slate-200' : familyTone(f.id).chip} hover:brightness-95`
                   }`}>
-                  <span aria-hidden>{f.emoji}</span> {f.label} <span className={`text-sm font-medium ${on ? 'text-white/70' : 'opacity-70'}`}>{f.n}</span>
+                  {f.emoji && <span aria-hidden>{f.emoji}</span>} {f.label} <span className={`text-sm font-medium ${on ? 'text-white/70' : 'opacity-70'}`}>{f.n}</span>
                 </button>
               )
             })}

@@ -18,7 +18,7 @@ export default function Field({ label, icon: Icon, error, as = 'input', children
           {children}
         </Control>
         {as === 'select' && (
-          <svg className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6" /></svg>
+          <svg aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6" /></svg>
         )}
       </div>
       {error && <p role="alert" className="text-sm font-semibold text-brand-dark lg:text-[15px]">{error}</p>}

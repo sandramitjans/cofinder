@@ -244,7 +244,7 @@ export default function RegisterView({ mode = 'create' }) {
 
         <form onSubmit={submit} noValidate className="mt-5 flex flex-1 flex-col">
           <header>
-            {editing && screen === 1 && <p className="mb-1 text-sm font-bold uppercase tracking-wider text-brand-dark">{t('register.editKicker')}</p>}
+            {editing && screen === 1 && <p className="mb-1 text-base font-semibold text-brand-dark">{t('register.editKicker')}</p>}
             {/* Ánimo según el paso */}
             {!editing && <p key={screen} className="animate-pop-in mb-1.5 text-sm font-semibold text-brand-dark">{t(`register.cheer${screen}`)}</p>}
             <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink lg:text-5xl">{steps.title}</h1>
@@ -357,7 +357,7 @@ function GuestCard({ form, onPhoto }) {
         <PhotoPicker compact value={form.photo} name={form.name} onChange={onPhoto} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-brand-dark">{t('register.guestCard')}</p>
+        <p className="text-sm font-semibold text-brand-dark">{t('register.guestCard')}</p>
         <p className={`mt-0.5 truncate font-display text-xl font-medium leading-tight ${name ? 'text-ink' : 'text-slate-500'}`}>{name || t('register.guestName')}</p>
         <p className={`truncate text-sm ${role ? 'text-slate-600' : 'text-slate-500'}`}>{role || t('register.guestRole')}</p>
         {place && <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-slate-600"><MapPin className="h-3.5 w-3.5 shrink-0" /> {place}</p>}

@@ -17,7 +17,7 @@ export default function SuperpowerPicker({ value, onChange, labelledBy, person }
     <div>
       {person && (
         <div className="mb-6">
-          <p className="text-sm font-bold uppercase tracking-wider text-slate-500">{t('register.previewTitle')}</p>
+          <p className="text-sm font-semibold text-slate-600 lg:text-base">{t('register.previewTitle')}</p>
           {/* Vista previa: la mini ficha que aparecerá en la mesa */}
           <div className="mt-2.5 flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 lg:p-5">
             <Avatar name={person.name} photo={person.photo} size="lg" />
@@ -30,7 +30,7 @@ export default function SuperpowerPicker({ value, onChange, labelledBy, person }
                 </span>
               ) : (
                 <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border-2 border-dashed border-slate-300 px-3 py-0.5 text-sm text-slate-500">
-                  <span aria-hidden>🃏</span> {t('register.previewEmpty')}
+                  {t('register.previewEmpty')}
                 </span>
               )}
             </div>
@@ -61,7 +61,7 @@ export default function SuperpowerPicker({ value, onChange, labelledBy, person }
                 <span aria-hidden className="absolute inset-0 flex rotate-y-180 flex-col items-center justify-center gap-1.5 rounded-2xl bg-accent px-2 text-center text-white shadow-lg shadow-accent/30 backface-hidden">
                   <span className="text-3xl lg:text-4xl">{emoji}</span>
                   <span className="text-[15px] font-semibold leading-tight lg:text-base">{superpower(id)}</span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wide">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-sm font-semibold">
                     <Check className="h-3.5 w-3.5" strokeWidth={3} /> {t('register.yourWeapon')}
                   </span>
                 </span>

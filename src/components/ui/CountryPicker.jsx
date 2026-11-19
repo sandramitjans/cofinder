@@ -99,7 +99,7 @@ export default function CountryPicker({ value, onChange, error }) {
           <ul
             ref={listRef} id="country-list" role="listbox" tabIndex={-1} aria-labelledby="country-label"
             aria-activedescendant={`country-opt-${options[active]}`} onKeyDown={onListKey}
-            className="animate-view-in absolute inset-x-0 top-full z-30 mt-2 rounded-2xl border border-slate-300 bg-white p-1.5 shadow-xl shadow-ink/10 focus:outline-none"
+            className="animate-view-in absolute inset-x-0 top-full z-30 mt-2 rounded-2xl border border-slate-300 bg-white p-1.5 shadow-md shadow-ink/10 focus:outline-none"
           >
             {options.map((id, i) => {
               const isSel = id === selected

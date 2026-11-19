@@ -81,7 +81,7 @@ export default function WaitingView({ onLobby }) {
             <span aria-hidden className="absolute -top-5 left-1/2 h-8 w-3 -translate-x-1/2 rounded-full bg-brand/70" />
           <section aria-label={t('waiting.yourFile')} className="animate-rise-in relative overflow-hidden rounded-3xl bg-white shadow-xl shadow-ink/10 ring-1 ring-slate-200 [animation-delay:200ms]">
             <div className="flex items-center justify-between gap-3 bg-brand px-5 pb-2.5 pt-4 text-white">
-              <span className="text-sm font-bold uppercase tracking-[0.2em]">{t('waiting.badgeKicker')}</span>
+              <span className="text-base font-semibold">{t('waiting.badgeKicker')}</span>
               <span aria-hidden className="h-2.5 w-14 rounded-full bg-white/40" />
               <span className="text-sm font-semibold">{formatDate(EVENT_DATE, { day: 'numeric', month: 'short' })}</span>
             </div>
@@ -97,14 +97,14 @@ export default function WaitingView({ onLobby }) {
             <div className="p-5">
               {!!currentUser.superpowers?.length && (
                 <>
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('waiting.superpowers')}</p>
+                  <p className="text-sm font-semibold text-slate-600">{t('waiting.superpowers')}</p>
                   <SuperpowerChips ids={currentUser.superpowers} className="mt-2" />
                 </>
               )}
 
               {chosen.length ? (
                 <>
-                  <p className={`${currentUser.superpowers?.length ? 'mt-5' : ''} text-xs font-bold uppercase tracking-wider text-slate-500`}>{t(chosen.length === 1 ? 'waiting.choice' : 'waiting.choices', { n: chosen.length })}</p>
+                  <p className={`${currentUser.superpowers?.length ? 'mt-5' : ''} text-sm font-semibold text-slate-600`}>{t(chosen.length === 1 ? 'waiting.choice' : 'waiting.choices', { n: chosen.length })}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {chosen.map((id) => (
                       <span key={id} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[15px] font-semibold ${familyTone(familyIn(id, eventTopics)).chip}`}>
@@ -120,7 +120,7 @@ export default function WaitingView({ onLobby }) {
 
               {!!mandatory.length && (
                 <>
-                  <p className="mt-5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><Lock aria-hidden className="h-3.5 w-3.5" /> {t('waiting.forEveryone')}</p>
+                  <p className="mt-5 flex items-center gap-1.5 text-sm font-semibold text-slate-600"><Lock aria-hidden className="h-3.5 w-3.5" /> {t('waiting.forEveryone')}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {mandatory.map((id) => (
                       <span key={id} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-ink">
@@ -177,11 +177,11 @@ function DateBlock() {
       <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-brand-soft text-center leading-none text-brand-dark">
         <span>
           <span className="block font-display text-2xl font-medium">{formatDate(EVENT_DATE, { day: 'numeric' })}</span>
-          <span className="block text-[10px] font-bold uppercase tracking-wider">{formatDate(EVENT_DATE, { month: 'short' })}</span>
+          <span className="block text-xs font-semibold">{formatDate(EVENT_DATE, { month: 'short' })}</span>
         </span>
       </div>
       <div className="min-w-0">
-        <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><CalendarDays className="h-3.5 w-3.5" /> {t('waiting.kicker')}</p>
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-600"><CalendarDays aria-hidden className="h-3.5 w-3.5" /> {t('waiting.kicker')}</p>
         <p className="font-display text-xl font-medium text-ink">{headline}</p>
         <p className="flex items-center gap-1 truncate text-sm text-slate-500"><MapPin className="h-3.5 w-3.5 shrink-0" /> {EVENT_PLACE || t('register.placeTbc')}</p>
       </div>
@@ -240,7 +240,7 @@ function AccessCode({ name, code }) {
   return (
     <section className="animate-pop-in mt-6 overflow-hidden rounded-2xl border-2 border-dashed border-brand/40 bg-white">
       <div className="p-5">
-        <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500"><KeyRound className="h-3.5 w-3.5" /> {t('login.codeTitle')}</p>
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-600"><KeyRound aria-hidden className="h-3.5 w-3.5" /> {t('login.codeTitle')}</p>
         <div className="mt-3 flex items-end justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs text-slate-500">{t('waiting.firstName')}</p>
