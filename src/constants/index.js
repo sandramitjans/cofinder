@@ -35,8 +35,8 @@ export const MOD_PIN = import.meta.env?.VITE_MOD_PIN || '2026'
 const EVENT_DATE_RAW = new Date(import.meta.env?.VITE_EVENT_DATE || '2026-11-24T00:00:00+01:00').getTime()
 export const EVENT_DATE = Number.isNaN(EVENT_DATE_RAW) ? new Date('2026-11-24T00:00:00+01:00').getTime() : EVENT_DATE_RAW
 
-// Lugar del evento (VITE_EVENT_PLACE en el .env); vacío = Cofidis España
-export const EVENT_PLACE = import.meta.env?.VITE_EVENT_PLACE || 'Cofidis España'
+// Lugar del evento (VITE_EVENT_PLACE en el .env); vacío = Château de Bellinglise
+export const EVENT_PLACE = import.meta.env?.VITE_EVENT_PLACE || 'Château de Bellinglise'
 
 // Sesión: 4 rondas de 15 minutos, mesas de 3 a 4 personas (nunca más de 4: con 13 personas, 4 mesas de 4+3+3+3).
 // MAX_TABLES solo es un tope de seguridad. Un mismo tema puede estar en 2 mesas de la misma ronda.
