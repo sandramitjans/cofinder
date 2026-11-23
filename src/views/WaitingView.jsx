@@ -87,7 +87,7 @@ export default function WaitingView({ onLobby, live = false }) {
                 <p className={`${live ? 'break-words' : 'truncate'} text-sm text-slate-600`}>{[currentUser.role, country(currentUser.country)].filter(Boolean).join(', ')}</p>
               </div>
               {canEditProfile && (
-                <button type="button" onClick={() => navigate(VIEWS.EDIT)} aria-label={t('waiting.edit')} className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl text-base font-semibold text-brand-dark transition-colors hover:bg-brand-soft sm:px-3">
+                <button type="button" onClick={() => navigate(VIEWS.EDIT)} aria-label={t('waiting.edit')} className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-brand/50 bg-white px-3 text-base font-semibold text-brand-dark transition-colors hover:border-brand hover:bg-brand-soft">
                   <PencilLine aria-hidden className="h-5 w-5" /> <span className={live ? 'px-1' : 'hidden sm:inline'}>{t(live ? 'waiting.editShort' : 'waiting.edit')}</span>
                 </button>
               )}
