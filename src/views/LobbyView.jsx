@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, MapPin } from 'lucide-react'
+import { CheckCircle2, MapPin, PencilLine } from 'lucide-react'
 import { useI18n } from '../context/I18nContext'
 import { topicEmoji } from '../lib/topics'
 import Logo from '../components/ui/Logo'
@@ -71,9 +71,16 @@ export default function LobbyView({ onTables, tablesLabel = 'lobby.seeTables', b
         <main className="flex flex-1 flex-col">{content}</main>
 
         {onTables && (
-          <button type="button" onClick={onTables} className="mb-6 self-center text-sm font-semibold text-brand-dark underline-offset-4 hover:underline">
-            {t(tablesLabel)}
-          </button>
+          tablesLabel === 'lobby.seeProfile' ? (
+            // Sin mesas todavía: botón con borde y lápiz, para que se vea que ahí puede modificar su perfil
+            <button type="button" onClick={onTables} className="mb-6 inline-flex min-h-12 w-full max-w-sm items-center justify-center gap-2 self-center rounded-xl border-2 border-brand/50 bg-white px-4 text-base font-semibold text-brand-dark transition-colors hover:border-brand hover:bg-brand-soft">
+              <PencilLine aria-hidden className="h-5 w-5" /> {t(tablesLabel)}
+            </button>
+          ) : (
+            <button type="button" onClick={onTables} className="mb-6 self-center text-sm font-semibold text-brand-dark underline-offset-4 hover:underline">
+              {t(tablesLabel)}
+            </button>
+          )
         )}
       </div>
     </div>
