@@ -332,6 +332,8 @@ export const modSetEvent = (pin, e) =>
   rpc('mod_set_event', { p_pin: pin, p_round: e.round, p_rounds: e.rounds, p_finished: e.finished })
 
 export const modRemove = (pin, id) => rpc('mod_delete_participant', { p_pin: pin, p_id: id })
+/** Cambia solo la foto de una persona (supabase/2026-11-foto-admin.sql); '' = sin foto */
+export const modSetPhoto = (pin, id, photo) => rpc('mod_set_photo', { p_pin: pin, p_id: id, p_photo: photo || '' })
 export const modClearDemo = (pin) => rpc('mod_clear_demo', { p_pin: pin })
 export const modAddDemo = (pin, people) => rpc('mod_add_demo', {
   p_pin: pin,
