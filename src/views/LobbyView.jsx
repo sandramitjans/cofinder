@@ -12,7 +12,7 @@ const PHRASE_MS = 4500
  * que van cambiando. Cuando el admin arranca (o se arranca solo), el móvil pasa a «Encuentra tu mesa».
  * `count` = { n, total } → «14 de 20 …» (`countKey` elige el texto) · `next` = { round, table, topic } → su próxima mesa.
  */
-export default function LobbyView({ onTables, badge, embedded = false, count, countKey = 'lobby.readyCount', next, nextLabel }) {
+export default function LobbyView({ onTables, tablesLabel = 'lobby.seeTables', badge, embedded = false, count, countKey = 'lobby.readyCount', next, nextLabel }) {
   const { t, topic } = useI18n()
   const phrases = t('lobby.phrases')
   const list = Array.isArray(phrases) ? phrases : [phrases]
@@ -72,7 +72,7 @@ export default function LobbyView({ onTables, badge, embedded = false, count, co
 
         {onTables && (
           <button type="button" onClick={onTables} className="mb-6 self-center text-sm font-semibold text-brand-dark underline-offset-4 hover:underline">
-            {t('lobby.seeTables')}
+            {t(tablesLabel)}
           </button>
         )}
       </div>

@@ -280,6 +280,8 @@ export function AppProvider({ children }) {
     myPlan = myTable?.plan ?? []
     ready = readyOverride ?? !!myTable?.ready
   }
+  // ¿Ya sabemos si hay plan de mesas? (en remoto, hasta que llega su mesa del servidor no lo sabemos)
+  const planLoaded = !REMOTE || !!myTable
   const setReady = useCallback(async (value = true) => {
     if (!currentUserId) return false
     if (REMOTE) {
@@ -757,14 +759,14 @@ export function AppProvider({ children }) {
     view, navigate,
     participants, currentUser, event, currentRound, seatedEver,
     modLoading: REMOTE && modUnlocked && !modState,
-    register, login, joinedLive, myPlan, ready, setReady, progress, saveReport, readyCount, readyTotal: realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, notedTotal: realTables.length, missingTables, forgetMe, removeParticipant, setParticipantPhoto, seedDemo, clearDemo,
+    register, login, joinedLive, myPlan, planLoaded, ready, setReady, progress, saveReport, readyCount, readyTotal: realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, notedTotal: realTables.length, missingTables, forgetMe, removeParticipant, setParticipantPhoto, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     modUnlocked, gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
   }), [view, navigate, participants, currentUser, event, currentRound, seatedEver, modUnlocked, modState,
-    register, login, joinedLive, myPlan, ready, setReady, progress, saveReport, readyCount, realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, realTables.length, missingTables.join(), forgetMe, removeParticipant, setParticipantPhoto, seedDemo, clearDemo,
+    register, login, joinedLive, myPlan, planLoaded, ready, setReady, progress, saveReport, readyCount, realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, realTables.length, missingTables.join(), forgetMe, removeParticipant, setParticipantPhoto, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     gateOpen, openGate, closeGate, unlockModerator, lockModerator,
