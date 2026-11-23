@@ -510,7 +510,8 @@ export function AppProvider({ children }) {
   const modAction = useCallback(async (fn) => {
     try { await fn(modPin) } catch (err) {
       if (err.code === 'invalid_pin') return lockModerator()
-      window.alert(translate(currentLang(), err.code === 'locked' ? 'gate.locked' : 'gate.network'))
+      // PGRST202 = falta ejecutar en Supabase el SQL de esa función
+      window.alert(translate(currentLang(), err.code === 'locked' ? 'gate.locked' : err.code === 'PGRST202' ? 'gate.missingSql' : 'gate.network'))
     }
     await refreshMod()
   }, [modPin, refreshMod, lockModerator])
@@ -518,6 +519,12 @@ export function AppProvider({ children }) {
   const removeParticipant = useCallback((id) => {
     if (REMOTE) return modAction((pin) => api.modRemove(pin, id))
     setLocalParticipants((prev) => prev.filter((p) => p.id !== id))
+  }, [modAction])
+
+  // El Admin cambia la foto de una persona: solo la foto, el resto del perfil no se toca
+  const setParticipantPhoto = useCallback((id, photo) => {
+    if (REMOTE) return modAction((pin) => api.modSetPhoto(pin, id, photo))
+    setLocalParticipants((prev) => prev.map((p) => (p.id === id ? { ...p, photo: photo || null } : p)))
   }, [modAction])
 
   const seedDemo = useCallback(() => {
@@ -750,14 +757,14 @@ export function AppProvider({ children }) {
     view, navigate,
     participants, currentUser, event, currentRound, seatedEver,
     modLoading: REMOTE && modUnlocked && !modState,
-    register, login, joinedLive, myPlan, ready, setReady, progress, saveReport, readyCount, readyTotal: realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, notedTotal: realTables.length, missingTables, forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, joinedLive, myPlan, ready, setReady, progress, saveReport, readyCount, readyTotal: realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, notedTotal: realTables.length, missingTables, forgetMe, removeParticipant, setParticipantPhoto, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     modUnlocked, gateOpen, openGate, closeGate, unlockModerator, lockModerator,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
   }), [view, navigate, participants, currentUser, event, currentRound, seatedEver, modUnlocked, modState,
-    register, login, joinedLive, myPlan, ready, setReady, progress, saveReport, readyCount, realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, realTables.length, missingTables.join(), forgetMe, removeParticipant, seedDemo, clearDemo,
+    register, login, joinedLive, myPlan, ready, setReady, progress, saveReport, readyCount, realPeople.length, startEvent, noteSent, submitNote, tableReporter, watchReporter, chooseReporter, notedCount, realTables.length, missingTables.join(), forgetMe, removeParticipant, setParticipantPhoto, seedDemo, clearDemo,
     canEditProfile, updateProfile, profileUpdatedAt,
     eventTopics, eventTopicsLoaded, loadEventTopics, addEventTopic, removeEventTopic, history,
     gateOpen, openGate, closeGate, unlockModerator, lockModerator,

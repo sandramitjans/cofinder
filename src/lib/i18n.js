@@ -332,7 +332,7 @@ export const DICT = {
     },
 
     gate: {
-      title: 'Accès réservé', text: 'Saisissez le code PIN.', wrong: 'Code PIN incorrect', locked: 'Trop de tentatives. Réessayez dans 10 minutes.', network: 'Pas de connexion. Réessayez.', checking: 'Vérification…', enter: 'Entrer', close: 'Fermer', pin: 'Code PIN',
+      title: 'Accès réservé', text: 'Saisissez le code PIN.', wrong: 'Code PIN incorrect', locked: 'Trop de tentatives. Réessayez dans 10 minutes.', network: 'Pas de connexion. Réessayez.', missingSql: 'Cette fonction n’est pas encore activée dans la base de données (fichier SQL à exécuter dans Supabase).', checking: 'Vérification…', enter: 'Entrer', close: 'Fermer', pin: 'Code PIN',
     },
 
     report: {
@@ -488,6 +488,9 @@ export const DICT = {
       legendMid: '👍 Niveau intermédiaire',
       legendNeed: '🌱 En découverte',
       remove: 'Retirer {name}',
+      photo: 'Changer la photo de {name}',
+      confirmPhoto: 'Remplacer la photo de {name}\u00A0? Le reste de son profil ne change pas.',
+      photoError: 'Impossible de lire cette image. Essayez avec une photo JPG ou PNG.',
     },
 
     day: {
@@ -981,7 +984,7 @@ export const DICT = {
     },
 
     gate: {
-      title: 'Restricted access', text: 'Enter the PIN.', wrong: 'Wrong PIN', locked: 'Too many attempts. Try again in 10 minutes.', network: 'No connection. Try again.', checking: 'Checking…', enter: 'Enter', close: 'Close', pin: 'PIN',
+      title: 'Restricted access', text: 'Enter the PIN.', wrong: 'Wrong PIN', locked: 'Too many attempts. Try again in 10 minutes.', network: 'No connection. Try again.', missingSql: 'This feature is not enabled in the database yet (SQL file to run in Supabase).', checking: 'Checking…', enter: 'Enter', close: 'Close', pin: 'PIN',
     },
 
     report: {
@@ -1137,6 +1140,9 @@ export const DICT = {
       legendMid: '👍 Intermediate',
       legendNeed: '🌱 Exploring',
       remove: 'Remove {name}',
+      photo: 'Change {name}’s photo',
+      confirmPhoto: 'Replace {name}’s photo? The rest of their profile stays the same.',
+      photoError: 'We couldn’t read this image. Try a JPG or PNG photo.',
     },
 
     day: {

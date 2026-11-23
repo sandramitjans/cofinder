@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  AlertTriangle, CheckCircle2, ChevronRight, Coffee, Eraser, Flag, LayoutGrid, Lock, Monitor,
+  AlertTriangle, Camera, CheckCircle2, ChevronRight, Coffee, Eraser, Flag, LayoutGrid, Lock, Monitor,
   MessagesSquare, PencilLine, Plus, RefreshCcw, RotateCcw, Search, Shuffle, TimerReset, Trash2, UserPlus, Users,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
@@ -11,6 +11,7 @@ import { advancedShortfall, isAdvanced, planStats, tableRange } from '../lib/mat
 import { MAX_CUSTOM_LENGTH, customLabel, hasTopic, isMandatory, makeEventTopic, myTopics, normalizeText, topicKey } from '../lib/topics'
 import { useCountdown } from '../lib/useCountdown'
 import { useConnected } from '../lib/useConnected'
+import { photoToDataUrl } from '../lib/image'
 import Logo from '../components/ui/Logo'
 import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
@@ -28,7 +29,7 @@ export default function ModeratorPanelView() {
     navigate, lockModerator, participants, currentUser, event, currentRound,
     planning, generatePlan, regeneratePlanRound, swapSeats, moveSeat,
     advance, stepBack, restartTimer, finishEvent, resetEvent, clearPlan,
-    removeParticipant, seedDemo, clearDemo, readyCount, readyTotal, notedCount, notedTotal, missingTables,
+    removeParticipant, setParticipantPhoto, seedDemo, clearDemo, readyCount, readyTotal, notedCount, notedTotal, missingTables,
     eventTopics, addEventTopic, removeEventTopic,
   } = useApp()
   const { t, topic, country, superpower } = useI18n()
@@ -99,7 +100,7 @@ export default function ModeratorPanelView() {
           {shown.map((p) => (
             <li key={p.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
               <div className="flex min-w-0 items-center gap-3 sm:w-64">
-                <Avatar name={p.name} photo={p.photo} />
+                <PhotoButton person={p} onSave={setParticipantPhoto} t={t} />
                 <div className="min-w-0">
                   <p className="truncate font-semibold">
                     {p.name}
@@ -837,3 +838,32 @@ function Quality({ ok, label, value }) {
 }
 
 
+
+// Foto de la lista de participantes: al pulsarla se elige otra imagen y se cambia SOLO la foto
+function PhotoButton({ person, onSave, t }) {
+  const input = useRef(null)
+  const [busy, setBusy] = useState(false)
+  const onFile = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // permite volver a elegir el mismo archivo
+    if (!file) return
+    let photo
+    try { photo = await photoToDataUrl(file) } catch { return window.alert(t('panel.photoError')) }
+    if (!window.confirm(t('panel.confirmPhoto', { name: person.name }))) return
+    setBusy(true)
+    try { await onSave(person.id, photo) } finally { setBusy(false) }
+  }
+  return (
+    <>
+      <button type="button" onClick={() => input.current?.click()} disabled={busy}
+        title={t('panel.photo', { name: person.name })} aria-label={t('panel.photo', { name: person.name })}
+        className={`group relative shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/40 ${busy ? 'opacity-50' : ''}`}>
+        <Avatar name={person.name} photo={person.photo} />
+        <span aria-hidden className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full bg-white text-slate-500 shadow ring-1 ring-slate-200 group-hover:bg-brand group-hover:text-white">
+          <Camera className="h-3 w-3" />
+        </span>
+      </button>
+      <input ref={input} type="file" accept="image/*" className="sr-only" tabIndex={-1} aria-hidden onChange={onFile} />
+    </>
+  )
+}
