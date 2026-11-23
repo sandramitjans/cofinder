@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CalendarPlus, Check, CheckCircle2, Copy, KeyRound, Mail, PencilLine } from 'lucide-react'
+import { ArrowRight, CalendarPlus, Check, CheckCircle2, Copy, KeyRound, Mail, PencilLine } from 'lucide-react'
 import { levelOfTopic, myTopics, topicEmoji } from '../lib/topics'
 import { SuperpowerChips } from '../components/ui/SuperpowerPicker'
 import { LEVEL_EMOJI } from '../components/LevelPicker'
@@ -11,14 +11,19 @@ import Avatar from '../components/ui/Avatar'
 import LangSwitch from '../components/ui/LangSwitch'
 import PublicFooter from '../components/layout/PublicFooter'
 import Confetti from '../components/ui/Confetti'
+import Button from '../components/ui/Button'
 
 /**
  * Pantalla final del registro (y la que ve al volver antes del día del evento):
  * misma estructura que los pasos: «Profil créé !» con la fecha y el lugar, el código de acceso para el día J
  * (copiar, email, calendario) y una línea con la persona y el enlace para editar el perfil. Nada más.
+ * `live` = el día J, tras entrar con nombre + código, si las mesas aún no están preparadas: «Bonjour Marie !»,
+ * su perfil (que aún puede modificar) y el botón «C'est parti !». Sin código ni confeti.
  */
-export default function WaitingView({ onLobby }) {
-  const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt } = useApp()
+export default function WaitingView({ onLobby, live = false }) {
+  const { currentUser, forgetMe, navigate, canEditProfile, profileUpdatedAt, setReady } = useApp()
+  const [busy, setBusy] = useState(false)
+  const [readyError, setReadyError] = useState(false)
   const { t, topic, country, formatDate } = useI18n()
   const [justUpdated, setJustUpdated] = useState(() => Date.now() - profileUpdatedAt < 3000)
   useEffect(() => {
@@ -30,9 +35,9 @@ export default function WaitingView({ onLobby }) {
 
   // Recién registrado (últimos 30 min) → «Profil créé !»; si vuelve más tarde → «Vous êtes inscrit·e !»
   const topics = myTopics(currentUser)
-  const fresh = Date.now() - (currentUser.createdAt ?? 0) < 30 * 60 * 1000
+  const fresh = !live && Date.now() - (currentUser.createdAt ?? 0) < 30 * 60 * 1000
   const longDate = formatDate(EVENT_DATE, { weekday: 'long', day: 'numeric', month: 'long' })
-  const line = EVENT_PLACE ? t('waiting.seeYouPlace', { date: '\u0000', place: '\u0001' }) : t('waiting.seeYou', { date: '\u0000' })
+  const line = live ? t('waiting.liveSub') : EVENT_PLACE ? t('waiting.seeYouPlace', { date: '\u0000', place: '\u0001' }) : t('waiting.seeYou', { date: '\u0000' })
 
   return (
     <div className="guest-scale vip-glow flex min-h-dvh flex-col px-5 pt-5 sm:px-8">
@@ -61,7 +66,7 @@ export default function WaitingView({ onLobby }) {
             <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-full bg-mint-soft ring-8 ring-mint-soft/50">
               <Check aria-hidden className="h-8 w-8 text-mint" strokeWidth={3} />
             </div>
-            <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink lg:text-5xl">{t(fresh ? 'waiting.created' : 'waiting.registered')}</h1>
+            <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-ink lg:text-5xl">{live ? t('lobby.hello', { name: currentUser.name.split(' ')[0] }) : t(fresh ? 'waiting.created' : 'waiting.registered')}</h1>
             <p className="mx-auto mt-1.5 max-w-[60ch] text-[17px] leading-relaxed text-slate-600 [text-wrap:pretty] lg:mt-3 lg:text-lg">
               {line.split(/(\u0000|\u0001)/).map((part, i) =>
                 part === '\u0000' ? <strong key={i} className="whitespace-nowrap font-semibold text-ink">{longDate}</strong>
@@ -71,19 +76,19 @@ export default function WaitingView({ onLobby }) {
           </header>
 
           {/* Lo único que hay que guardar */}
-          {currentUser.accessCode && <AccessCode name={currentUser.name} code={currentUser.accessCode} />}
+          {!live && currentUser.accessCode && <AccessCode name={currentUser.name} code={currentUser.accessCode} />}
 
           {/* Resumen de lo elegido: quién es, su arma secreta y su nivel en cada tema. Desde aquí se edita */}
-          <section aria-label={t('waiting.yourFile')} className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-            <div className="flex items-center gap-4 p-4 lg:px-7 lg:py-5">
+          <section aria-label={t('waiting.yourFile')} className={`${live ? 'mt-8' : 'mt-4'} overflow-hidden rounded-2xl border border-slate-200 bg-white`}>
+            <div className="flex flex-col items-center gap-3 p-5 text-center sm:flex-row sm:gap-4 sm:p-4 sm:text-left lg:px-7 lg:py-5">
               <Avatar name={currentUser.name} photo={currentUser.photo} size="md" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-lg font-semibold leading-tight text-ink">{currentUser.name}</p>
-                <p className="truncate text-sm text-slate-600">{[currentUser.role, country(currentUser.country)].filter(Boolean).join(', ')}</p>
+              <div className="w-full min-w-0 sm:w-auto sm:flex-1">
+                <p className={`break-words text-lg font-semibold leading-tight text-ink`}>{currentUser.name}</p>
+                <p className={`break-words text-sm text-slate-600`}>{[currentUser.role, country(currentUser.country)].filter(Boolean).join(', ')}</p>
               </div>
               {canEditProfile && (
-                <button type="button" onClick={() => navigate(VIEWS.EDIT)} aria-label={t('waiting.edit')} className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl text-base font-semibold text-brand-dark transition-colors hover:bg-brand-soft sm:px-3">
-                  <PencilLine aria-hidden className="h-5 w-5" /> <span className="hidden sm:inline">{t('waiting.edit')}</span>
+                <button type="button" onClick={() => navigate(VIEWS.EDIT)} aria-label={t('waiting.edit')} className="inline-flex min-h-12 mt-1 w-full shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-brand/50 bg-white px-4 text-base sm:mt-0 sm:w-auto font-semibold text-brand-dark transition-colors hover:border-brand hover:bg-brand-soft">
+                  <PencilLine aria-hidden className="h-5 w-5" /> <span>{t('waiting.edit')}</span>
                 </button>
               )}
             </div>
@@ -113,7 +118,20 @@ export default function WaitingView({ onLobby }) {
             </div>
           </section>
 
-          <p className="mt-4 text-sm text-slate-600">{t('waiting.tablesLater')}</p>
+          {live && onLobby ? null : live ? (
+            <div className="mt-6">
+              <p className="text-[17px] leading-relaxed text-slate-600">{t('waiting.liveReadyHint')}</p>
+              {readyError && <p role="alert" className="mt-4 rounded-xl bg-brand-soft px-3.5 py-3 text-sm font-semibold text-brand-dark">{t('login.err.network')}</p>}
+              <Button
+                type="button" disabled={busy} iconRight={ArrowRight} className="mt-4 w-full py-4 text-base lg:w-auto lg:px-10"
+                onClick={async () => { setBusy(true); const ok = await setReady(true); setBusy(false); setReadyError(!ok) }}
+              >
+                {busy ? t('login.busy') : t('tables.ready')}
+              </Button>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-slate-600">{t('waiting.tablesLater')}</p>
+          )}
         </main>
 
         <PublicFooter className="!py-3">
