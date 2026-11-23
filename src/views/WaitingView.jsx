@@ -80,15 +80,15 @@ export default function WaitingView({ onLobby, live = false }) {
 
           {/* Resumen de lo elegido: quién es, su arma secreta y su nivel en cada tema. Desde aquí se edita */}
           <section aria-label={t('waiting.yourFile')} className={`${live ? 'mt-8' : 'mt-4'} overflow-hidden rounded-2xl border border-slate-200 bg-white`}>
-            <div className="flex items-center gap-4 p-4 lg:px-7 lg:py-5">
+            <div className="flex flex-wrap items-center gap-4 p-4 lg:px-7 lg:py-5">
               <Avatar name={currentUser.name} photo={currentUser.photo} size="md" />
               <div className="min-w-0 flex-1">
-                <p className={`${live ? 'break-words' : 'truncate'} text-lg font-semibold leading-tight text-ink`}>{currentUser.name}</p>
-                <p className={`${live ? 'break-words' : 'truncate'} text-sm text-slate-600`}>{[currentUser.role, country(currentUser.country)].filter(Boolean).join(', ')}</p>
+                <p className={`break-words text-lg font-semibold leading-tight text-ink`}>{currentUser.name}</p>
+                <p className={`break-words text-sm text-slate-600`}>{[currentUser.role, country(currentUser.country)].filter(Boolean).join(', ')}</p>
               </div>
               {canEditProfile && (
-                <button type="button" onClick={() => navigate(VIEWS.EDIT)} aria-label={t('waiting.edit')} className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-brand/50 bg-white px-3 text-base font-semibold text-brand-dark transition-colors hover:border-brand hover:bg-brand-soft">
-                  <PencilLine aria-hidden className="h-5 w-5" /> <span className={live ? 'px-1' : 'hidden sm:inline'}>{t(live ? 'waiting.editShort' : 'waiting.edit')}</span>
+                <button type="button" onClick={() => navigate(VIEWS.EDIT)} aria-label={t('waiting.edit')} className="inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-brand/50 bg-white px-4 text-base sm:w-auto font-semibold text-brand-dark transition-colors hover:border-brand hover:bg-brand-soft">
+                  <PencilLine aria-hidden className="h-5 w-5" /> <span>{t('waiting.edit')}</span>
                 </button>
               )}
             </div>
