@@ -247,6 +247,12 @@ export const DICT = {
       localNote: 'Mode test local\u00A0: les téléphones ne peuvent pas se connecter à cet ordinateur.',
     },
 
+    noTable: {
+      title: 'Bonjour {name}, la session a déjà commencé',
+      sub: 'Ce profil n’est dans aucune table. Vous vous êtes peut-être déjà inscrit·e avant avec un autre profil\u00A0: entrez avec votre nom et votre code à 4\u00A0chiffres.',
+      login: 'Entrer avec mon code',
+      ask: 'Pas de code\u00A0? Allez voir l’équipe d’organisation, elle vous trouvera une table.',
+    },
     waiting: {
       yourFile: 'Votre profil',
       badgeKicker: 'Invité·e',
@@ -902,6 +908,12 @@ export const DICT = {
       localNote: 'Local test mode: phones can’t connect to this computer.',
     },
 
+    noTable: {
+      title: 'Hi {name}, the session has already started',
+      sub: 'This profile isn’t at any table. You may have registered earlier with another profile: sign in with your name and your 4-digit code.',
+      login: 'Sign in with my code',
+      ask: 'No code? Go see the organisers, they’ll find you a table.',
+    },
     waiting: {
       yourFile: 'Your profile',
       badgeKicker: 'Guest',

@@ -5,6 +5,7 @@ import WaitingView from './WaitingView'
 import RoundCardView from './RoundCardView'
 import LobbyView from './LobbyView'
 import MyTablesView from './MyTablesView'
+import NoTableView from './NoTableView'
 
 /**
  * Vista pública de un participante ya registrado:
@@ -18,6 +19,8 @@ export default function HomeView() {
   const { event, seatedEver, joinedLive, ready, progress, myPlan, planLoaded } = useApp()
   const [peek, setPeek] = useState(false) // ya preparado, repasando sus mesas
   if (event.round && seatedEver) return <RoundCardView />
+  // La sesión ya empezó y no está en ninguna mesa (casi siempre: se registró otra vez hoy) → que entre con su código
+  if (event.round && !event.finished && planLoaded && !myPlan.length) return <NoTableView />
   const eventDay = !event.finished && (joinedLive || Date.now() >= EVENT_DATE)
   if (!eventDay) return <WaitingView />
   if (!ready && planLoaded && !myPlan.length) return <WaitingView live />
