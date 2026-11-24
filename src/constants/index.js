@@ -19,6 +19,9 @@ export const isModHash = (h) => h === MOD_HASH || h === '#moderadora'
 export const JOIN_HASH = '#entrar'
 // Ventana aparte del proyector, abierta desde el panel (comparte el PIN de la pestaña que la abre)
 export const PROJ_HASH = '#proyector'
+// Nombre de esa ventana (window.open la reutiliza) y aviso «vuelve a mostrar el proyector» que le manda el panel
+export const PROJ_WIN = 'cofinder-projector'
+export const PROJ_SHOW_MSG = 'cofinder:show-projector'
 // Página de resúmenes: transcripciones de las notas de audio (pide el PIN de Admin)
 export const RESUM_HASH = '#resum'
 // Dirección que codifica el QR. Por defecto, la de la propia página; en pruebas en red local

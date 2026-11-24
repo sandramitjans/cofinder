@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useI18n } from '../context/I18nContext'
-import { FAMILY_EMOJI, FIND_MINUTES, MAX_INTERESTS, PAUSE_AFTER_ROUND, PAUSE_MINUTES, PROJ_HASH, TOPIC_FAMILIES, VIEWS } from '../constants'
+import { FAMILY_EMOJI, FIND_MINUTES, MAX_INTERESTS, PAUSE_AFTER_ROUND, PAUSE_MINUTES, PROJ_HASH, PROJ_SHOW_MSG, PROJ_WIN, TOPIC_FAMILIES, VIEWS } from '../constants'
 import { familyTone } from '../lib/familyColors'
 import { advancedShortfall, isAdvanced, planStats, tableRange } from '../lib/matching'
 import { MAX_CUSTOM_LENGTH, customLabel, hasTopic, isMandatory, makeEventTopic, myTopics, normalizeText, topicKey } from '../lib/topics'
@@ -177,8 +177,15 @@ export default function ModeratorPanelView() {
     return () => clearInterval(id)
   }, [projWin])
   const openProjector = () => {
-    const w = window.open(`${window.location.pathname}${PROJ_HASH}`, 'cofinder-projector', 'popup,width=1280,height=760')
-    if (w) { setProjWin(w); w.focus() } else navigate(VIEWS.PROJECTOR) // ventanas bloqueadas: como antes, en esta pestaña
+    // Estamos DENTRO de la ventana del proyector (se volvió al panel con su botón): basta con volver a mostrarlo.
+    // Antes se llamaba a window.open con el mismo nombre, que apuntaba a esta misma ventana y no hacía nada.
+    if (window.name === PROJ_WIN || window.location.hash === PROJ_HASH) return navigate(VIEWS.PROJECTOR)
+    const w = window.open(`${window.location.pathname}${PROJ_HASH}`, PROJ_WIN, 'popup,width=1280,height=760')
+    if (!w) return navigate(VIEWS.PROJECTOR) // ventanas bloqueadas: como antes, en esta pestaña
+    // Si la ventana ya estaba abierta pero mostrando el panel, la misma dirección no la recarga: se lo pedimos
+    try { w.postMessage({ type: PROJ_SHOW_MSG }, window.location.origin) } catch { /* ventana aún cargando: ya abrirá el proyector */ }
+    setProjWin(w)
+    w.focus()
   }
 
   const header = (
