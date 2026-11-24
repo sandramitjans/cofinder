@@ -264,6 +264,9 @@ export function generateRound(people, previousRounds = [], { attempts = 24, iter
  *  - mesa sin nadie Avancé en el tema (faltan avanzados en el grupo)                         (+300 por mesa)
  *  - mesa con 4 personas cuando podría tener 3 (preferir 4+3+3+3 a 4+4+…)                    (0: se deja libre)
  *  - parejas repetidas (+4 la segunda vez, +15 la tercera, +400 a partir de la cuarta) y misma filial (+1)
+ * Además del cambio de orden de una persona, se prueba el intercambio de dos personas que hacen los
+ * mismos dos temas en orden inverso: así un avanzado puede pasar al tour donde ese tema no tiene ninguno
+ * (3 avanzados y 4 reuniones del tema → 3 reuniones con 1 referente cada una) sin deshacer las mesas de 3.
  * Después cada grupo se divide en mesas de 3 a 4 repartiendo primero a los avanzados.
  */
 function scheduleMandatory(people, cands, rounds, { restarts = 4, iterations = 30000 } = {}) {
@@ -316,14 +319,22 @@ function scheduleMandatory(people, cands, rounds, { restarts = 4, iterations = 3
       const r1 = Math.floor(Math.random() * rounds)
       let r2 = Math.floor(Math.random() * (rounds - 1))
       if (r2 >= r1) r2++
-      const row = sched[i];
-      [row[r1], row[r2]] = [row[r2], row[r1]]
+      // Dos movimientos: (a) la persona i cambia el orden de dos de sus temas, o (b) la persona i y otra
+      // persona j que hace esos mismos dos temas al revés se intercambian el sitio en los dos tours.
+      // (b) no cambia el tamaño de ningún grupo: es lo que permite mover a un avanzado de un tour donde
+      // sobra (2 avanzados en la misma mesa) a otro donde falta, sin romper las mesas de 3.
+      const partners = Math.random() < 0.5
+        ? ids.map((_, j) => j).filter((j) => j !== i && sched[j][r1] === sched[i][r2] && sched[j][r2] === sched[i][r1])
+        : []
+      const rows = partners.length ? [sched[i], sched[partners[Math.floor(Math.random() * partners.length)]]] : [sched[i]]
+      const flip = () => rows.forEach((row) => { [row[r1], row[r2]] = [row[r2], row[r1]] })
+      flip()
       const next = evaluate(sched)
       const delta = next - cur
       if (delta <= 0 || Math.random() < Math.exp(-delta / Math.max(temperature, 1e-3))) {
         cur = next
         if (cur < best.cost) best = { cost: cur, sched: sched.map((x) => [...x]) }
-      } else [row[r1], row[r2]] = [row[r2], row[r1]]
+      } else flip()
     }
   }
 
