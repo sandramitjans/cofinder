@@ -267,9 +267,11 @@ export function generateRound(people, previousRounds = [], { attempts = 24, iter
  * Además del cambio de orden de una persona, se prueba el intercambio de dos personas que hacen los
  * mismos dos temas en orden inverso: así un avanzado puede pasar al tour donde ese tema no tiene ninguno
  * (3 avanzados y 4 reuniones del tema → 3 reuniones con 1 referente cada una) sin deshacer las mesas de 3.
- * Después cada grupo se divide en mesas de 3 a 4 repartiendo primero a los avanzados.
+ * Con menos de 3 personas por tema y tour (11 personas, 4 temas) cada tour deja fuera un tema distinto,
+ * para que no salgan mesas de 2. Después cada grupo se divide en mesas de 3 a 4 repartiendo primero a los
+ * avanzados, y entre todos los intentos se elige el plan con menos problemas en las mesas reales.
  */
-function scheduleMandatory(people, cands, rounds, { restarts = 4, iterations = 30000 } = {}) {
+function scheduleMandatory(people, cands, rounds, { restarts = 12, iterations = 20000 } = {}) {
   const byId = prepare(people)
   const ids = people.map((p) => p.id)
   const n = ids.length
@@ -306,14 +308,82 @@ function scheduleMandatory(people, cands, rounds, { restarts = 4, iterations = 3
     return cost
   }
 
+  // Cada grupo (tour, tema) → mesas de 3 a 4; primero un avanzado en cada mesa, después el resto.
+  // Si un grupo se divide en 2 mesas, cada persona va a la mesa donde menos veces ha coincidido ya con
+  // los demás (así no se juntan siempre las mismas dos personas).
+  const split = (sched) => {
+    const cellsOf = (r) => cands.map((_, t) => ids.map((_, i) => i).filter((i) => sched[i][r] === t))
+    const met = new Map()
+    const meet = (members) => members.forEach((a, x) => members.slice(x + 1).forEach((b) => { const k = pairKey(a, b); met.set(k, (met.get(k) ?? 0) + 1) }))
+    const seen = (id, members) => members.reduce((s, m) => s + (met.get(pairKey(id, m)) ?? 0) ** 2, 0)
+    for (let r = 0; r < rounds; r++) cellsOf(r).forEach((cell) => { if (tablesFor(cell.length) === 1) meet(cell.map((i) => ids[i])) })
+    return Array.from({ length: rounds }, (_, r) => {
+      const tables = []
+      cellsOf(r).forEach((all, t) => {
+        if (!all.length) return
+        const cell = shuffle(all)
+        const k = tablesFor(cell.length)
+        const cap = evenSizes(cell.length, k)
+        const groups = Array.from({ length: k }, () => [])
+        const ordered = [...cell.filter((i) => adv[i][t]), ...cell.filter((i) => !adv[i][t])]
+        ordered.forEach((i, x) => {
+          const room = groups.map((_, gi) => gi).filter((gi) => groups[gi].length < cap[gi])
+          // Los primeros avanzados, uno por mesa; los demás, donde menos coincidencias haya
+          const target = x < k && adv[i][t] ? room.find((gi) => !groups[gi].length) ?? room[0]
+            : room.reduce((a, b) => (seen(ids[i], groups[b]) < seen(ids[i], groups[a]) ? b : a))
+          groups[target].push(ids[i])
+        })
+        if (k > 1) groups.forEach(meet)
+        groups.forEach((members) => tables.push({ topic: cands[t].id, t, members }))
+      })
+      return tables
+    })
+  }
+
+  // Coste del plan ya dividido en mesas (lo que de verdad verá la gente)
+  const index = new Map(ids.map((id, i) => [id, i]))
+  const planCost = (plan) => {
+    let cost = 0
+    const met = new Map()
+    for (const tables of plan) for (const { t, members } of tables) {
+      if (members.length < MIN_TABLE_SIZE || members.length > MAX_TABLE_SIZE) cost += 5000 // regla del evento: nunca mesas de 2 ni de 5
+      if (!members.some((id) => adv[index.get(id)][t])) cost += COST_NO_ADVANCED
+      members.forEach((a, x) => members.slice(x + 1).forEach((b) => {
+        const k = pairKey(a, b)
+        met.set(k, (met.get(k) ?? 0) + 1)
+        if (branch[index.get(a)] && branch[index.get(a)] === branch[index.get(b)]) cost += 1
+      }))
+    }
+    for (const m of met.values()) cost += pairCost(m)
+    return cost
+  }
+
   let best = null
   for (let rs = 0; rs < restarts; rs++) {
     // Inicio equilibrado: rotación de los temas (persona i hace el tema (i + r) mod T en el tour r)
     const offset = shuffle(ids.map((_, i) => i))
     const sched = ids.map((_, i) => Array.from({ length: rounds }, (_, r) => (offset[i] + r) % T))
+    // Con menos de 3 personas por tema y tour (p. ej. 11 personas y 4 temas) no caben todos los temas
+    // en cada tour: cada tour deja fuera un tema distinto (con 11: 3 mesas por tour, 4+4+3, y cada tema
+    // sale en 3 tours). Se empieza con un horario que ya respeta ese patrón y durante la búsqueda nadie
+    // sale de él (`allowed`); si no, casi siempre salía una mesa de 2.
+    const perRound = Math.max(1, Math.floor(n / MIN_TABLE_SIZE))
+    const shift = Math.floor(Math.random() * T)
+    const open = perRound < T && rounds === T
+      ? Array.from({ length: rounds }, (_, r) => new Set(Array.from({ length: perRound }, (_, j) => (shift + r * perRound + j) % T)))
+      : null
+    const allowed = (row) => !open || row.every((t, r) => open[r].has(t))
+    if (open) {
+      sched.forEach((row) => {
+        for (let tries = 0; tries < 500; tries++) {
+          const order = shuffle(cands.map((_, t) => t))
+          if (order.every((t, r) => open[r].has(t))) { order.forEach((t, r) => { row[r] = t }); break }
+        }
+      })
+    }
     let cur = evaluate(sched)
-    if (!best || cur < best.cost) best = { cost: cur, sched: sched.map((row) => [...row]) }
-    for (let it = 0; it < iterations && best.cost > 0; it++) {
+    let local = { cost: cur, sched: sched.map((row) => [...row]) }
+    for (let it = 0; it < iterations && local.cost > 0; it++) {
       const temperature = 8 * (1 - it / iterations)
       const i = Math.floor(Math.random() * n)
       const r1 = Math.floor(Math.random() * rounds)
@@ -329,29 +399,43 @@ function scheduleMandatory(people, cands, rounds, { restarts = 4, iterations = 3
       const rows = partners.length ? [sched[i], sched[partners[Math.floor(Math.random() * partners.length)]]] : [sched[i]]
       const flip = () => rows.forEach((row) => { [row[r1], row[r2]] = [row[r2], row[r1]] })
       flip()
+      if (!rows.every(allowed)) { flip(); continue }
       const next = evaluate(sched)
       const delta = next - cur
       if (delta <= 0 || Math.random() < Math.exp(-delta / Math.max(temperature, 1e-3))) {
         cur = next
-        if (cur < best.cost) best = { cost: cur, sched: sched.map((x) => [...x]) }
+        if (cur < local.cost) local = { cost: cur, sched: sched.map((x) => [...x]) }
       } else flip()
+    }
+    // Repaso final: se prueban TODOS los cambios posibles (de una persona o de dos) y se aplica cualquiera
+    // que mejore, hasta que ninguno mejora. Así no queda un avanzado de más en una reunión mientras otra
+    // reunión del mismo tema se queda sin ninguno, si hay forma de evitarlo.
+    const sch = local.sched
+    let cost = local.cost
+    for (let improved = true; improved && cost > 0;) {
+      improved = false
+      for (let i = 0; i < n; i++) for (let r1 = 0; r1 < rounds; r1++) for (let r2 = r1 + 1; r2 < rounds; r2++) {
+        for (let j = i; j < n; j++) {
+          if (j !== i && !(sch[j][r1] === sch[i][r2] && sch[j][r2] === sch[i][r1])) continue
+          const rows = j === i ? [sch[i]] : [sch[i], sch[j]]
+          const flip = () => rows.forEach((row) => { [row[r1], row[r2]] = [row[r2], row[r1]] })
+          flip()
+          const next = rows.every(allowed) ? evaluate(sch) : Infinity
+          if (next < cost) { cost = next; improved = true } else flip()
+        }
+      }
+    }
+    // Se divide en mesas varias veces y se queda el mejor plan real de todos los intentos
+    for (let x = 0; x < 6; x++) {
+      const plan = split(sch)
+      const c = planCost(plan)
+      if (!best || c < best.cost) best = { cost: c, plan }
     }
   }
 
-  // Cada grupo (tour, tema) → mesas de 3 a 4; primero un avanzado en cada mesa, después el resto
-  return Array.from({ length: rounds }, (_, r) => {
-    const tables = []
-    cands.forEach((c, t) => {
-      const cell = shuffle(ids.map((_, i) => i).filter((i) => best.sched[i][r] === t))
-      if (!cell.length) return
-      const k = tablesFor(cell.length)
-      const groups = Array.from({ length: k }, () => [])
-      const ordered = [...cell.filter((i) => adv[i][t]), ...cell.filter((i) => !adv[i][t])]
-      ordered.forEach((i, x) => groups[x % k].push(ids[i]))
-      groups.forEach((members) => tables.push({ topic: c.id, members }))
-    })
-    tables.sort((x, y) => y.members.length - x.members.length)
-    return { tables: tables.map((t, i) => ({ id: i + 1, ...t })) }
+  return best.plan.map((tables) => {
+    const sorted = [...tables].sort((x, y) => y.members.length - x.members.length)
+    return { tables: sorted.map(({ topic, members }, i) => ({ id: i + 1, topic, members })) }
   })
 }
 
