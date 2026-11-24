@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { VIEWS, MODERATOR_VIEWS, isModHash, JOIN_HASH, PROJ_HASH, MOD_PIN, PAUSE_AFTER_ROUND, FIND_MINUTES, ROUND_MINUTES } from '../constants'
+import { VIEWS, MODERATOR_VIEWS, isModHash, JOIN_HASH, PROJ_HASH, PROJ_SHOW_MSG, MOD_PIN, PAUSE_AFTER_ROUND, FIND_MINUTES, ROUND_MINUTES } from '../constants'
 import { demoParticipants } from '../lib/demo'
 import { configureEventTopics } from '../lib/topics'
 import * as api from '../lib/backend'
@@ -403,6 +403,16 @@ export function AppProvider({ children }) {
     setView(next)
     window.scrollTo({ top: 0 })
   }, [modUnlocked])
+
+  // La ventana del proyector que se volvió al panel recibe del panel principal «muestra el proyector»
+  useEffect(() => {
+    const onMsg = (e) => {
+      if (e.origin !== window.location.origin || e.data?.type !== PROJ_SHOW_MSG) return
+      if (window.location.hash === PROJ_HASH) navigate(VIEWS.PROJECTOR)
+    }
+    window.addEventListener('message', onMsg)
+    return () => window.removeEventListener('message', onMsg)
+  }, [navigate])
 
   /* ---------- Acceso de moderadora ---------- */
   const openGate = useCallback(() => setGateOpen(true), [])
